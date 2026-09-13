@@ -1,0 +1,242 @@
+// ============================================================
+// Budgment — Esquema DBML (v2)
+// Diseñado para SQLite.
+// ============================================================
+
+Table users {
+  id String [pk]
+  name String
+  username String [unique]
+  email String [unique] // opcional, para recuperación de cuenta
+  password_hash String
+  default_currency Char(3) // ISO-4217, moneda de referencia para totales/dashboards
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+}
+
+Table accounts {
+  id String [pk]
+  user_id String [ref: > users.id]
+  name String
+  account_type account_types
+  currency Char(3) // ISO-4217
+  icon String
+  color String
+  credit_limit INTEGER // en centavos; solo aplica si account_type = Credit
+  statement_day Int // día de corte; solo crédito
+  payment_due_day Int // día límite de pago; solo crédito
+  balance_cache INTEGER // saldo cacheado en centavos (derivado, se recalcula desde transactions)
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    user_id
+  }
+}
+
+Table categories {
+  id String [pk]
+  user_id String [ref: > users.id]
+  parent_category_id String [ref: > categories.id] // null = categoría raíz
+  name String
+  type nature
+  icon String
+  color String
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    user_id
+    parent_category_id
+  }
+}
+
+Table transactions {
+  id String [pk]
+  user_id String [ref: > users.id]
+  account_id String [ref: > accounts.id]
+  category_id String [ref: > categories.id]
+  recurring_id String [ref: > recurring_transactions.id] // null si no vino de una recurrencia
+  amount INTEGER [not null] // centavos, con signo
+  currency Char(3) // si es NULL se asume la currency de la cuenta
+  exchange_rate_micros INTEGER // tasa * 1,000,000; NULL si no hubo conversión
+  description String
+  date date [not null]
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    (user_id, date)
+    account_id
+    category_id
+    recurring_id
+  }
+}
+
+// Reemplaza al `transfer_id` suelto de la v1: garantiza que una
+// transferencia siempre tenga exactamente sus dos transacciones,
+// y permite hacer JOIN directo sin buscar por un id compartido.
+Table transfers {
+  id String [pk]
+  user_id String [ref: > users.id]
+  from_account_id String [ref: > accounts.id]
+  to_account_id String [ref: > accounts.id]
+  from_transaction_id String [ref: > transactions.id]
+  to_transaction_id String [ref: > transactions.id]
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    user_id
+  }
+}
+
+Table budgets {
+  id String [pk]
+  user_id String [ref: > users.id]
+  name String
+  amount_limit INTEGER // centavos
+  scope scopes
+  period_interval Int [not null, default: 1] // "cada N unidades"
+  period_unit period_units [not null]
+  start_date date
+  end_date date
+  rollover Boolean [default: false] // si el saldo no gastado pasa al siguiente periodo
+  notify_threshold_percent Int // ej. 80 -> avisar al llegar al 80% del límite
+  auto_create_recurring Boolean [default: false]
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    user_id
+  }
+}
+
+Table budget_categories {
+  id String [pk]
+  budget_id String [ref: > budgets.id]
+  category_id String [ref: > categories.id]
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (budget_id, category_id) [unique]
+  }
+}
+
+Table recurring_transactions {
+  id String [pk]
+  user_id String [ref: > users.id]
+  account_id String [ref: > accounts.id]
+  category_id String [ref: > categories.id]
+  base_amount INTEGER [not null] // centavos
+  currency Char(3)
+  period_interval Int [not null, default: 1]
+  period_unit period_units [not null]
+  anchor_date date [not null] // fecha base desde la que se calculan ocurrencias
+  next_occurrence date [not null]
+  end_date date
+  active Boolean [default: true]
+  notify_before_days Int // avisar N días antes de la próxima ocurrencia
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    user_id
+    account_id
+    next_occurrence
+  }
+}
+
+// Historial de tasas de cambio, necesario si de verdad vas a
+// soportar multi-moneda más allá de un campo suelto por transacción.
+Table exchange_rates {
+  id String [pk]
+  from_currency Char(3)
+  to_currency Char(3)
+  rate_micros INTEGER [not null] // tasa * 1,000,000
+  date date [not null]
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (from_currency, to_currency, date) [unique]
+  }
+}
+
+Table goals {
+  id String [pk]
+  user_id String [ref: > users.id]
+  account_id String [ref: > accounts.id] // cuenta destino del ahorro (opcional)
+  name String
+  target_amount INTEGER [not null] // centavos
+  current_amount INTEGER [default: 0]
+  target_date date
+  icon String
+  color String
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    user_id
+  }
+}
+
+Table tags {
+  id String [pk]
+  user_id String [ref: > users.id]
+  name String
+  color String
+
+  indexes {
+    (user_id, name) [unique]
+  }
+}
+
+Table transaction_tags {
+  transaction_id String [ref: > transactions.id]
+  tag_id String [ref: > tags.id]
+
+  indexes {
+    (transaction_id, tag_id) [pk]
+  }
+}
+
+Table attachments {
+  id String [pk]
+  transaction_id String [ref: > transactions.id]
+  file_path String [not null] // ruta/uri local al recibo/foto
+  created_at datetime [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    transaction_id
+  }
+}
+
+Enum account_types {
+  "Cash"
+  "Debit"
+  "Credit"
+  "Savings"
+  "Investment"
+}
+
+Enum scopes {
+  "Global"
+  "Category"
+}
+
+Enum nature {
+  "Gasto"
+  "Ingreso"
+}
+
+Enum period_units {
+  "DAY"
+  "WEEK"
+  "MONTH"
+  "YEAR"
+}

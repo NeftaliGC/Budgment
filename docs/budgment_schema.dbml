@@ -230,8 +230,8 @@ Enum scopes {
 }
 
 Enum nature {
-  "Gasto"
-  "Ingreso"
+  "EXPENSE"
+  "INCOME"
 }
 
 Enum period_units {

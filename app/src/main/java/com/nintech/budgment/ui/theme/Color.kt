@@ -2,10 +2,21 @@ package com.nintech.budgment.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Paleta base
+val DarkGreen = Color(0xFF002B24)
+val CastletonGreen = Color(0xFF0B5D44)
+val PineGreen = Color(0xFF01796F)
+val JungleGreen = Color(0xFF2AA679)
+val Aquamarine = Color(0xFF8EE5C1)
+val MintCream = Color(0xFFF3FFF9)
+val Night = Color(0xFF0D1111)
+val OrangePeel = Color(0xFFFFA114)
+val FaluRed = Color(0xFF7A1613)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Acentos
+val HighlightDark = Color(0xFFFF9800)
+val Success = Color(0xFF2ECC71)
+
+// Derivados
+val CardBgLight = Color(0xFF0E7C69)
+val MutedLight = Color(0xFF2B6B63)

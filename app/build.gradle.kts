@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.work.runtime.ktx)
 
     implementation(libs.errorprone.annotations)
+    implementation(libs.compose.icons.core)
 }
 
 ksp {

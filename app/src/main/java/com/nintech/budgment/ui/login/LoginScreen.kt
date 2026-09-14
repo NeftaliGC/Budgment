@@ -1,0 +1,214 @@
+package com.nintech.budgment.ui.login
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.nintech.budgment.R
+import com.nintech.budgment.ui.theme.BudgmentTheme
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
+
+@Composable
+fun LoginScreen(
+    onLoginClick: (username: String, password: String) -> Unit = { _, _ -> },
+    onRegisterClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Hero
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 32.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.logo_mark),
+                contentDescription = null,
+                modifier = Modifier.size(100.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.login_tagline),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    fontSize = 12.sp
+                )
+            }
+        }
+
+        // Formulario
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(horizontal = 32.dp, vertical = 40.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.login_welcome),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.login_subtitle),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontSize = 14.sp
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(stringResource(R.string.login_username_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.login_password_label)) },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        TextButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Text(
+                                text = stringResource(
+                                    if (passwordVisible) R.string.common_password_hide else R.string.common_password_show
+                                ),
+                                fontSize = 12.sp
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = { rememberMe = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    )
+                    Text(
+                        text = stringResource(R.string.login_remember_me),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = { onLoginClick(username, password) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(text = stringResource(R.string.login_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+
+                ) {
+                    Text(
+                        text = stringResource(R.string.login_no_account),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = stringResource(R.string.login_register),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.clickable { onRegisterClick() }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Login - Claro")
+@Composable
+private fun LoginScreenLightPreview() {
+    BudgmentTheme(darkTheme = false) {
+        LoginScreen()
+    }
+}
+
+@Preview(showBackground = true, name = "Login - Oscuro")
+@Composable
+private fun LoginScreenDarkPreview() {
+    BudgmentTheme(darkTheme = true) {
+        LoginScreen()
+    }
+}

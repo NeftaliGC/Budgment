@@ -1,3 +1,35 @@
 <resources>
-    <string name="app_name">Budgment</string>
+    <string name="app_name" translatable="false">Budgment</string>
+
+    <!-- Common -->
+    <string name="common_password_show">Mostrar</string>
+    <string name="common_password_hide">Ocultar</string>
+    <string name="common_back">Volver</string>
+
+    <!-- Home (placeholder temporal) -->
+    <string name="home_placeholder_title">Próximamente</string>
+
+    <!-- Login -->
+    <string name="login_tagline">Controla tus gastos sin complicarte</string>
+    <string name="login_welcome">Bienvenido</string>
+    <string name="login_subtitle">Inicia sesión para continuar</string>
+    <string name="login_username_label">Usuario</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="login_no_account">¿No tienes cuenta? </string>
+    <string name="login_register">Regístrate</string>
+    <string name="login_remember_me">Recuérdame</string>
+
+
+    <!-- Register -->
+    <string name="register_title">Crea tu cuenta</string>
+    <string name="register_subtitle">Es rápido y solo se usa en este dispositivo</string>
+    <string name="register_name_label">Nombre</string>
+    <string name="register_username_label">Usuario</string>
+    <string name="register_email_label">Correo (opcional)</string>
+    <string name="register_password_label">Contraseña</string>
+    <string name="register_confirm_password_label">Confirmar contraseña</string>
+    <string name="register_button">Crear cuenta</string>
+    <string name="register_have_account">¿Ya tienes cuenta? </string>
+    <string name="register_login_link">Inicia sesión</string>
 </resources>

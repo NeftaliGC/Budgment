@@ -14,6 +14,7 @@ room = "2.8.5"
 navigationCompose = "2.9.8"
 workManager = "2.11.2"
 ksp = "2.2.10-2.0.2"
+errorprone = "2.50.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,8 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+
+errorprone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorprone" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

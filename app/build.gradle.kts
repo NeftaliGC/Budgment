@@ -86,6 +86,8 @@ dependencies {
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
+
+    implementation(libs.errorprone.annotations)
 }
 
 ksp {

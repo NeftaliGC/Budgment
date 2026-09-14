@@ -46,6 +46,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    sourceSets {
+        getByName("androidTest") {
+            assets.directories.add("$projectDir/schemas")
+        }
+    }
 }
 
 dependencies {
@@ -80,4 +86,8 @@ dependencies {
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

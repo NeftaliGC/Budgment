@@ -2,9 +2,12 @@ package com.nintech.budgment.ui.categories
 
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -13,11 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.CategoryEntity
@@ -29,17 +34,27 @@ fun CategoriesListScreen(
     onBackClick: () -> Unit,
     onAddCategoryClick: () -> Unit,
     onCategoryClick: (String) -> Unit,
-    viewModel: CategoriesViewModel = hiltViewModel()
+    viewModel: CategoriesViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    if (viewModel != null) {
+        val uiState by viewModel.uiState.collectAsState()
 
-    CategoriesListScreen(
-        uiState = uiState,
-        onBackClick = onBackClick,
-        onAddCategoryClick = onAddCategoryClick,
-        onCategoryClick = onCategoryClick,
-        onDeleteCategory = viewModel::deleteCategory
-    )
+        CategoriesListScreen(
+            uiState = uiState,
+            onBackClick = onBackClick,
+            onAddCategoryClick = onAddCategoryClick,
+            onCategoryClick = onCategoryClick,
+            onDeleteCategory = viewModel::deleteCategory
+        )
+    } else {
+        CategoriesListScreen(
+            uiState = CategoriesUiState(),
+            onBackClick = onBackClick,
+            onAddCategoryClick = onAddCategoryClick,
+            onCategoryClick = onCategoryClick,
+            onDeleteCategory = {}
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,15 +126,42 @@ fun CategoriesListScreen(
 
 @Composable
 private fun CategoryRow(category: CategoryEntity, onClick: () -> Unit, onDeleteClick: () -> Unit) {
+    val accentColor = when {
+        parseHexColor(category.color) != null -> parseHexColor(category.color)!!
+        category.type == CategoryType.EXPENSE -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.tertiary
+    }
+    val icon = CategoryIcon.resolveIcon(category.icon)
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(category.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
-            Spacer(Modifier.height(2.dp))
-            Text(category.type.label(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(accentColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Box(Modifier.size(10.dp).background(accentColor, CircleShape))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(category.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+                Spacer(Modifier.height(2.dp))
+                Text(category.type.label(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+            }
         }
         IconButton(onClick = onDeleteClick) {
             Icon(

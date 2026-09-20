@@ -18,4 +18,7 @@ interface BudgetCategoryDao {
 
     @Query("SELECT * FROM budget_categories WHERE budgetId = :budgetId")
     fun observeByBudget(budgetId: String): Flow<List<BudgetCategoryEntity>>
+
+    @Query("SELECT * FROM budget_categories WHERE budgetId IN (:budgetIds)")
+    suspend fun getForBudgets(budgetIds: List<String>): List<BudgetCategoryEntity>
 }

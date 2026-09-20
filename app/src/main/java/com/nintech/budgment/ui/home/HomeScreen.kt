@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,11 +30,16 @@ import com.nintech.budgment.data.local.entity.AccountEntity
 import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.AccountType
 import com.nintech.budgment.data.model.CategoryType
+import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.ui.accounts.label
+import com.nintech.budgment.ui.categories.CategoryIcon
+import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.navigation.BudgmentDestination
 import com.nintech.budgment.ui.theme.BudgmentTheme
+
+import androidx.compose.ui.platform.LocalInspectionMode
 
 @Composable
 fun HomeScreen(
@@ -45,9 +51,10 @@ fun HomeScreen(
     onCategoryClick: (String) -> Unit,
     onSeeAllCategoriesClick: () -> Unit,
     onAddTransactionClick: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    onAddBudgetClick: () -> Unit,
+    viewModel: HomeViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState = if (viewModel != null) viewModel.uiState.collectAsState().value else HomeUiState()
 
     HomeScreenContent(
         currentRoute = currentRoute,
@@ -58,7 +65,9 @@ fun HomeScreen(
         onAddCategoryClick = onAddCategoryClick,
         onCategoryClick = onCategoryClick,
         onSeeAllCategoriesClick = onSeeAllCategoriesClick,
-        onAddTransactionClick = onAddTransactionClick
+        onAddTransactionClick = onAddTransactionClick,
+        onAddBudgetClick = onAddBudgetClick,
+        onCurrencyChange = { viewModel?.onDisplayCurrencyChange(it) }
     )
 }
 
@@ -72,7 +81,9 @@ fun HomeScreenContent(
     onAddCategoryClick: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onSeeAllCategoriesClick: () -> Unit,
-    onAddTransactionClick: () -> Unit
+    onAddTransactionClick: () -> Unit,
+    onAddBudgetClick: () -> Unit,
+    onCurrencyChange: (String) -> Unit
 ) {
     BudgmentScaffold(currentRoute = currentRoute, onNavigateToTab = onNavigateToTab) { innerPadding ->
         Column(
@@ -95,6 +106,30 @@ fun HomeScreenContent(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            if (uiState.missingRateAccounts > 0) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.home_currency_missing_rates, uiState.missingRateAccounts),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(SupportedCurrency.ALL) { currency ->
+                    FilterChip(
+                        selected = uiState.primaryCurrency == currency.code,
+                        onClick = { onCurrencyChange(currency.code) },
+                        label = { Text(currency.code) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_currency_rate_note),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+            )
 
             Spacer(Modifier.height(32.dp))
 
@@ -106,24 +141,35 @@ fun HomeScreenContent(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
             Spacer(Modifier.height(12.dp))
-            Row {
-                QuickActionItem(
-                    label = stringResource(R.string.home_action_new_transaction),
-                    icon = { Icon(painter = painterResource(R.drawable.ic_transacciones), contentDescription = null) },
-                    onClick = onAddTransactionClick
-                )
-                Spacer(Modifier.width(8.dp))
-                QuickActionItem(
-                    label = stringResource(R.string.home_action_new_account),
-                    icon = { Icon(painter = painterResource(R.drawable.ic_wallet), contentDescription = null) },
-                    onClick = onAddAccountClick
-                )
-                Spacer(Modifier.width(8.dp))
-                QuickActionItem(
-                    label = stringResource(R.string.home_action_new_category),
-                    icon = { Icon(painter = painterResource(R.drawable.ic_category), contentDescription = null) },
-                    onClick = onAddCategoryClick
-                )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    QuickActionItem(
+                        label = stringResource(R.string.home_action_new_transaction),
+                        icon = { Icon(painter = painterResource(R.drawable.ic_transacciones), contentDescription = null) },
+                        onClick = onAddTransactionClick
+                    )
+                }
+                item {
+                    QuickActionItem(
+                        label = stringResource(R.string.home_action_new_account),
+                        icon = { Icon(painter = painterResource(R.drawable.ic_wallet), contentDescription = null) },
+                        onClick = onAddAccountClick
+                    )
+                }
+                item {
+                    QuickActionItem(
+                        label = stringResource(R.string.home_action_new_category),
+                        icon = { Icon(painter = painterResource(R.drawable.ic_category), contentDescription = null) },
+                        onClick = onAddCategoryClick
+                    )
+                }
+                item {
+                    QuickActionItem(
+                        label = stringResource(R.string.home_action_new_budget),
+                        icon = { Icon(painter = painterResource(R.drawable.ic_calendar), contentDescription = null) },
+                        onClick = onAddBudgetClick
+                    )
+                }
             }
 
             Spacer(Modifier.height(32.dp))
@@ -142,10 +188,21 @@ fun HomeScreenContent(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
             } else {
-                Column {
-                    uiState.accounts.forEach { account ->
-                        AccountRow(account = account, onClick = { onAccountClick(account.id) })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                val shownAccounts = uiState.accounts.take(4)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    shownAccounts.chunked(2).forEach { rowAccounts ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowAccounts.forEach { account ->
+                                AccountCard(
+                                    account = account,
+                                    onClick = { onAccountClick(account.id) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (rowAccounts.size == 1) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
@@ -217,44 +274,86 @@ private fun QuickActionItem(label: String, icon: @Composable () -> Unit, onClick
 }
 
 @Composable
-private fun AccountRow(account: AccountEntity, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
+private fun AccountCard(account: AccountEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column {
-            Text(account.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
-            Spacer(Modifier.height(2.dp))
-            Text(account.accountType.label(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+        Column(Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_card),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = account.name,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = account.accountType.label(),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = formatCents(account.balanceCache, account.currency),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
-        Text(
-            text = formatCents(account.balanceCache, account.currency),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
     }
 }
 
 @Composable
 private fun CategoryChip(category: CategoryEntity, onClick: () -> Unit) {
-    val accentColor = if (category.type == CategoryType.EXPENSE) {
+    val fallbackAccent = if (category.type == CategoryType.EXPENSE) {
         MaterialTheme.colorScheme.error
     } else {
         MaterialTheme.colorScheme.tertiary
     }
-    Box(
+    val accentColor = parseHexColor(category.color) ?: fallbackAccent
+
+    val icon = CategoryIcon.resolveIcon(category.icon)
+
+    Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
+            .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(50))
             .border(1.dp, accentColor, RoundedCornerShape(50))
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(category.name, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(16.dp)
+            )
+        } else {
+            Box(Modifier.size(8.dp).background(accentColor, CircleShape))
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = category.name,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -312,7 +411,9 @@ fun HomeScreenPreview() {
             onAddCategoryClick = {},
             onCategoryClick = {},
             onSeeAllCategoriesClick = {},
-            onAddTransactionClick = {}
+            onAddTransactionClick = {},
+            onAddBudgetClick = {},
+            onCurrencyChange = {}
         )
     }
 }

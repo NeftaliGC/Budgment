@@ -89,7 +89,12 @@ dependencies {
 
     implementation(libs.errorprone.annotations)
     implementation(libs.compose.icons.core)
+    implementation(libs.compose.icons.extended)
     implementation(libs.datastore.preferences)
+
+    // Red (tasas de cambio)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
 }
 
 ksp {

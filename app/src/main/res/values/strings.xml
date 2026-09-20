@@ -38,6 +38,8 @@
     <string name="home_accounts_title">Mis cuentas</string>
     <string name="home_see_all">Ver todas</string>
     <string name="home_no_accounts">Aún no tienes cuentas registradas</string>
+    <string name="home_currency_missing_rates">%1$d cuenta(s) sin convertir (tasa no disponible)</string>
+    <string name="home_currency_rate_note">Tasa de referencia diaria (BCE)</string>
 
     <!-- Login -->
     <string name="login_tagline">Controla tus gastos sin complicarte</string>
@@ -100,6 +102,10 @@
     <string name="category_form_title_edit">Editar categoría</string>
     <string name="category_form_name_label">Nombre</string>
     <string name="category_form_type_label">Tipo</string>
+    <string name="category_form_icon_label">Icono</string>
+    <string name="category_form_color_label">Color</string>
+    <string name="category_form_color_default_content_description">Predeterminado (color automático)</string>
+    <string name="category_form_color_auto_hint">Si no eliges color se usa el automático según el tipo de categoría.</string>
     <string name="category_form_save_button">Guardar</string>
 
     <!-- Category types -->
@@ -130,5 +136,29 @@
     <string name="transaction_form_error_invalid_amount">Ingresa un monto válido mayor a cero</string>
     <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos</string>
     <string name="transaction_form_no_categories">Primero crea una categoría para poder registrar movimientos</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Presupuestos</string>
+    <string name="budgets_empty_title">Aún no tienes presupuestos</string>
+    <string name="budgets_empty_subtitle">Crea un presupuesto para controlar tu gasto mensual</string>
+    <string name="budgets_add_content_description">Agregar presupuesto</string>
+    <string name="budgets_delete_content_description">Eliminar presupuesto</string>
+    <string name="budgets_spent_format">%1$s de %2$s</string>
+    <string name="budgets_period_current_month">Este mes</string>
+
+    <!-- Budget form -->
+    <string name="budget_form_title_new">Nuevo presupuesto</string>
+    <string name="budget_form_title_edit">Editar presupuesto</string>
+    <string name="budget_form_name_label">Nombre</string>
+    <string name="budget_form_amount_label">Límite</string>
+    <string name="budget_form_scope_label">Alcance</string>
+    <string name="budget_form_categories_label">Categorías incluidas</string>
+    <string name="budget_form_save_button">Guardar</string>
+    <string name="budget_form_error">Completa el nombre, un límite válido, y al menos una categoría si el alcance es por categoría</string>
+    <string name="budget_form_no_expense_categories">Primero crea una categoría de tipo Gasto para presupuestos por categoría</string>
+
+    <!-- Budget scope -->
+    <string name="budget_scope_global">Global</string>
+    <string name="budget_scope_category">Por categoría</string>
 
 </resources>

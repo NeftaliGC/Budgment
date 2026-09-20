@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.nintech.budgment.data.local.entity.AccountEntity
 import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.AccountType
@@ -28,23 +29,35 @@ import com.nintech.budgment.ui.theme.BudgmentTheme
 fun TransactionFormScreen(
     onBackClick: () -> Unit,
     onSaved: () -> Unit,
-    viewModel: TransactionFormViewModel = hiltViewModel()
+    viewModel: TransactionFormViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    if (viewModel != null) {
+        val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) onSaved()
+        LaunchedEffect(state.isSaved) {
+            if (state.isSaved) onSaved()
+        }
+
+        TransactionFormScreen(
+            state = state,
+            onAccountSelected = viewModel::onAccountSelected,
+            onCategorySelected = viewModel::onCategorySelected,
+            onAmountChange = viewModel::onAmountChange,
+            onDescriptionChange = viewModel::onDescriptionChange,
+            onSaveClick = viewModel::save,
+            onBackClick = onBackClick
+        )
+    } else {
+        TransactionFormScreen(
+            state = TransactionFormState(),
+            onAccountSelected = {},
+            onCategorySelected = {},
+            onAmountChange = {},
+            onDescriptionChange = {},
+            onSaveClick = {},
+            onBackClick = onBackClick
+        )
     }
-
-    TransactionFormScreen(
-        state = state,
-        onAccountSelected = viewModel::onAccountSelected,
-        onCategorySelected = viewModel::onCategorySelected,
-        onAmountChange = viewModel::onAmountChange,
-        onDescriptionChange = viewModel::onDescriptionChange,
-        onSaveClick = viewModel::save,
-        onBackClick = onBackClick
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

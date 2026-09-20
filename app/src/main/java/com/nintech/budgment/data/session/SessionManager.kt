@@ -15,10 +15,13 @@ import javax.inject.Singleton
 val Context.sessionDataStore by preferencesDataStore(name = "budgment_session")
 
 private val USER_ID_KEY = stringPreferencesKey("user_id")
+private val DISPLAY_CURRENCY_KEY = stringPreferencesKey("display_currency")
 
 interface SessionManager {
     val currentUserId: Flow<String?>
+    val displayCurrency: Flow<String?>
     suspend fun login(userId: String, rememberMe: Boolean)
+    suspend fun setDisplayCurrency(code: String)
     suspend fun logout()
 }
 
@@ -35,12 +38,19 @@ class SessionManagerImpl @Inject constructor(
         inMemoryUserId
     ) { persisted, memory -> persisted ?: memory }
 
+    override val displayCurrency: Flow<String?> =
+        dataStore.data.map { it[DISPLAY_CURRENCY_KEY] }
+
     override suspend fun login(userId: String, rememberMe: Boolean) {
         if (rememberMe) {
             dataStore.edit { it[USER_ID_KEY] = userId }
         } else {
             inMemoryUserId.value = userId
         }
+    }
+
+    override suspend fun setDisplayCurrency(code: String) {
+        dataStore.edit { it[DISPLAY_CURRENCY_KEY] = code }
     }
 
     override suspend fun logout() {

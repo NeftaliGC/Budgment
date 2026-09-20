@@ -52,8 +52,8 @@ fun BudgmentBottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
             colors = itemColors
         )
         NavigationBarItem(
-            selected = false, // 👈 mismo caso
-            onClick = { /* TODO: pendiente hasta construir la pantalla de presupuestos */ },
+            selected = currentRoute == BudgmentDestination.Budgets.route,
+            onClick = { onNavigate(BudgmentDestination.Budgets.route) },
             icon = { Icon(painter = painterResource(id = R.drawable.ic_calendar), contentDescription = stringResource(R.string.bottom_nav_budgets)) },
             label = { Text(stringResource(R.string.bottom_nav_budgets)) },
             alwaysShowLabel = true,

@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.TransactionEntity
@@ -32,18 +33,29 @@ fun TransactionsListScreen(
     onNavigateToTab: (String) -> Unit,
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
-    viewModel: TransactionsViewModel = hiltViewModel()
+    viewModel: TransactionsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    if (viewModel != null) {
+        val uiState by viewModel.uiState.collectAsState()
 
-    TransactionsListScreen(
-        uiState = uiState,
-        currentRoute = currentRoute,
-        onNavigateToTab = onNavigateToTab,
-        onAddTransactionClick = onAddTransactionClick,
-        onTransactionClick = onTransactionClick,
-        onDeleteTransaction = viewModel::deleteTransaction
-    )
+        TransactionsListScreen(
+            uiState = uiState,
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddTransactionClick = onAddTransactionClick,
+            onTransactionClick = onTransactionClick,
+            onDeleteTransaction = viewModel::deleteTransaction
+        )
+    } else {
+        TransactionsListScreen(
+            uiState = TransactionsUiState(),
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddTransactionClick = onAddTransactionClick,
+            onTransactionClick = onTransactionClick,
+            onDeleteTransaction = {}
+        )
+    }
 }
 
 @Composable

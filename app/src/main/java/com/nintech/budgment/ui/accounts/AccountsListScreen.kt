@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.AccountEntity
 import com.nintech.budgment.data.model.AccountType
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.theme.BudgmentTheme
@@ -35,18 +36,29 @@ fun AccountsListScreen(
     onNavigateToTab: (String) -> Unit,
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    viewModel: AccountsViewModel = hiltViewModel()
+    viewModel: AccountsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    if (viewModel != null) {
+        val uiState by viewModel.uiState.collectAsState()
 
-    AccountsListScreen(
-        uiState = uiState,
-        currentRoute = currentRoute,
-        onNavigateToTab = onNavigateToTab,
-        onAddAccountClick = onAddAccountClick,
-        onAccountClick = onAccountClick,
-        onDeleteAccount = viewModel::deleteAccount
-    )
+        AccountsListScreen(
+            uiState = uiState,
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddAccountClick = onAddAccountClick,
+            onAccountClick = onAccountClick,
+            onDeleteAccount = viewModel::deleteAccount
+        )
+    } else {
+        AccountsListScreen(
+            uiState = AccountsUiState(),
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddAccountClick = onAddAccountClick,
+            onAccountClick = onAccountClick,
+            onDeleteAccount = {}
+        )
+    }
 }
 
 @Composable

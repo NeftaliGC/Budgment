@@ -2,10 +2,14 @@ package com.nintech.budgment.di
 
 import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.AccountRepositoryImpl
+import com.nintech.budgment.data.repository.BudgetRepository
+import com.nintech.budgment.data.repository.BudgetRepositoryImpl
 import com.nintech.budgment.data.repository.AuthRepository
 import com.nintech.budgment.data.repository.AuthRepositoryImpl
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.CategoryRepositoryImpl
+import com.nintech.budgment.data.repository.ExchangeRateRepository
+import com.nintech.budgment.data.repository.ExchangeRateRepositoryImpl
 import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.repository.TransactionRepositoryImpl
 import com.nintech.budgment.data.repository.UserRepository
@@ -40,4 +44,11 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds
+    abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindExchangeRateRepository(impl: ExchangeRateRepositoryImpl): ExchangeRateRepository
 }

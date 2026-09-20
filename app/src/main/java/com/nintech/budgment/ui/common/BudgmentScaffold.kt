@@ -19,6 +19,8 @@ fun BudgmentScaffold(
     headerViewModel: HeaderViewModel? = if (LocalInspectionMode.current) null else hiltViewModel(),
     content: @Composable (PaddingValues) -> Unit
 ) {
+    ForceLightSystemBars()
+
     val userName = if (headerViewModel != null) {
         val name by headerViewModel.userName.collectAsState()
         name

@@ -10,6 +10,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nintech.budgment.ui.accounts.AccountFormScreen
 import com.nintech.budgment.ui.accounts.AccountsListScreen
+import com.nintech.budgment.ui.budgets.BudgetFormScreen
+import com.nintech.budgment.ui.budgets.BudgetsListScreen
 import com.nintech.budgment.ui.categories.CategoriesListScreen
 import com.nintech.budgment.ui.categories.CategoryFormScreen
 import com.nintech.budgment.ui.home.HomeScreen
@@ -69,6 +71,7 @@ fun BudgmentNavHost(
                 onCategoryClick = { id -> navController.navigate(BudgmentDestination.CategoryForm.createRoute(id)) },
                 onSeeAllCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
+                onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) }
             )
         }
 
@@ -125,6 +128,30 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
+            )
+        }
+
+        composable(BudgmentDestination.Budgets.route) {
+            BudgetsListScreen(
+                currentRoute = BudgmentDestination.Budgets.route,
+                onNavigateToTab = onNavigateToTab,
+                onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
+                onBudgetClick = { id -> navController.navigate(BudgmentDestination.BudgetForm.createRoute(id)) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.BudgetForm.route,
+            arguments = listOf(
+                navArgument(BudgmentDestination.BudgetForm.ARG_BUDGET_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
+            BudgetFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
             )
         }
 

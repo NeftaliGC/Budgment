@@ -21,4 +21,10 @@ sealed class BudgmentDestination(val route: String) {
         const val ARG_TRANSACTION_ID = "transactionId"
         fun createRoute(transactionId: String? = null) = "transaction_form?transactionId=${transactionId ?: ""}"
     }
+
+    object Budgets : BudgmentDestination("budgets")
+    object BudgetForm : BudgmentDestination("budget_form?budgetId={budgetId}") {
+        const val ARG_BUDGET_ID = "budgetId"
+        fun createRoute(budgetId: String? = null) = "budget_form?budgetId=${budgetId ?: ""}"
+    }
 }

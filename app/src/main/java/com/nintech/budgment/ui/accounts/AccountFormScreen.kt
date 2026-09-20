@@ -9,28 +9,72 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.AccountType
+import com.nintech.budgment.data.model.SupportedCurrency
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountFormScreen(
     onBackClick: () -> Unit,
     onSaved: () -> Unit,
-    viewModel: AccountFormViewModel = hiltViewModel()
+    viewModel: AccountFormViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    if (viewModel != null) {
+        val state by viewModel.state.collectAsState()
+
+        LaunchedEffect(state.isSaved) {
+            if (state.isSaved) onSaved()
+        }
+
+        AccountFormScreenContent(
+            state = state,
+            onNameChange = viewModel::onNameChange,
+            onAccountTypeChange = viewModel::onAccountTypeChange,
+            onCurrencyChange = viewModel::onCurrencyChange,
+            onCreditLimitChange = viewModel::onCreditLimitChange,
+            onStatementDayChange = viewModel::onStatementDayChange,
+            onPaymentDueDayChange = viewModel::onPaymentDueDayChange,
+            onSaveClick = viewModel::save,
+            onBackClick = onBackClick
+        )
+    } else {
+        AccountFormScreenContent(
+            state = AccountFormState(),
+            onNameChange = {},
+            onAccountTypeChange = {},
+            onCurrencyChange = {},
+            onCreditLimitChange = {},
+            onStatementDayChange = {},
+            onPaymentDueDayChange = {},
+            onSaveClick = {},
+            onBackClick = onBackClick
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccountFormScreenContent(
+    state: AccountFormState,
+    onNameChange: (String) -> Unit,
+    onAccountTypeChange: (AccountType) -> Unit,
+    onCurrencyChange: (String) -> Unit,
+    onCreditLimitChange: (String) -> Unit,
+    onStatementDayChange: (String) -> Unit,
+    onPaymentDueDayChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var typeMenuExpanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) onSaved()
-    }
-
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(if (state.isEditing) R.string.account_form_title_edit else R.string.account_form_title_new)) },
@@ -51,7 +95,7 @@ fun AccountFormScreen(
         ) {
             OutlinedTextField(
                 value = state.name,
-                onValueChange = viewModel::onNameChange,
+                onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.account_form_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -72,7 +116,7 @@ fun AccountFormScreen(
                     AccountType.entries.forEach { type ->
                         DropdownMenuItem(
                             text = { Text(type.label()) },
-                            onClick = { viewModel.onAccountTypeChange(type); typeMenuExpanded = false }
+                            onClick = { onAccountTypeChange(type); typeMenuExpanded = false }
                         )
                     }
                 }
@@ -80,19 +124,35 @@ fun AccountFormScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = state.currency,
-                onValueChange = viewModel::onCurrencyChange,
-                label = { Text(stringResource(R.string.account_form_currency_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            var currencyMenuExpanded by remember { mutableStateOf(false) }
+            val currencies = buildList {
+                addAll(SupportedCurrency.ALL.map { it.code })
+                if (state.currency !in this) add(state.currency)
+            }
+            ExposedDropdownMenuBox(expanded = currencyMenuExpanded, onExpandedChange = { currencyMenuExpanded = it }) {
+                OutlinedTextField(
+                    value = state.currency,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.account_form_currency_label)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = currencyMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(expanded = currencyMenuExpanded, onDismissRequest = { currencyMenuExpanded = false }) {
+                    currencies.forEach { code ->
+                        DropdownMenuItem(
+                            text = { Text(code) },
+                            onClick = { onCurrencyChange(code); currencyMenuExpanded = false }
+                        )
+                    }
+                }
+            }
 
             if (state.accountType == AccountType.CREDIT) {
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = state.creditLimitText,
-                    onValueChange = viewModel::onCreditLimitChange,
+                    onValueChange = onCreditLimitChange,
                     label = { Text(stringResource(R.string.account_form_credit_limit_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -101,7 +161,7 @@ fun AccountFormScreen(
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = state.statementDayText,
-                    onValueChange = viewModel::onStatementDayChange,
+                    onValueChange = onStatementDayChange,
                     label = { Text(stringResource(R.string.account_form_statement_day_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -110,7 +170,7 @@ fun AccountFormScreen(
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = state.paymentDueDayText,
-                    onValueChange = viewModel::onPaymentDueDayChange,
+                    onValueChange = onPaymentDueDayChange,
                     label = { Text(stringResource(R.string.account_form_payment_due_day_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -121,7 +181,7 @@ fun AccountFormScreen(
             Spacer(Modifier.height(28.dp))
 
             Button(
-                onClick = viewModel::save,
+                onClick = onSaveClick,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
                 Text(stringResource(R.string.account_form_save_button))

@@ -22,6 +22,7 @@ import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview
 import com.nintech.budgment.R
 import com.nintech.budgment.ui.common.toMessage
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.nintech.budgment.ui.theme.BudgmentTheme
 
 @Composable
@@ -30,23 +31,39 @@ fun RegisterScreen(
     onBackClick: () -> Unit,
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RegisterViewModel = hiltViewModel()
+    viewModel: RegisterViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    if (viewModel != null) {
+        val state by viewModel.state.collectAsState()
 
-    RegisterScreenContent(
-        state = state,
-        onNameChange = viewModel::onNameChange,
-        onUsernameChange = viewModel::onUsernameChange,
-        onEmailChange = viewModel::onEmailChange,
-        onPasswordChange = viewModel::onPasswordChange,
-        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-        onRegisterClick = viewModel::register,
-        onRegisterSuccess = onRegisterSuccess,
-        onBackClick = onBackClick,
-        onLoginClick = onLoginClick,
-        modifier = modifier
-    )
+        RegisterScreenContent(
+            state = state,
+            onNameChange = viewModel::onNameChange,
+            onUsernameChange = viewModel::onUsernameChange,
+            onEmailChange = viewModel::onEmailChange,
+            onPasswordChange = viewModel::onPasswordChange,
+            onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+            onRegisterClick = viewModel::register,
+            onRegisterSuccess = onRegisterSuccess,
+            onBackClick = onBackClick,
+            onLoginClick = onLoginClick,
+            modifier = modifier
+        )
+    } else {
+        RegisterScreenContent(
+            state = RegisterUiState(),
+            onNameChange = {},
+            onUsernameChange = {},
+            onEmailChange = {},
+            onPasswordChange = {},
+            onConfirmPasswordChange = {},
+            onRegisterClick = {},
+            onRegisterSuccess = onRegisterSuccess,
+            onBackClick = onBackClick,
+            onLoginClick = onLoginClick,
+            modifier = modifier
+        )
+    }
 }
 
 @Composable

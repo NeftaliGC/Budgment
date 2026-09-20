@@ -15,26 +15,60 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Preview
 import com.nintech.budgment.R
+import com.nintech.budgment.ui.common.toMessage
 import com.nintech.budgment.ui.theme.BudgmentTheme
 
 @Composable
 fun RegisterScreen(
-    onRegisterClick: (name: String, username: String, email: String, password: String) -> Unit = { _, _, _, _ -> },
-    onBackClick: () -> Unit = {},
-    onLoginClick: () -> Unit = {},
+    onRegisterSuccess: () -> Unit,
+    onBackClick: () -> Unit,
+    onLoginClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: RegisterViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsState()
+
+    RegisterScreenContent(
+        state = state,
+        onNameChange = viewModel::onNameChange,
+        onUsernameChange = viewModel::onUsernameChange,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+        onRegisterClick = viewModel::register,
+        onRegisterSuccess = onRegisterSuccess,
+        onBackClick = onBackClick,
+        onLoginClick = onLoginClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun RegisterScreenContent(
+    state: RegisterUiState,
+    onNameChange: (String) -> Unit,
+    onUsernameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onRegisterSuccess: () -> Unit,
+    onBackClick: () -> Unit,
+    onLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var name by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.registerSuccess) {
+        if (state.registerSuccess) onRegisterSuccess()
+    }
 
     Column(
         modifier = modifier
@@ -78,40 +112,30 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                value = state.name,
+                onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.register_name_label)) },
                 singleLine = true,
+                isError = state.errorMessage != null,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                value = state.username,
+                onValueChange = onUsernameChange,
                 label = { Text(stringResource(R.string.register_username_label)) },
                 singleLine = true,
+                isError = state.errorMessage != null,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                value = state.email,
+                onValueChange = onEmailChange,
                 label = { Text(stringResource(R.string.register_email_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -120,14 +144,11 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                value = state.password,
+                onValueChange = onPasswordChange,
                 label = { Text(stringResource(R.string.register_password_label)) },
                 singleLine = true,
+                isError = state.errorMessage != null,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     TextButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -145,14 +166,11 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
+                value = state.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
                 label = { Text(stringResource(R.string.register_confirm_password_label)) },
                 singleLine = true,
+                isError = state.errorMessage != null,
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     TextButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -167,10 +185,20 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            state.errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error.toMessage(),
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 13.sp
+                )
+            }
+
             Spacer(modifier = Modifier.height(28.dp))
 
             Button(
-                onClick = { onRegisterClick(name, username, email, password) },
+                onClick = onRegisterClick,
+                enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -180,7 +208,15 @@ fun RegisterScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text(text = stringResource(R.string.register_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.register_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -208,18 +244,22 @@ fun RegisterScreen(
     }
 }
 
-@Preview(showBackground = true, name = "Registro - Claro")
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun RegisterScreenLightPreview() {
-    BudgmentTheme(darkTheme = false) {
-        RegisterScreen()
-    }
-}
-
-@Preview(showBackground = true, name = "Registro - Oscuro")
-@Composable
-private fun RegisterScreenDarkPreview() {
-    BudgmentTheme(darkTheme = true) {
-        RegisterScreen()
+fun RegisterScreenPreview() {
+    BudgmentTheme {
+        RegisterScreenContent(
+            state = RegisterUiState(),
+            onNameChange = {},
+            onUsernameChange = {},
+            onEmailChange = {},
+            onPasswordChange = {},
+            onConfirmPasswordChange = {},
+            onRegisterClick = {},
+            onRegisterSuccess = {},
+            onBackClick = {},
+            onLoginClick = {}
+        )
     }
 }

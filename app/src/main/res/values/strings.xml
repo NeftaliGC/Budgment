@@ -6,8 +6,38 @@
     <string name="common_password_hide">Ocultar</string>
     <string name="common_back">Volver</string>
 
-    <!-- Home (placeholder temporal) -->
-    <string name="home_placeholder_title">Próximamente</string>
+    <!-- Header -->
+    <string name="header_greeting">Hola, %1$s</string>
+    <string name="header_menu_settings">Configuración</string>
+    <string name="header_menu_logout">Cerrar sesión</string>
+    <string name="header_notifications_content_description">Notificaciones</string>
+
+    <!-- Bottom navigation -->
+    <string name="bottom_nav_home">Inicio</string>
+    <string name="bottom_nav_accounts">Cuentas</string>
+    <string name="bottom_nav_transactions">Movimientos</string>
+    <string name="bottom_nav_stats">Estadisticas</string>
+    <string name="bottom_nav_budgets">Presupuestos</string>
+
+    <!-- Auth errors -->
+    <string name="auth_error_username_taken">Ese usuario ya existe</string>
+    <string name="auth_error_invalid_credentials">Usuario o contraseña incorrectos</string>
+    <string name="auth_error_empty_fields">Completa todos los campos obligatorios</string>
+    <string name="auth_error_passwords_do_not_match">Las contraseñas no coinciden</string>
+    <string name="user_placeholder">Usuario</string>
+
+    <!-- Home -->
+    <string name="home_action_new_transaction">Nuevo movimiento</string>
+    <string name="home_action_new_category">Nueva categoría</string>
+    <string name="home_action_new_budget">Nuevo presupuesto</string>
+    <string name="home_action_coming_soon">Próximamente</string>
+
+    <string name="home_total_balance_title">Saldo disponible</string>
+    <string name="home_quick_actions_title">Acciones rápidas</string>
+    <string name="home_action_new_account">Nueva cuenta</string>
+    <string name="home_accounts_title">Mis cuentas</string>
+    <string name="home_see_all">Ver todas</string>
+    <string name="home_no_accounts">Aún no tienes cuentas registradas</string>
 
     <!-- Login -->
     <string name="login_tagline">Controla tus gastos sin complicarte</string>
@@ -20,7 +50,6 @@
     <string name="login_register">Regístrate</string>
     <string name="login_remember_me">Recuérdame</string>
 
-
     <!-- Register -->
     <string name="register_title">Crea tu cuenta</string>
     <string name="register_subtitle">Es rápido y solo se usa en este dispositivo</string>
@@ -32,4 +61,74 @@
     <string name="register_button">Crear cuenta</string>
     <string name="register_have_account">¿Ya tienes cuenta? </string>
     <string name="register_login_link">Inicia sesión</string>
+
+    <!-- Accounts -->
+    <string name="accounts_title">Cuentas</string>
+    <string name="accounts_empty_title">Aún no tienes cuentas</string>
+    <string name="accounts_empty_subtitle">Agrega tu primera cuenta para empezar a registrar movimientos</string>
+    <string name="accounts_add_content_description">Agregar cuenta</string>
+    <string name="accounts_delete_content_description">Eliminar cuenta</string>
+    <string name="accounts_balance_format">Saldo: %1$s</string>
+
+    <!-- Account form -->
+    <string name="account_form_title_new">Nueva cuenta</string>
+    <string name="account_form_title_edit">Editar cuenta</string>
+    <string name="account_form_name_label">Nombre</string>
+    <string name="account_form_type_label">Tipo de cuenta</string>
+    <string name="account_form_currency_label">Moneda</string>
+    <string name="account_form_credit_limit_label">Límite de crédito</string>
+    <string name="account_form_statement_day_label">Día de corte</string>
+    <string name="account_form_payment_due_day_label">Día límite de pago</string>
+    <string name="account_form_save_button">Guardar</string>
+
+    <!-- Account types -->
+    <string name="account_type_cash">Efectivo</string>
+    <string name="account_type_debit">Débito</string>
+    <string name="account_type_credit">Crédito</string>
+    <string name="account_type_savings">Ahorro</string>
+    <string name="account_type_investment">Inversión</string>
+
+    <!-- Categories -->
+    <string name="categories_title">Categorías</string>
+    <string name="categories_empty_title">Aún no tienes categorías</string>
+    <string name="categories_empty_subtitle">Agrega categorías para poder clasificar tus movimientos</string>
+    <string name="categories_add_content_description">Agregar categoría</string>
+    <string name="categories_delete_content_description">Eliminar categoría</string>
+
+    <!-- Category form -->
+    <string name="category_form_title_new">Nueva categoría</string>
+    <string name="category_form_title_edit">Editar categoría</string>
+    <string name="category_form_name_label">Nombre</string>
+    <string name="category_form_type_label">Tipo</string>
+    <string name="category_form_save_button">Guardar</string>
+
+    <!-- Category types -->
+    <string name="category_type_expense">Gasto</string>
+    <string name="category_type_income">Ingreso</string>
+
+    <!-- Home: categorías -->
+    <string name="home_categories_title">Mis categorías</string>
+    <string name="home_no_categories">Aún no tienes categorías</string>
+
+    <!-- Transactions -->
+    <string name="transactions_title">Movimientos</string>
+    <string name="transactions_empty_title">Aún no tienes movimientos</string>
+    <string name="transactions_empty_subtitle">Registra tu primer ingreso o gasto</string>
+    <string name="transactions_add_content_description">Agregar movimiento</string>
+    <string name="transactions_delete_content_description">Eliminar movimiento</string>
+    <string name="transactions_no_description">Sin descripción</string>
+
+    <!-- Transaction form -->
+    <string name="transaction_form_title_new">Nuevo movimiento</string>
+    <string name="transaction_form_title_edit">Editar movimiento</string>
+    <string name="transaction_form_account_label">Cuenta</string>
+    <string name="transaction_form_category_label">Categoría</string>
+    <string name="transaction_form_amount_label">Monto</string>
+    <string name="transaction_form_description_label">Descripción (opcional)</string>
+    <string name="transaction_form_save_button">Guardar</string>
+    <string name="transaction_form_error_missing_fields">Selecciona cuenta y categoría, e ingresa un monto</string>
+    <string name="transaction_form_error_invalid_amount">Ingresa un monto válido mayor a cero</string>
+    <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos</string>
+    <string name="transaction_form_no_categories">Primero crea una categoría para poder registrar movimientos</string>
+
 </resources>

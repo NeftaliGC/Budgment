@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,23 +25,66 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.nintech.budgment.ui.common.toMessage
+import com.nintech.budgment.ui.theme.ChromeBackground
+import com.nintech.budgment.ui.theme.ChromeContent
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (username: String, password: String) -> Unit = { _, _ -> },
-    onRegisterClick: () -> Unit = {},
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: LoginViewModel? = if (LocalInspectionMode.current) null else hiltViewModel(),
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    if (viewModel != null) {
+        val state by viewModel.state.collectAsState()
+        LoginContent(
+            state = state,
+            onUsernameChange = viewModel::onUsernameChange,
+            onPasswordChange = viewModel::onPasswordChange,
+            onRememberMeChange = viewModel::onRememberMeChange,
+            onLoginClick = viewModel::login,
+            onLoginSuccess = onLoginSuccess,
+            onRegisterClick = onRegisterClick,
+            modifier = modifier
+        )
+    } else {
+        LoginContent(
+            state = LoginUiState(),
+            onUsernameChange = {},
+            onPasswordChange = {},
+            onRememberMeChange = {},
+            onLoginClick = {},
+            onLoginSuccess = onLoginSuccess,
+            onRegisterClick = onRegisterClick,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+fun LoginContent(
+    state: LoginUiState,
+    onUsernameChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onRememberMeChange: (Boolean) -> Unit,
+    onLoginClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.loginSuccess) {
+        if (state.loginSuccess) onLoginSuccess()
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .imePadding()
-            .background(MaterialTheme.colorScheme.background)
+            .background(ChromeBackground)
     ) {
         // Hero
         Row(
@@ -64,14 +108,14 @@ fun LoginScreen(
             ) {
                 Text(
                     text = stringResource(R.string.app_name),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = ChromeContent,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.login_tagline),
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    color = ChromeContent.copy(alpha = 0.7f),
                     fontSize = 12.sp
                 )
             }
@@ -82,7 +126,7 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(
@@ -108,20 +152,22 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
+                    value = state.username,
+                    onValueChange = onUsernameChange,
                     label = { Text(stringResource(R.string.login_username_label)) },
                     singleLine = true,
+                    isError = state.errorMessage != null,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = state.password,
+                    onValueChange = onPasswordChange,
                     label = { Text(stringResource(R.string.login_password_label)) },
                     singleLine = true,
+                    isError = state.errorMessage != null,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         TextButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -136,14 +182,19 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                state.errorMessage?.let { error ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(error.toMessage(), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = { rememberMe = it },
+                        checked = state.rememberMe,
+                        onCheckedChange = onRememberMeChange,
                         colors = CheckboxDefaults.colors(
                             checkedColor = MaterialTheme.colorScheme.primary,
                             uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -159,7 +210,8 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Button(
-                    onClick = { onLoginClick(username, password) },
+                    onClick = onLoginClick,
+                    enabled = !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -169,7 +221,11 @@ fun LoginScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(text = stringResource(R.string.login_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    if (state.isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.login_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -201,7 +257,10 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenLightPreview() {
     BudgmentTheme(darkTheme = false) {
-        LoginScreen()
+        LoginScreen(
+            onLoginSuccess = {},
+            onRegisterClick = {}
+        )
     }
 }
 
@@ -209,6 +268,9 @@ private fun LoginScreenLightPreview() {
 @Composable
 private fun LoginScreenDarkPreview() {
     BudgmentTheme(darkTheme = true) {
-        LoginScreen()
+        LoginScreen(
+            onLoginSuccess = {},
+            onRegisterClick = {}
+        )
     }
 }

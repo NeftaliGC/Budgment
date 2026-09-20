@@ -1,47 +1,54 @@
 package com.nintech.budgment.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.nintech.budgment.R
+import androidx.navigation.navArgument
+import com.nintech.budgment.ui.accounts.AccountFormScreen
+import com.nintech.budgment.ui.accounts.AccountsListScreen
+import com.nintech.budgment.ui.categories.CategoriesListScreen
+import com.nintech.budgment.ui.categories.CategoryFormScreen
+import com.nintech.budgment.ui.home.HomeScreen
 import com.nintech.budgment.ui.login.LoginScreen
 import com.nintech.budgment.ui.register.RegisterScreen
+import com.nintech.budgment.ui.transactions.TransactionFormScreen
+import com.nintech.budgment.ui.transactions.TransactionsListScreen
 
 @Composable
 fun BudgmentNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: String = BudgmentDestination.Login.route
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
+    // Navegación entre pestañas del bottom nav: conserva el estado de cada pestaña
+    // al cambiar entre ellas, en vez de recrearlas desde cero cada vez.
+    val onNavigateToTab: (String) -> Unit = { route ->
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
         composable(BudgmentDestination.Login.route) {
             LoginScreen(
-                onLoginClick = { _, _ ->
+                onLoginSuccess = {
                     navController.navigate(BudgmentDestination.Home.route) {
                         popUpTo(BudgmentDestination.Login.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                onRegisterClick = {
-                    navController.navigate(BudgmentDestination.Register.route)
-                }
+                onRegisterClick = { navController.navigate(BudgmentDestination.Register.route) }
             )
         }
 
         composable(BudgmentDestination.Register.route) {
             RegisterScreen(
-                onRegisterClick = { _, _, _, _ ->
+                onRegisterSuccess = {
                     navController.navigate(BudgmentDestination.Home.route) {
                         popUpTo(BudgmentDestination.Login.route) { inclusive = true }
                         launchSingleTop = true
@@ -53,16 +60,87 @@ fun BudgmentNavHost(
         }
 
         composable(BudgmentDestination.Home.route) {
-            // Placeholder temporal — aquí conectamos el MVP real más adelante
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.home_placeholder_title),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            HomeScreen(
+                currentRoute = BudgmentDestination.Home.route,
+                onNavigateToTab = onNavigateToTab,
+                onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
+                onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) },
+                onAddCategoryClick = { navController.navigate(BudgmentDestination.CategoryForm.createRoute()) },
+                onCategoryClick = { id -> navController.navigate(BudgmentDestination.CategoryForm.createRoute(id)) },
+                onSeeAllCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
+                onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
+            )
+        }
+
+        composable(BudgmentDestination.Categories.route) {
+            CategoriesListScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddCategoryClick = { navController.navigate(BudgmentDestination.CategoryForm.createRoute()) },
+                onCategoryClick = { id -> navController.navigate(BudgmentDestination.CategoryForm.createRoute(id)) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.CategoryForm.route,
+            arguments = listOf(
+                navArgument(BudgmentDestination.CategoryForm.ARG_CATEGORY_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
+            CategoryFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
+            )
+        }
+
+        composable(BudgmentDestination.Accounts.route) {
+            AccountsListScreen(
+                currentRoute = BudgmentDestination.Accounts.route,
+                onNavigateToTab = onNavigateToTab,
+                onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
+                onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.AccountForm.route,
+            arguments = listOf(
+                navArgument(BudgmentDestination.AccountForm.ARG_ACCOUNT_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
+            AccountFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
+            )
+        }
+
+        composable(BudgmentDestination.Transactions.route) {
+            TransactionsListScreen(
+                currentRoute = BudgmentDestination.Transactions.route,
+                onNavigateToTab = onNavigateToTab,
+                onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
+                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.TransactionForm.route,
+            arguments = listOf(
+                navArgument(BudgmentDestination.TransactionForm.ARG_TRANSACTION_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
+            TransactionFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
+            )
         }
     }
 }

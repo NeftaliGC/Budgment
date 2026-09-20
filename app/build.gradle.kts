@@ -89,6 +89,7 @@ dependencies {
 
     implementation(libs.errorprone.annotations)
     implementation(libs.compose.icons.core)
+    implementation(libs.datastore.preferences)
 }
 
 ksp {

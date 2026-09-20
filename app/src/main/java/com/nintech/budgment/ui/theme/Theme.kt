@@ -16,12 +16,12 @@ private val LightColors = lightColorScheme(
     onSecondary = Night,
     tertiary = OrangePeel,
     onTertiary = Night,
-    background = DarkGreen,
-    onBackground = MintCream,
+    background = MintCream,
+    onBackground = Night,
     surface = MintCream,
     onSurface = Night,
-    surfaceVariant = MintCream,
-    onSurfaceVariant = MutedLight,
+    surfaceVariant = CardBgLight,
+    onSurfaceVariant = Night, // Changed to Night to ensure text on cards/inputs is visible
     error = FaluRed,
     onError = MintCream,
     outline = MutedLight
@@ -34,38 +34,29 @@ private val DarkColors = darkColorScheme(
     onSecondary = Night,
     tertiary = HighlightDark,
     onTertiary = Night,
-    background = CastletonGreen,
+    background = Night,
     onBackground = MintCream,
     surface = DarkGreen,
     onSurface = MintCream,
     surfaceVariant = CastletonGreen,
-    onSurfaceVariant = MintCream,
+    onSurfaceVariant = Aquamarine,
     error = FaluRed,
     onError = MintCream,
     outline = Aquamarine
 )
-
 
 data class BudgmentExtraColors(
     val success: Color,
     val onSuccess: Color
 )
 
-private val LightExtraColors = BudgmentExtraColors(
-    success = Success,
-    onSuccess = MintCream
-)
-
-private val DarkExtraColors = BudgmentExtraColors(
-    success = Success,
-    onSuccess = Night
-)
+private val LightExtraColors = BudgmentExtraColors(success = Success, onSuccess = MintCream)
+private val DarkExtraColors = BudgmentExtraColors(success = Success, onSuccess = Night)
 
 private val LocalBudgmentExtraColors = staticCompositionLocalOf {
     BudgmentExtraColors(success = Success, onSuccess = Color.White)
 }
 
-// Acceso: BudgmentTheme.extraColors.success
 object BudgmentTheme {
     val extraColors: BudgmentExtraColors
         @Composable
@@ -81,10 +72,6 @@ fun BudgmentTheme(
     val extraColors = if (darkTheme) DarkExtraColors else LightExtraColors
 
     CompositionLocalProvider(LocalBudgmentExtraColors provides extraColors) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
-            content = content
-        )
+        MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
     }
 }

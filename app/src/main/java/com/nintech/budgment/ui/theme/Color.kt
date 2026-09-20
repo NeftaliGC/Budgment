@@ -20,3 +20,7 @@ val Success = Color(0xFF2ECC71)
 // Derivados
 val CardBgLight = Color(0xFF0E7C69)
 val MutedLight = Color(0xFF2B6B63)
+
+// Chrome estructural: headers, hero, bottom nav — SIEMPRE estos dos colores, sin importar el tema
+val ChromeBackground = DarkGreen
+val ChromeContent = MintCream

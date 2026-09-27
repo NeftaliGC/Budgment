@@ -6,7 +6,7 @@
 
 ## 📌 Estado del repositorio
 
-### Commits en `main` (8)
+### Commits en `main` (10 — SHAs reescritos por filter-branch)
 
 | Commit | Descripción |
 |--------|-------------|
@@ -14,28 +14,18 @@
 | `663d155` | readme and docs init |
 | `80f2d1e` | modelos iniciales |
 | `f3caaac` | daos y bd |
-| `9112d92` | bd completa |
-| `8cd3f71` | pantallas de login y register |
-| `972f2d3` | pantallas de categorias y movimientos |
-| `df8d702` | presupuestos, rediseno home y categorias, system bars y tasas de cambio |
+| `8d946ee` | bd completa ⚠️ schemas eliminados por filter-branch |
+| `693a71c` | pantallas de login y register |
+| `dd1aec7` | pantallas de categorias y movimientos |
+| `2af6b7f` | presupuestos, rediseno home y categorias, system bars y tasas de cambio |
+| `b8956d0` | exclude app/schemas/ from tracking |
+| `b013327` | work in progress: UI improvements, AccountIcons, dev.md, README update |
 
-### Cambios no commiteados (11 archivos modificados + 1 nuevo)
+> ⚠️ **`app/schemas/` eliminado permanentemente del historial** mediante `git filter-branch` + `reflog expire` + `gc --prune=now`. Los archivos `1.json` y `2.json` ya no existen en ningún commit ni en disco. Refs originales de filter-branch limpiadas.
 
-**Archivos modificados:**
-1. `data/repository/AccountRepository.kt` — Agregó `adjustBalance(accountId, delta)`
-2. `ui/accounts/AccountFormScreen.kt` — Rediseño completo: selector de iconos, paleta de colores, tipo/cuenta/currency dropdowns, campos crédito condicionales (+102 líneas)
-3. `ui/accounts/AccountFormViewModel.kt` — Ajustes en state (+10 líneas)
-4. `ui/accounts/AccountsListScreen.kt` — Rediseño mayor: TotalSummaryHeader, cards por tipo de cuenta, cierre de saldo negativo en rojo, botón delete en cada card (+179 líneas)
-5. `ui/accounts/AccountsViewModel.kt` — Agregó `deleteAccount()`, `onDisplayCurrencyChange()` (+47 líneas)
-6. `ui/budgets/BudgetsListScreen.kt` — Rediseño completo: BudgetSummaryHeader, secciones global/categoría, progress bar, delete button, currency selector (+508 líneas)
-7. `ui/budgets/BudgetsViewModel.kt` — Agregó `BudgetWithProgress`, cálculo de spent/progress, categorías vinculadas (+116 líneas)
-8. `ui/home/HomeScreen.kt` — Ajustes menores (+23 líneas)
-9. `ui/theme/Color.kt` — Cambios en paleta de colores
-10. `ui/theme/Theme.kt` — Actualización de theme, agregado de `extraColors` (success)
-11. `res/values/strings.xml` — Nuevas strings (credit limit, statement day, payment due day, etc.)
+### Cambios no commiteados
 
-**Archivo nuevo:**
-- `ui/accounts/AccountIcons.kt` — Enum de iconos por tipo de cuenta con `defaultIcon()` y `defaultColorHex()` helpers
+**Ninguno.** Working directory limpio. Todo el trabajo actual está commiteado en `b013327`.
 
 ---
 
@@ -277,6 +267,13 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 ---
 
 ## ⚠️ Notas y problemas conocidos
+
+### `app/schemas/` eliminado permanentemente (2026-09-27)
+- Los archivos `app/schemas/com.nintech.budgment.data.local.BudgmentDatabase/1.json` y `2.json` fueron **eliminados permanentemente del historial** con `git filter-branch` + `reflog expire` + `gc --prune=now`
+- Los archivos no existen en ningún commit ni en disco
+- `app/schemas/` fue agregado a `.gitignore` para evitar reintroducirlos accidentalmente
+- Los SHAs originales de los commits cambiaron tras filter-branch (referencias anteriores rotas)
+- Los refs originales de backup fueron limpiados con `git for-each-ref --format='delete %(refname)' refs/original/`
 
 ### `fallbackToDestructiveMigration`
 - En `DatabaseModule.kt` línea 44: `fallbackToDestructiveMigration(dropAllTables = true)`

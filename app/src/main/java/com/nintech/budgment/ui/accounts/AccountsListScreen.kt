@@ -4,7 +4,9 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -22,13 +25,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.AccountEntity
 import com.nintech.budgment.data.model.AccountType
-import androidx.compose.ui.platform.LocalInspectionMode
+import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.theme.BudgmentTheme
-import java.text.NumberFormat
-import java.util.Currency
-import java.util.Locale
+import androidx.compose.ui.platform.LocalInspectionMode
 
 @Composable
 fun AccountsListScreen(
@@ -47,7 +49,8 @@ fun AccountsListScreen(
             onNavigateToTab = onNavigateToTab,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
-            onDeleteAccount = viewModel::deleteAccount
+            onDeleteAccount = viewModel::deleteAccount,
+            onCurrencyChange = viewModel::onDisplayCurrencyChange
         )
     } else {
         AccountsListScreen(
@@ -56,7 +59,8 @@ fun AccountsListScreen(
             onNavigateToTab = onNavigateToTab,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
-            onDeleteAccount = {}
+            onDeleteAccount = {},
+            onCurrencyChange = {}
         )
     }
 }
@@ -68,7 +72,8 @@ fun AccountsListScreen(
     onNavigateToTab: (String) -> Unit,
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onDeleteAccount: (String) -> Unit
+    onDeleteAccount: (String) -> Unit,
+    onCurrencyChange: (String) -> Unit
 ) {
     BudgmentScaffold(
         currentRoute = currentRoute,
@@ -119,12 +124,35 @@ fun AccountsListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(uiState.accounts, key = { it.id }) { account ->
-                    AccountCard(
-                        account = account,
-                        onClick = { onAccountClick(account.id) },
-                        onDeleteClick = { onDeleteAccount(account.id) }
+                item(key = "summary") {
+                    TotalSummaryHeader(
+                        totalBalance = uiState.totalBalance,
+                        primaryCurrency = uiState.primaryCurrency,
+                        accountCount = uiState.accounts.size,
+                        missingRateAccounts = uiState.missingRateAccounts,
+                        onCurrencyChange = onCurrencyChange
                     )
+                }
+                AccountType.entries.forEach { type ->
+                    val typeAccounts = uiState.accounts.filter { it.accountType == type }
+                    if (typeAccounts.isNotEmpty()) {
+                        item(key = "header_${type.name}") {
+                            Text(
+                                text = type.label(),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                            )
+                        }
+                        items(typeAccounts, key = { it.id }) { account ->
+                            AccountCard(
+                                account = account,
+                                onClick = { onAccountClick(account.id) },
+                                onDeleteClick = { onDeleteAccount(account.id) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -132,7 +160,75 @@ fun AccountsListScreen(
 }
 
 @Composable
+private fun TotalSummaryHeader(
+    totalBalance: Long,
+    primaryCurrency: String,
+    accountCount: Int,
+    missingRateAccounts: Int,
+    onCurrencyChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.accounts_total_balance_title),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = formatCents(totalBalance, primaryCurrency),
+                fontSize = 30.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.accounts_count_format, accountCount),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            if (missingRateAccounts > 0) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.accounts_missing_rates, missingRateAccounts),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(SupportedCurrency.ALL) { currency ->
+                    FilterChip(
+                        selected = primaryCurrency == currency.code,
+                        onClick = { onCurrencyChange(currency.code) },
+                        label = { Text(currency.code) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_currency_rate_note),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
 private fun AccountCard(account: AccountEntity, onClick: () -> Unit, onDeleteClick: () -> Unit) {
+    val accentColor = parseHexColor(account.color)
+        ?: parseHexColor(account.accountType.defaultColorHex())!!
+    val icon = AccountIcon.resolveIcon(account.icon) ?: account.accountType.defaultIcon().icon
+    val balanceColor = if (account.balanceCache < 0) {
+        MaterialTheme.colorScheme.error
+    } else {
+        BudgmentTheme.extraColors.success
+    }
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -142,14 +238,38 @@ private fun AccountCard(account: AccountEntity, onClick: () -> Unit, onDeleteCli
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accentColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(account.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.height(4.dp))
-                Text(account.accountType.label(), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                Spacer(Modifier.height(4.dp))
+                val creditInfo = if (account.accountType == AccountType.CREDIT && account.creditLimit != null) {
+                    " · " + stringResource(R.string.accounts_credit_limit_format, formatCents(account.creditLimit, account.currency))
+                } else {
+                    ""
+                }
                 Text(
-                    stringResource(R.string.accounts_balance_format, formatCents(account.balanceCache, account.currency)),
-                    fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface
+                    account.accountType.label() + creditInfo,
+                    fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    formatCents(account.balanceCache, account.currency),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = balanceColor
                 )
             }
             IconButton(onClick = onDeleteClick) {
@@ -177,6 +297,8 @@ private fun AccountsListScreenPopulatedLightPreview() {
                         name = "Cuenta de Débito",
                         accountType = AccountType.DEBIT,
                         currency = "MXN",
+                        icon = AccountIcon.CARD.key,
+                        color = AccountType.DEBIT.defaultColorHex(),
                         balanceCache = 1500000L
                     ),
                     AccountEntity(
@@ -185,16 +307,32 @@ private fun AccountsListScreenPopulatedLightPreview() {
                         name = "Efectivo",
                         accountType = AccountType.CASH,
                         currency = "MXN",
+                        icon = AccountIcon.WALLET.key,
+                        color = AccountType.CASH.defaultColorHex(),
                         balanceCache = 25000L
+                    ),
+                    AccountEntity(
+                        id = "3",
+                        userId = "user_1",
+                        name = "Tarjeta de Crédito",
+                        accountType = AccountType.CREDIT,
+                        currency = "MXN",
+                        icon = AccountIcon.CARD.key,
+                        color = AccountType.CREDIT.defaultColorHex(),
+                        creditLimit = 1000000L,
+                        balanceCache = -80000L
                     )
                 ),
+                totalBalance = 1445000L,
+                primaryCurrency = "MXN",
                 isLoading = false
             ),
             currentRoute = "accounts",
             onNavigateToTab = {},
             onAddAccountClick = {},
             onAccountClick = {},
-            onDeleteAccount = {}
+            onDeleteAccount = {},
+            onCurrencyChange = {}
         )
     }
 }
@@ -213,7 +351,8 @@ private fun AccountsListScreenEmptyLightPreview() {
             onNavigateToTab = {},
             onAddAccountClick = {},
             onAccountClick = {},
-            onDeleteAccount = {}
+            onDeleteAccount = {},
+            onCurrencyChange = {}
         )
     }
 }

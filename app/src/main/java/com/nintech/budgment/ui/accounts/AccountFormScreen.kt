@@ -1,22 +1,33 @@
 package com.nintech.budgment.ui.accounts
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.NotInterested
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.AccountType
 import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.ui.categories.CategoryColorPalette
+import com.nintech.budgment.ui.categories.parseHexColor
 
 @Composable
 fun AccountFormScreen(
@@ -36,6 +47,8 @@ fun AccountFormScreen(
             onNameChange = viewModel::onNameChange,
             onAccountTypeChange = viewModel::onAccountTypeChange,
             onCurrencyChange = viewModel::onCurrencyChange,
+            onIconChange = viewModel::onIconChange,
+            onColorChange = viewModel::onColorChange,
             onCreditLimitChange = viewModel::onCreditLimitChange,
             onStatementDayChange = viewModel::onStatementDayChange,
             onPaymentDueDayChange = viewModel::onPaymentDueDayChange,
@@ -48,6 +61,8 @@ fun AccountFormScreen(
             onNameChange = {},
             onAccountTypeChange = {},
             onCurrencyChange = {},
+            onIconChange = {},
+            onColorChange = {},
             onCreditLimitChange = {},
             onStatementDayChange = {},
             onPaymentDueDayChange = {},
@@ -64,6 +79,8 @@ fun AccountFormScreenContent(
     onNameChange: (String) -> Unit,
     onAccountTypeChange: (AccountType) -> Unit,
     onCurrencyChange: (String) -> Unit,
+    onIconChange: (String?) -> Unit,
+    onColorChange: (String?) -> Unit,
     onCreditLimitChange: (String) -> Unit,
     onStatementDayChange: (String) -> Unit,
     onPaymentDueDayChange: (String) -> Unit,
@@ -144,6 +161,91 @@ fun AccountFormScreenContent(
                             text = { Text(code) },
                             onClick = { onCurrencyChange(code); currencyMenuExpanded = false }
                         )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(15.dp))
+
+            Text(
+                text = stringResource(R.string.category_form_icon_label),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(Modifier.height(8.dp))
+            AccountIcon.entries.chunked(6).forEach { rowIcons ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 0.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowIcons.forEach { item ->
+                        val selected = state.icon == item.key
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .border(
+                                    if (selected) 2.dp else 1.dp,
+                                    if (selected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .clickable { onIconChange(if (selected) null else item.key) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = null,
+                                tint = if (selected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(15.dp))
+
+            Text(
+                text = stringResource(R.string.category_form_color_label) + ": " + stringResource(R.string.account_form_color_auto_hint),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(Modifier.height(8.dp))
+            (listOf<String?>(null) + CategoryColorPalette).chunked(6).forEach { rowColors ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowColors.forEach { hex ->
+                        val color = parseHexColor(hex)
+                        val selected = state.color == hex
+                        val isDefault = hex == null
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(color ?: MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                .border(
+                                    if (selected) 3.dp else 1.dp,
+                                    if (selected && !isDefault) color!! else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                    CircleShape
+                                )
+                                .clickable { onColorChange(if (selected) null else hex) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isDefault) {
+                                Icon(
+                                    imageVector = Icons.Filled.NotInterested,
+                                    contentDescription = stringResource(R.string.category_form_color_default_content_description),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

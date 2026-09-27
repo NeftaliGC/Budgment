@@ -14,14 +14,14 @@ private val LightColors = lightColorScheme(
     onPrimary = MintCream,
     secondary = JungleGreen,
     onSecondary = Night,
-    tertiary = OrangePeel,
+    tertiary = DeepOrange,
     onTertiary = Night,
     background = MintCream,
     onBackground = Night,
     surface = MintCream,
     onSurface = Night,
     surfaceVariant = CardBgLight,
-    onSurfaceVariant = Night, // Changed to Night to ensure text on cards/inputs is visible
+    onSurfaceVariant = Night,
     error = FaluRed,
     onError = MintCream,
     outline = MutedLight
@@ -50,7 +50,7 @@ data class BudgmentExtraColors(
     val onSuccess: Color
 )
 
-private val LightExtraColors = BudgmentExtraColors(success = Success, onSuccess = MintCream)
+private val LightExtraColors = BudgmentExtraColors(success = SuccessDark, onSuccess = MintCream)
 private val DarkExtraColors = BudgmentExtraColors(success = Success, onSuccess = Night)
 
 private val LocalBudgmentExtraColors = staticCompositionLocalOf {

@@ -20,6 +20,8 @@ data class AccountFormState(
     val name: String = "",
     val accountType: AccountType = AccountType.CASH,
     val currency: String = "MXN",
+    val icon: String? = null,
+    val color: String? = null,
     val creditLimitText: String = "",
     val statementDayText: String = "",
     val paymentDueDayText: String = "",
@@ -49,6 +51,8 @@ class AccountFormViewModel @Inject constructor(
                         name = account.name,
                         accountType = account.accountType,
                         currency = account.currency,
+                        icon = account.icon,
+                        color = account.color,
                         creditLimitText = account.creditLimit?.let { (it / 100.0).toString() } ?: "",
                         statementDayText = account.statementDay?.toString() ?: "",
                         paymentDueDayText = account.paymentDueDay?.toString() ?: ""
@@ -61,6 +65,8 @@ class AccountFormViewModel @Inject constructor(
     fun onNameChange(value: String) { _state.value = _state.value.copy(name = value) }
     fun onAccountTypeChange(value: AccountType) { _state.value = _state.value.copy(accountType = value) }
     fun onCurrencyChange(value: String) { _state.value = _state.value.copy(currency = value.uppercase()) }
+    fun onIconChange(value: String?) { _state.value = _state.value.copy(icon = value) }
+    fun onColorChange(value: String?) { _state.value = _state.value.copy(color = value) }
     fun onCreditLimitChange(value: String) { _state.value = _state.value.copy(creditLimitText = value) }
     fun onStatementDayChange(value: String) { _state.value = _state.value.copy(statementDayText = value) }
     fun onPaymentDueDayChange(value: String) { _state.value = _state.value.copy(paymentDueDayText = value) }
@@ -74,10 +80,10 @@ class AccountFormViewModel @Inject constructor(
             val paymentDueDay = if (isCredit) s.paymentDueDayText.toIntOrNull() else null
 
             existingAccount?.let { account ->
-                accountRepository.updateAccount(account, s.name, s.accountType, s.currency, creditLimit, statementDay, paymentDueDay)
+                accountRepository.updateAccount(account, s.name, s.accountType, s.currency, creditLimit, statementDay, paymentDueDay, s.icon, s.color)
             } ?: run {
                 val userId = sessionManager.currentUserId.filterNotNull().first()
-                accountRepository.createAccount(userId, s.name, s.accountType, s.currency, creditLimit, statementDay, paymentDueDay)
+                accountRepository.createAccount(userId, s.name, s.accountType, s.currency, creditLimit, statementDay, paymentDueDay, s.icon, s.color)
             }
             _state.value = _state.value.copy(isSaved = true)
         }

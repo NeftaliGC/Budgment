@@ -4,33 +4,25 @@ Aplicación móvil Android para control de gastos y presupuestos personales. Los
 
 ## ✨ Características
 
-### Implementadas / en desarrollo actual
-- [ ] Bloqueo de la app con PIN
-- [ ] Gestión de cuentas (efectivo, débito, crédito, ahorro, inversión)
-- [ ] Categorías de gasto/ingreso con subcategorías
-- [ ] Registro, edición y borrado de transacciones
-
-### Planeadas (ver [Roadmap](#-roadmap))
-- [ ] Presupuestos con seguimiento de progreso y alertas
-- [ ] Reportes y gráficas por categoría/periodo
-- [ ] Transferencias entre cuentas propias
-- [ ] Transacciones recurrentes automáticas
-- [ ] Metas de ahorro
-- [ ] Etiquetas y adjuntos (fotos de recibos)
-- [ ] Soporte multi-moneda
-- [ ] Respaldo y restauración cifrados vía Google Drive
-- [ ] Bloqueo con biometría (huella/rostro)
+- **Autenticación** — Registro e inicio de sesión con contraseña hasheada (PBKDF2)
+- **Gestión de cuentas** — Efectivo, débito, crédito, ahorro e inversión con campos específicos (límite de crédito, días de corte/pago)
+- **Categorías** — Gasto e ingreso con iconos, colores y subcategorías
+- **Transacciones** — Registro, edición y eliminación de movimientos
+- **Presupuestos** — Seguimiento de progreso con alcance global o por categoría
+- **Tasas de cambio** — Conversión automática entre 7 monedas (MXN, USD, EUR, CAD, GBP, JPY, CHF)
+- **Multi-moneda** — Selector de moneda de visualización en toda la app
+- **Navegación intuitiva** — BottomBar con pestañas y conservación de estado
 
 ## 🛠️ Stack técnico
 
 - **Lenguaje:** Kotlin
-- **UI:** Jetpack Compose
+- **UI:** Jetpack Compose + Material 3
 - **Arquitectura:** MVVM
 - **Inyección de dependencias:** Hilt
 - **Persistencia:** Room (sobre SQLite)
 - **Navegación:** Navigation Compose
+- **Tasas de cambio:** Frankfurter API (Retrofit)
 - **Tareas en segundo plano:** WorkManager
-- **Respaldo en la nube:** Google Drive REST API v3 (appDataFolder)
 
 ## 📐 Modelo de datos
 
@@ -47,15 +39,14 @@ El esquema completo de la base de datos está documentado en [`docs/budgment_sch
 7. Extras: tags, adjuntos y multi-moneda
 8. Pulido, pruebas y publicación
 
-> Estado actual: fase 1-2 (fundamentos y modelo de datos), proyecto iniciado en Android Studio.
+> Estado actual: fase 3-4 (MVP completado, presupuestos implementados).
 
 ## 🚀 Cómo correr el proyecto
 
 ### Requisitos
 - Android Studio (versión estable más reciente)
 - JDK 17
-- SDK de Android — minSdk 24 / targetSdk según `build.gradle`
-- Cuenta de Google (para probar la integración de respaldo en Drive, cuando esté implementada)
+- SDK de Android — minSdk 24 / targetSdk 37
 
 ### Pasos
 1. Clona el repositorio:
@@ -65,19 +56,20 @@ El esquema completo de la base de datos está documentado en [`docs/budgment_sch
 2. Ábrelo en Android Studio y espera a que sincronice Gradle.
 3. Ejecuta la app en un emulador o dispositivo físico con el botón **Run**.
 
+> **Nota:** La base de datos usa `fallbackToDestructiveMigration(dropAllTables = true)` durante el desarrollo. Al cambiar el esquema se borrará y recreará la BD. Quitar antes de publicar.
+
 ## 📁 Estructura del proyecto
 
 ```
 app/
- ├─ data/          # Entities, DAOs, Database (Room)
- ├─ domain/        # Modelos de dominio y casos de uso
- ├─ ui/            # Pantallas y componentes de Compose
- └─ di/            # Módulos de Hilt
+  ├─ data/          # Entities, DAOs, Database (Room), repositorios, seguridad
+  ├─ di/            # Módulos de Hilt (Database, Repository, Network, Session)
+  ├─ domain/        # Modelos de dominio y casos de uso
+  ├─ ui/            # Pantallas y componentes de Compose
+  └─ MainActivity.kt, BudgmentApp.kt
 docs/
- └─ budgment_schema.dbml
+  └─ budgment_schema.dbml
 ```
-
-*(Ajusta esta sección conforme evolucione la estructura real del proyecto.)*
 
 ## 🤝 Contribuciones
 

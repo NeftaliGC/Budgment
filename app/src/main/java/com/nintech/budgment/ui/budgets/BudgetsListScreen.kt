@@ -1,9 +1,12 @@
 package com.nintech.budgment.ui.budgets
 
-import androidx.compose.foundation.clickable
+import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -11,15 +14,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
-import androidx.compose.ui.platform.LocalInspectionMode
+import com.nintech.budgment.data.local.entity.BudgetEntity
+import com.nintech.budgment.data.local.entity.CategoryEntity
+import com.nintech.budgment.data.model.BudgetScope
+import com.nintech.budgment.data.model.CategoryType
+import com.nintech.budgment.data.model.PeriodUnit
+import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.ui.categories.CategoryIcon
+import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
+import com.nintech.budgment.ui.theme.BudgmentTheme
+import kotlin.math.roundToInt
 
 @Composable
 fun BudgetsListScreen(
@@ -29,8 +46,44 @@ fun BudgetsListScreen(
     onBudgetClick: (String) -> Unit,
     viewModel: BudgetsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
-    val uiState = if (viewModel != null) viewModel.uiState.collectAsState().value else BudgetsUiState()
+    if (viewModel != null) {
+        val uiState by viewModel.uiState.collectAsState()
 
+        BudgetsListScreen(
+            uiState = uiState,
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddBudgetClick = onAddBudgetClick,
+            onBudgetClick = onBudgetClick,
+            onDeleteBudget = viewModel::deleteBudget,
+            onCurrencyChange = viewModel::setDisplayCurrency,
+            modifier = Modifier
+        )
+    } else {
+        BudgetsListScreen(
+            uiState = BudgetsUiState(),
+            currentRoute = currentRoute,
+            onNavigateToTab = onNavigateToTab,
+            onAddBudgetClick = onAddBudgetClick,
+            onBudgetClick = onBudgetClick,
+            onDeleteBudget = {},
+            onCurrencyChange = {},
+            modifier = Modifier
+        )
+    }
+}
+
+@Composable
+fun BudgetsListScreen(
+    uiState: BudgetsUiState,
+    currentRoute: String,
+    onNavigateToTab: (String) -> Unit,
+    onAddBudgetClick: () -> Unit,
+    onBudgetClick: (String) -> Unit,
+    onDeleteBudget: (String) -> Unit,
+    onCurrencyChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     BudgmentScaffold(
         currentRoute = currentRoute,
         onNavigateToTab = onNavigateToTab,
@@ -44,25 +97,80 @@ fun BudgetsListScreen(
             }
         }
     ) { innerPadding ->
-        if (!uiState.isLoading && uiState.budgets.isEmpty()) {
+        if (!uiState.isLoading && uiState.global.isEmpty() && uiState.category.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(32.dp),
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(R.string.budgets_empty_title), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        stringResource(R.string.budgets_empty_title),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.budgets_empty_subtitle), fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                    Text(
+                        stringResource(R.string.budgets_empty_subtitle),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(uiState.budgets, key = { it.budget.id }) { item ->
-                    BudgetRow(item = item, onClick = { onBudgetClick(item.budget.id) }, onDeleteClick = { viewModel?.deleteBudget(item.budget.id) })
+                item(key = "summary") {
+                    BudgetSummaryHeader(
+                        totalAllocated = uiState.totalAllocated,
+                        totalSpent = uiState.totalSpent,
+                        budgetCount = uiState.global.size + uiState.category.size,
+                        primaryCurrency = uiState.primaryCurrency,
+                        missingRateCount = uiState.missingRateCount,
+                        onCurrencyChange = onCurrencyChange
+                    )
+                }
+                if (uiState.global.isNotEmpty()) {
+                    item(key = "section_global") {
+                        BudgetSectionHeader(BudgetScope.GLOBAL)
+                    }
+                    items(uiState.global, key = { it.budget.id }) { item ->
+                        BudgetCard(
+                            item = item,
+                            currency = uiState.primaryCurrency,
+                            linkedCategories = uiState.budgetCategories[item.budget.id].orEmpty(),
+                            onClick = { onBudgetClick(item.budget.id) },
+                            onDeleteClick = { onDeleteBudget(item.budget.id) }
+                        )
+                    }
+                }
+                if (uiState.category.isNotEmpty()) {
+                    item(key = "section_category") {
+                        BudgetSectionHeader(BudgetScope.CATEGORY)
+                    }
+                    items(uiState.category, key = { it.budget.id }) { item ->
+                        BudgetCard(
+                            item = item,
+                            currency = uiState.primaryCurrency,
+                            linkedCategories = uiState.budgetCategories[item.budget.id].orEmpty(),
+                            onClick = { onBudgetClick(item.budget.id) },
+                            onDeleteClick = { onDeleteBudget(item.budget.id) }
+                        )
+                    }
                 }
             }
         }
@@ -70,31 +178,371 @@ fun BudgetsListScreen(
 }
 
 @Composable
-private fun BudgetRow(item: BudgetWithProgress, onClick: () -> Unit, onDeleteClick: () -> Unit) {
+private fun BudgetSectionHeader(scope: BudgetScope) {
+    Text(
+        text = scope.label(),
+        fontSize = 13.sp,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+    )
+}
+
+@Composable
+private fun BudgetSummaryHeader(
+    totalAllocated: Long,
+    totalSpent: Long,
+    budgetCount: Int,
+    primaryCurrency: String,
+    missingRateCount: Int,
+    onCurrencyChange: (String) -> Unit
+) {
+    val remaining = totalAllocated - totalSpent
+    val remainingColor = if (remaining < 0) {
+        MaterialTheme.colorScheme.error
+    } else {
+        BudgmentTheme.extraColors.success
+    }
+    val progress = if (totalAllocated > 0) {
+        (totalSpent.toFloat() / totalAllocated).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text(
+                stringResource(R.string.budgets_summary_title),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth()) {
+                SummaryValue(
+                    label = stringResource(R.string.budgets_summary_allocated),
+                    value = formatCents(totalAllocated, primaryCurrency),
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryValue(
+                    label = stringResource(R.string.budgets_summary_spent),
+                    value = formatCents(totalSpent, primaryCurrency),
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryValue(
+                    label = stringResource(R.string.budgets_summary_remaining),
+                    value = formatCents(remaining, primaryCurrency),
+                    color = remainingColor,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.budgets_count_format, budgetCount),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            if (missingRateCount > 0) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.budgets_missing_rates, missingRateCount),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(SupportedCurrency.ALL) { currency ->
+                    FilterChip(
+                        selected = primaryCurrency == currency.code,
+                        onClick = { onCurrencyChange(currency.code) },
+                        label = { Text(currency.code) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.home_currency_rate_note),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummaryValue(label: String, value: String, modifier: Modifier = Modifier, color: androidx.compose.ui.graphics.Color? = null) {
+    Column(modifier) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = value,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color ?: MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun BudgetCard(
+    item: BudgetWithProgress,
+    currency: String,
+    linkedCategories: List<CategoryEntity>,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     val overLimit = item.progress > 1f
-    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column {
-                Text(item.budget.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+    val accentColor = if (item.budget.scope == BudgetScope.CATEGORY) {
+        linkedCategories.firstNotNullOfOrNull { parseHexColor(it.color) } ?: MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val remaining = item.budget.amountLimit - item.spent
+    val percent = (item.progress * 100).roundToInt().coerceAtLeast(0)
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        item.budget.name,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.budgets_percent_format, percent),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (overLimit) MaterialTheme.colorScheme.error else accentColor
+                    )
+                }
                 Spacer(Modifier.height(2.dp))
-                Text(stringResource(R.string.budgets_period_current_month), fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                Text(
+                    item.budget.scope.label(),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(10.dp))
+                LinearProgressIndicator(
+                    progress = { item.progress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    color = if (overLimit) MaterialTheme.colorScheme.error else accentColor,
+                    trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(
+                            R.string.budgets_spent_format,
+                            formatCents(item.spent, currency),
+                            formatCents(item.budget.amountLimit, currency)
+                        ),
+                        fontSize = 13.sp,
+                        color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        stringResource(
+                            if (overLimit) R.string.budgets_exceeded_format else R.string.budgets_remaining_format,
+                            formatCents(if (overLimit) -remaining else remaining, currency)
+                        ),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (overLimit) MaterialTheme.colorScheme.error else BudgmentTheme.extraColors.success
+                    )
+                }
+                if (item.budget.scope == BudgetScope.CATEGORY && linkedCategories.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        linkedCategories.take(3).forEach { category ->
+                            CategoryMiniChip(category)
+                        }
+                    }
+                }
             }
             IconButton(onClick = onDeleteClick) {
-                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.budgets_delete_content_description), tint = MaterialTheme.colorScheme.error)
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.budgets_delete_content_description),
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
-        Spacer(Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { item.progress.coerceAtMost(1f) },
-            modifier = Modifier.fillMaxWidth().height(8.dp),
-            color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-        Spacer(Modifier.height(4.dp))
+    }
+}
+
+@Composable
+private fun CategoryMiniChip(category: CategoryEntity) {
+    val accent = parseHexColor(category.color) ?: MaterialTheme.colorScheme.primary
+    val icon = CategoryIcon.resolveIcon(category.icon)
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(accent.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(12.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+        }
         Text(
-            text = stringResource(R.string.budgets_spent_format, formatCents(item.spent, "MXN"), formatCents(item.budget.amountLimit, "MXN")),
-            fontSize = 13.sp,
-            color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            category.name,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun BudgetsListScreenPopulatedLightPreview() {
+    BudgmentTheme {
+        BudgetsListScreen(
+            uiState = BudgetsUiState(
+                global = listOf(
+                    BudgetWithProgress(
+                        budget = BudgetEntity(
+                            id = "1",
+                            userId = "user_1",
+                            name = "Gastos del mes",
+                            amountLimit = 2000000L,
+                            scope = BudgetScope.GLOBAL,
+                            periodUnit = PeriodUnit.MONTH,
+                            startDate = 1000L,
+                            endDate = 2000L,
+                            periodInterval = 1
+                        ),
+                        spent = 1450000L,
+                        progress = 0.725f,
+                        missingRate = false
+                    ),
+                    BudgetWithProgress(
+                        budget = BudgetEntity(
+                            id = "2",
+                            userId = "user_1",
+                            name = "Entretenimiento",
+                            amountLimit = 500000L,
+                            scope = BudgetScope.GLOBAL,
+                            periodUnit = PeriodUnit.MONTH,
+                            startDate = 1000L,
+                            endDate = 2000L,
+                            periodInterval = 1
+                        ),
+                        spent = 780000L,
+                        progress = 1.56f,
+                        missingRate = false
+                    )
+                ),
+                category = listOf(
+                    BudgetWithProgress(
+                        budget = BudgetEntity(
+                            id = "3",
+                            userId = "user_1",
+                            name = "Alimentación",
+                            amountLimit = 400000L,
+                            scope = BudgetScope.CATEGORY,
+                            periodUnit = PeriodUnit.MONTH,
+                            startDate = 1000L,
+                            endDate = 2000L,
+                            periodInterval = 1
+                        ),
+                        spent = 230000L,
+                        progress = 0.575f,
+                        missingRate = false
+                    )
+                ),
+                budgetCategories = mapOf(
+                    "3" to listOf(
+                        CategoryEntity(
+                            id = "c1",
+                            userId = "user_1",
+                            name = "Comida",
+                            type = CategoryType.EXPENSE,
+                            icon = "restaurant",
+                            color = "#FFC107"
+                        ),
+                        CategoryEntity(
+                            id = "c2",
+                            userId = "user_1",
+                            name = "Bebidas",
+                            type = CategoryType.EXPENSE,
+                            icon = "fastfood",
+                            color = "#E91E63"
+                        )
+                    )
+                ),
+                totalAllocated = 2900000L,
+                totalSpent = 2460000L,
+                primaryCurrency = "MXN",
+                isLoading = false
+            ),
+            currentRoute = "budgets",
+            onNavigateToTab = {},
+            onAddBudgetClick = {},
+            onBudgetClick = {},
+            onDeleteBudget = {},
+            onCurrencyChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun BudgetsListScreenEmptyLightPreview() {
+    BudgmentTheme {
+        BudgetsListScreen(
+            uiState = BudgetsUiState(isLoading = false),
+            currentRoute = "budgets",
+            onNavigateToTab = {},
+            onAddBudgetClick = {},
+            onBudgetClick = {},
+            onDeleteBudget = {},
+            onCurrencyChange = {}
         )
     }
 }

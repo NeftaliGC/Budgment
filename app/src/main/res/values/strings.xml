@@ -71,6 +71,10 @@
     <string name="accounts_add_content_description">Agregar cuenta</string>
     <string name="accounts_delete_content_description">Eliminar cuenta</string>
     <string name="accounts_balance_format">Saldo: %1$s</string>
+    <string name="accounts_total_balance_title">Saldo total</string>
+    <string name="accounts_count_format">%1$d cuentas</string>
+    <string name="accounts_missing_rates">%1$d cuenta(s) sin convertir (tasa no disponible)</string>
+    <string name="accounts_credit_limit_format">Límite: %1$s</string>
 
     <!-- Account form -->
     <string name="account_form_title_new">Nueva cuenta</string>
@@ -82,6 +86,7 @@
     <string name="account_form_statement_day_label">Día de corte</string>
     <string name="account_form_payment_due_day_label">Día límite de pago</string>
     <string name="account_form_save_button">Guardar</string>
+    <string name="account_form_color_auto_hint">si no eliges color se usa el automático según el tipo de cuenta</string>
 
     <!-- Account types -->
     <string name="account_type_cash">Efectivo</string>
@@ -145,6 +150,15 @@
     <string name="budgets_delete_content_description">Eliminar presupuesto</string>
     <string name="budgets_spent_format">%1$s de %2$s</string>
     <string name="budgets_period_current_month">Este mes</string>
+    <string name="budgets_summary_title">Resumen del mes</string>
+    <string name="budgets_summary_allocated">Presupuestado</string>
+    <string name="budgets_summary_spent">Gastado</string>
+    <string name="budgets_summary_remaining">Restante</string>
+    <string name="budgets_count_format">%1$d presupuestos</string>
+    <string name="budgets_remaining_format">Restan %1$s</string>
+    <string name="budgets_exceeded_format">Excedido por %1$s</string>
+    <string name="budgets_percent_format">%1$d%% usado</string>
+    <string name="budgets_missing_rates">%1$d presupuesto(s) sin convertir (tasa no disponible)</string>
 
     <!-- Budget form -->
     <string name="budget_form_title_new">Nuevo presupuesto</string>

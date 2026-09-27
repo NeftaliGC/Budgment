@@ -12,11 +12,13 @@ interface AccountRepository {
     suspend fun getAccount(id: String): AccountEntity?
     suspend fun createAccount(
         userId: String, name: String, accountType: AccountType, currency: String,
-        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?
+        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
+        icon: String? = null, color: String? = null
     )
     suspend fun updateAccount(
         account: AccountEntity, name: String, accountType: AccountType, currency: String,
-        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?
+        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
+        icon: String? = null, color: String? = null
     )
     suspend fun deleteAccount(id: String)
 
@@ -35,7 +37,8 @@ class AccountRepositoryImpl @Inject constructor(
 
     override suspend fun createAccount(
         userId: String, name: String, accountType: AccountType, currency: String,
-        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?
+        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
+        icon: String?, color: String?
     ) {
         accountDao.insert(
             AccountEntity(
@@ -44,6 +47,8 @@ class AccountRepositoryImpl @Inject constructor(
                 name = name,
                 accountType = accountType,
                 currency = currency,
+                icon = icon,
+                color = color,
                 creditLimit = creditLimit,
                 statementDay = statementDay,
                 paymentDueDay = paymentDueDay
@@ -53,13 +58,16 @@ class AccountRepositoryImpl @Inject constructor(
 
     override suspend fun updateAccount(
         account: AccountEntity, name: String, accountType: AccountType, currency: String,
-        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?
+        creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
+        icon: String?, color: String?
     ) {
         accountDao.update(
             account.copy(
                 name = name,
                 accountType = accountType,
                 currency = currency,
+                icon = icon,
+                color = color,
                 creditLimit = creditLimit,
                 statementDay = statementDay,
                 paymentDueDay = paymentDueDay,

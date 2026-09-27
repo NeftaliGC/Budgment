@@ -10,15 +10,16 @@ val JungleGreen = Color(0xFF2AA679)
 val Aquamarine = Color(0xFF8EE5C1)
 val MintCream = Color(0xFFF3FFF9)
 val Night = Color(0xFF0D1111)
-val OrangePeel = Color(0xFFFFA114)
 val FaluRed = Color(0xFF7A1613)
 
 // Acentos
 val HighlightDark = Color(0xFFFF9800)
 val Success = Color(0xFF2ECC71)
+val DeepOrange = Color(0xFFB45309)
+val SuccessDark = Color(0xFF18794E)
 
 // Derivados
-val CardBgLight = Color(0xFF0E7C69)
+val CardBgLight = Color(0xFFE3F4ED)
 val MutedLight = Color(0xFF2B6B63)
 
 // Chrome estructural: headers, hero, bottom nav — SIEMPRE estos dos colores, sin importar el tema

@@ -1,7 +1,6 @@
 package com.nintech.budgment.ui.register
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,15 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Alignment
 import com.nintech.budgment.R
+import com.nintech.budgment.ui.common.SurfaceSystemBars
 import com.nintech.budgment.ui.common.toMessage
 import androidx.compose.ui.platform.LocalInspectionMode
 import com.nintech.budgment.ui.theme.BudgmentTheme
@@ -87,6 +86,8 @@ fun RegisterScreenContent(
         if (state.registerSuccess) onRegisterSuccess()
     }
 
+    SurfaceSystemBars()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -116,14 +117,13 @@ fun RegisterScreenContent(
             Text(
                 text = stringResource(R.string.register_title),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Medium
+                style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.register_subtitle),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                fontSize = 14.sp
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -173,7 +173,7 @@ fun RegisterScreenContent(
                             text = stringResource(
                                 if (passwordVisible) R.string.common_password_hide else R.string.common_password_show
                             ),
-                            fontSize = 12.sp
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 },
@@ -195,7 +195,7 @@ fun RegisterScreenContent(
                             text = stringResource(
                                 if (confirmPasswordVisible) R.string.common_password_hide else R.string.common_password_show
                             ),
-                            fontSize = 12.sp
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 },
@@ -207,7 +207,7 @@ fun RegisterScreenContent(
                 Text(
                     text = error.toMessage(),
                     color = MaterialTheme.colorScheme.error,
-                    fontSize = 13.sp
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
@@ -218,7 +218,7 @@ fun RegisterScreenContent(
                 enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .heightIn(min = 52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -232,7 +232,7 @@ fun RegisterScreenContent(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(text = stringResource(R.string.register_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(text = stringResource(R.string.register_button), style = MaterialTheme.typography.titleMedium)
                 }
             }
 
@@ -240,20 +240,23 @@ fun RegisterScreenContent(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = stringResource(R.string.register_have_account),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    fontSize = 14.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
                 )
-                Text(
-                    text = stringResource(R.string.register_login_link),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable { onLoginClick() }
-                )
+                TextButton(
+                    onClick = onLoginClick,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.tertiary)
+                ) {
+                    Text(
+                        text = stringResource(R.string.register_login_link),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

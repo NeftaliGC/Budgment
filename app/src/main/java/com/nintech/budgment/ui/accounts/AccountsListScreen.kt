@@ -6,21 +6,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.AccountEntity
@@ -28,9 +23,13 @@ import com.nintech.budgment.data.model.AccountType
 import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
+import com.nintech.budgment.ui.common.ColorIconTile
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import androidx.compose.ui.platform.LocalInspectionMode
+import com.nintech.budgment.ui.common.RowActionsMenu
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.nintech.budgment.ui.theme.tabular
 
 @Composable
 fun AccountsListScreen(
@@ -75,6 +74,19 @@ fun AccountsListScreen(
     onDeleteAccount: (String) -> Unit,
     onCurrencyChange: (String) -> Unit
 ) {
+    // Cuenta para la que se pidió eliminar; el diálogo decide si se puede.
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    uiState.accounts.firstOrNull { it.id == pendingDeleteId }?.let { account ->
+        DeleteAccountDialog(
+            account = account,
+            onConfirm = {
+                onDeleteAccount(account.id)
+                pendingDeleteId = null
+            },
+            onDismiss = { pendingDeleteId = null }
+        )
+    }
+
     BudgmentScaffold(
         currentRoute = currentRoute,
         onNavigateToTab = onNavigateToTab,
@@ -103,14 +115,14 @@ fun AccountsListScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.accounts_empty_title),
-                        fontSize = 18.sp, fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.accounts_empty_subtitle),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -139,9 +151,8 @@ fun AccountsListScreen(
                         item(key = "header_${type.name}") {
                             Text(
                                 text = type.label(),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
                             )
                         }
@@ -149,13 +160,54 @@ fun AccountsListScreen(
                             AccountCard(
                                 account = account,
                                 onClick = { onAccountClick(account.id) },
-                                onDeleteClick = { onDeleteAccount(account.id) }
+                                onDeleteClick = { pendingDeleteId = account.id }
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Una cuenta solo se puede eliminar con saldo en cero. Si tiene saldo se explica por qué no;
+ * si no, se pide confirmación porque la acción no se puede deshacer desde la app.
+ */
+@Composable
+private fun DeleteAccountDialog(account: AccountEntity, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    if (account.balanceCache != 0L) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.accounts_delete_blocked_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.accounts_delete_blocked_message,
+                        account.name,
+                        formatCents(account.balanceCache, account.currency)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_understood)) }
+            }
+        )
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.accounts_delete_confirm_title, account.name)) },
+            text = { Text(stringResource(R.string.accounts_delete_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.common_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
     }
 }
 
@@ -174,27 +226,26 @@ private fun TotalSummaryHeader(
         Column(Modifier.padding(20.dp)) {
             Text(
                 text = stringResource(R.string.accounts_total_balance_title),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = formatCents(totalBalance, primaryCurrency),
-                fontSize = 30.sp,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.displaySmall.tabular,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.accounts_count_format, accountCount),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (missingRateAccounts > 0) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = stringResource(R.string.accounts_missing_rates, missingRateAccounts),
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -211,8 +262,8 @@ private fun TotalSummaryHeader(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.home_currency_rate_note),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -238,23 +289,10 @@ private fun AccountCard(account: AccountEntity, onClick: () -> Unit, onDeleteCli
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(accentColor.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            ColorIconTile(color = accentColor, icon = icon)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(account.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                Text(account.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 val creditInfo = if (account.accountType == AccountType.CREDIT && account.creditLimit != null) {
                     " · " + stringResource(R.string.accounts_credit_limit_format, formatCents(account.creditLimit, account.currency))
                 } else {
@@ -262,23 +300,16 @@ private fun AccountCard(account: AccountEntity, onClick: () -> Unit, onDeleteCli
                 }
                 Text(
                     account.accountType.label() + creditInfo,
-                    fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     formatCents(account.balanceCache, account.currency),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.tabular,
                     color = balanceColor
                 )
             }
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.accounts_delete_content_description),
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            RowActionsMenu(deleteLabel = stringResource(R.string.accounts_delete_content_description), onDeleteClick = onDeleteClick)
         }
     }
 }

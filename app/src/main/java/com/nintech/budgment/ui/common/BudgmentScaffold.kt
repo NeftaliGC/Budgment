@@ -16,10 +16,11 @@ fun BudgmentScaffold(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     headerViewModel: HeaderViewModel? = if (LocalInspectionMode.current) null else hiltViewModel(),
     content: @Composable (PaddingValues) -> Unit
 ) {
-    ForceLightSystemBars()
+    ChromeSystemBars()
 
     val userName = if (headerViewModel != null) {
         val name by headerViewModel.userName.collectAsState()
@@ -38,6 +39,7 @@ fun BudgmentScaffold(
         },
         bottomBar = { BudgmentBottomBar(currentRoute = currentRoute, onNavigate = onNavigateToTab) },
         floatingActionButton = floatingActionButton,
+        snackbarHost = snackbarHost,
         content = content
     )
 }

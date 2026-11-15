@@ -9,10 +9,14 @@ import javax.inject.Inject
 
 interface CategoryRepository {
     fun observeCategories(userId: String): Flow<List<CategoryEntity>>
+
+    /** Incluye las categorías eliminadas, para resolver nombre y tipo de movimientos del historial. */
+    fun observeCategoriesIncludingDeleted(userId: String): Flow<List<CategoryEntity>>
     suspend fun getCategory(id: String): CategoryEntity?
     suspend fun createCategory(userId: String, name: String, type: CategoryType, icon: String? = null, color: String? = null)
     suspend fun updateCategory(category: CategoryEntity, name: String, type: CategoryType, icon: String? = null, color: String? = null)
     suspend fun deleteCategory(id: String)
+    suspend fun restoreCategory(id: String)
 }
 
 class CategoryRepositoryImpl @Inject constructor(
@@ -21,6 +25,9 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override fun observeCategories(userId: String): Flow<List<CategoryEntity>> =
         categoryDao.observeCategories(userId)
+
+    override fun observeCategoriesIncludingDeleted(userId: String): Flow<List<CategoryEntity>> =
+        categoryDao.observeAllCategories(userId)
 
     override suspend fun getCategory(id: String): CategoryEntity? =
         categoryDao.getById(id)
@@ -37,5 +44,9 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun deleteCategory(id: String) {
         categoryDao.softDelete(id)
+    }
+
+    override suspend fun restoreCategory(id: String) {
+        categoryDao.restore(id)
     }
 }

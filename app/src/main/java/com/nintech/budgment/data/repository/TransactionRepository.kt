@@ -12,6 +12,7 @@ interface TransactionRepository {
     suspend fun createTransaction(userId: String, accountId: String, categoryId: String, amount: Long, description: String?, date: Long)
     suspend fun updateTransaction(transaction: TransactionEntity, accountId: String, categoryId: String, amount: Long, description: String?, date: Long)
     suspend fun deleteTransaction(id: String)
+    suspend fun restoreTransaction(id: String)
 }
 
 class TransactionRepositoryImpl @Inject constructor(
@@ -65,5 +66,12 @@ class TransactionRepositoryImpl @Inject constructor(
         val transaction = transactionDao.getById(id) ?: return
         accountRepository.adjustBalance(transaction.accountId, -transaction.amount)
         transactionDao.softDelete(id)
+    }
+
+    override suspend fun restoreTransaction(id: String) {
+        val transaction = transactionDao.getById(id) ?: return
+        if (transaction.deletedAt == null) return
+        transactionDao.restore(id)
+        accountRepository.adjustBalance(transaction.accountId, transaction.amount)
     }
 }

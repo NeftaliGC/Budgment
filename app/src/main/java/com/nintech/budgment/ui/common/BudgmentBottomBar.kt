@@ -10,15 +10,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nintech.budgment.R
 import com.nintech.budgment.ui.navigation.BudgmentDestination
 import com.nintech.budgment.ui.theme.BudgmentTheme
+import com.nintech.budgment.ui.theme.ChromeAccent
 import com.nintech.budgment.ui.theme.ChromeBackground
+import com.nintech.budgment.ui.theme.ChromeIndicator
 import com.nintech.budgment.ui.theme.ChromeContent
 
 @Composable
 fun BudgmentBottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
     val itemColors = NavigationBarItemDefaults.colors(
-        selectedIconColor = MaterialTheme.colorScheme.tertiary,
-        selectedTextColor = MaterialTheme.colorScheme.tertiary,
-        indicatorColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.6f),
+        // La barra es oscura en ambos temas, así que el acento no depende del esquema de color.
+        selectedIconColor = ChromeAccent,
+        selectedTextColor = ChromeAccent,
+        indicatorColor = ChromeIndicator,
         unselectedIconColor = ChromeContent,
         unselectedTextColor = ChromeContent
     )

@@ -2,7 +2,6 @@ package com.nintech.budgment.ui.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,12 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.nintech.budgment.R
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -26,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.nintech.budgment.ui.common.HeroSystemBars
 import com.nintech.budgment.ui.common.toMessage
 import com.nintech.budgment.ui.theme.ChromeBackground
 import com.nintech.budgment.ui.theme.ChromeContent
@@ -80,6 +78,8 @@ fun LoginContent(
         if (state.loginSuccess) onLoginSuccess()
     }
 
+    HeroSystemBars()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -90,9 +90,10 @@ fun LoginContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
                 .statusBarsPadding()
-                .padding(horizontal = 32.dp),
+                // Altura mínima, no fija: con texto grande el encabezado crece en vez de recortarse.
+                .heightIn(min = 116.dp)
+                .padding(horizontal = 32.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -109,14 +110,13 @@ fun LoginContent(
                 Text(
                     text = stringResource(R.string.app_name),
                     color = ChromeContent,
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.displaySmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.login_tagline),
                     color = ChromeContent.copy(alpha = 0.7f),
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -139,14 +139,13 @@ fun LoginContent(
                 Text(
                     text = stringResource(R.string.login_welcome),
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = stringResource(R.string.login_subtitle),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 14.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -175,7 +174,7 @@ fun LoginContent(
                                 text = stringResource(
                                     if (passwordVisible) R.string.common_password_hide else R.string.common_password_show
                                 ),
-                                fontSize = 12.sp
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     },
@@ -184,7 +183,7 @@ fun LoginContent(
 
                 state.errorMessage?.let { error ->
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(error.toMessage(), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                    Text(error.toMessage(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Row(
@@ -197,13 +196,13 @@ fun LoginContent(
                         onCheckedChange = onRememberMeChange,
                         colors = CheckboxDefaults.colors(
                             checkedColor = MaterialTheme.colorScheme.primary,
-                            uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                     Text(
                         text = stringResource(R.string.login_remember_me),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        fontSize = 14.sp
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
@@ -214,7 +213,7 @@ fun LoginContent(
                     enabled = !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -224,7 +223,7 @@ fun LoginContent(
                     if (state.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
-                        Text(stringResource(R.string.login_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
                     }
                 }
 
@@ -233,20 +232,22 @@ fun LoginContent(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
-
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = stringResource(R.string.login_no_account),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        fontSize = 14.sp
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                    Text(
-                        text = stringResource(R.string.login_register),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable { onRegisterClick() }
-                    )
+                    TextButton(
+                        onClick = onRegisterClick,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.login_register),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
         }

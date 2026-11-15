@@ -21,6 +21,7 @@ data class CategoryFormState(
     val type: CategoryType = CategoryType.EXPENSE,
     val icon: String? = null,
     val color: String? = null,
+    val nameError: Boolean = false,
     val isEditing: Boolean = false,
     val isSaved: Boolean = false
 )
@@ -51,19 +52,24 @@ class CategoryFormViewModel @Inject constructor(
         }
     }
 
-    fun onNameChange(value: String) { _state.value = _state.value.copy(name = value) }
+    fun onNameChange(value: String) { _state.value = _state.value.copy(name = value, nameError = false) }
     fun onTypeChange(value: CategoryType) { _state.value = _state.value.copy(type = value) }
     fun onIconChange(value: String?) { _state.value = _state.value.copy(icon = value) }
     fun onColorChange(value: String?) { _state.value = _state.value.copy(color = value) }
 
     fun save() {
+        val s = _state.value
+        val name = s.name.trim()
+        if (name.isBlank()) {
+            _state.value = s.copy(nameError = true)
+            return
+        }
         viewModelScope.launch {
-            val s = _state.value
             existingCategory?.let { category ->
-                categoryRepository.updateCategory(category, s.name, s.type, s.icon, s.color)
+                categoryRepository.updateCategory(category, name, s.type, s.icon, s.color)
             } ?: run {
                 val userId = sessionManager.currentUserId.filterNotNull().first()
-                categoryRepository.createCategory(userId, s.name, s.type, s.icon, s.color)
+                categoryRepository.createCategory(userId, name, s.type, s.icon, s.color)
             }
             _state.value = _state.value.copy(isSaved = true)
         }

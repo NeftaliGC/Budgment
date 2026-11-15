@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,12 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.BudgetEntity
@@ -37,6 +34,9 @@ import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import kotlin.math.roundToInt
+import com.nintech.budgment.ui.common.RowActionsMenu
+import com.nintech.budgment.ui.common.rememberUndoableDelete
+import com.nintech.budgment.ui.theme.tabular
 
 @Composable
 fun BudgetsListScreen(
@@ -48,6 +48,7 @@ fun BudgetsListScreen(
 ) {
     if (viewModel != null) {
         val uiState by viewModel.uiState.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
 
         BudgetsListScreen(
             uiState = uiState,
@@ -55,7 +56,13 @@ fun BudgetsListScreen(
             onNavigateToTab = onNavigateToTab,
             onAddBudgetClick = onAddBudgetClick,
             onBudgetClick = onBudgetClick,
-            onDeleteBudget = viewModel::deleteBudget,
+            onDeleteBudget = rememberUndoableDelete(
+                snackbarHostState = snackbarHostState,
+                message = stringResource(R.string.budgets_deleted_message),
+                onDelete = viewModel::deleteBudget,
+                onRestore = viewModel::restoreBudget
+            ),
+            snackbarHostState = snackbarHostState,
             onCurrencyChange = viewModel::setDisplayCurrency,
             modifier = Modifier
         )
@@ -82,11 +89,13 @@ fun BudgetsListScreen(
     onBudgetClick: (String) -> Unit,
     onDeleteBudget: (String) -> Unit,
     onCurrencyChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
         currentRoute = currentRoute,
         onNavigateToTab = onNavigateToTab,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddBudgetClick,
@@ -112,15 +121,14 @@ fun BudgetsListScreen(
                 ) {
                     Text(
                         stringResource(R.string.budgets_empty_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         stringResource(R.string.budgets_empty_subtitle),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -181,9 +189,8 @@ fun BudgetsListScreen(
 private fun BudgetSectionHeader(scope: BudgetScope) {
     Text(
         text = scope.label(),
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp, start = 4.dp)
     )
 }
@@ -216,26 +223,24 @@ private fun BudgetSummaryHeader(
         Column(Modifier.padding(20.dp)) {
             Text(
                 stringResource(R.string.budgets_summary_title),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth()) {
+            // Una fila por cifra: con montos largos o texto grande, tres columnas recortaban el dinero.
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 SummaryValue(
                     label = stringResource(R.string.budgets_summary_allocated),
-                    value = formatCents(totalAllocated, primaryCurrency),
-                    modifier = Modifier.weight(1f)
+                    value = formatCents(totalAllocated, primaryCurrency)
                 )
                 SummaryValue(
                     label = stringResource(R.string.budgets_summary_spent),
-                    value = formatCents(totalSpent, primaryCurrency),
-                    modifier = Modifier.weight(1f)
+                    value = formatCents(totalSpent, primaryCurrency)
                 )
                 SummaryValue(
                     label = stringResource(R.string.budgets_summary_remaining),
                     value = formatCents(remaining, primaryCurrency),
-                    color = remainingColor,
-                    modifier = Modifier.weight(1f)
+                    color = remainingColor
                 )
             }
             Spacer(Modifier.height(14.dp))
@@ -248,14 +253,14 @@ private fun BudgetSummaryHeader(
             Spacer(Modifier.height(10.dp))
             Text(
                 stringResource(R.string.budgets_count_format, budgetCount),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (missingRateCount > 0) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     stringResource(R.string.budgets_missing_rates, missingRateCount),
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -272,8 +277,8 @@ private fun BudgetSummaryHeader(
             Spacer(Modifier.height(4.dp))
             Text(
                 stringResource(R.string.home_currency_rate_note),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -281,20 +286,21 @@ private fun BudgetSummaryHeader(
 
 @Composable
 private fun SummaryValue(label: String, value: String, modifier: Modifier = Modifier, color: androidx.compose.ui.graphics.Color? = null) {
-    Column(modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
             text = label,
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.width(12.dp))
         Text(
             text = value,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = color ?: MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            style = MaterialTheme.typography.titleMedium.tabular,
+            color = color ?: MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -333,8 +339,7 @@ private fun BudgetCard(
                 ) {
                     Text(
                         item.budget.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -343,16 +348,16 @@ private fun BudgetCard(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         stringResource(R.string.budgets_percent_format, percent),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (overLimit) MaterialTheme.colorScheme.error else accentColor
+                        style = MaterialTheme.typography.labelMedium,
+                        // El color de la categoría queda solo en la barra: como texto no garantiza contraste.
+                        color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     item.budget.scope.label(),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(10.dp))
                 LinearProgressIndicator(
@@ -362,28 +367,31 @@ private fun BudgetCard(
                     trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                // Dos líneas: en una sola fila los dos montos no caben en pantallas angostas.
+                Text(
+                    stringResource(
+                        R.string.budgets_spent_format,
+                        formatCents(item.spent, currency),
+                        formatCents(item.budget.amountLimit, currency)
+                    ),
+                    style = MaterialTheme.typography.bodyMedium.tabular,
+                    color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    stringResource(
+                        if (overLimit) R.string.budgets_exceeded_format else R.string.budgets_remaining_format,
+                        formatCents(if (overLimit) -remaining else remaining, currency)
+                    ),
+                    style = MaterialTheme.typography.labelLarge.tabular,
+                    color = if (overLimit) MaterialTheme.colorScheme.error else BudgmentTheme.extraColors.success
+                )
+                if (item.allCategoriesDeleted) {
+                    Spacer(Modifier.height(10.dp))
                     Text(
-                        stringResource(
-                            R.string.budgets_spent_format,
-                            formatCents(item.spent, currency),
-                            formatCents(item.budget.amountLimit, currency)
-                        ),
-                        fontSize = 13.sp,
-                        color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        stringResource(
-                            if (overLimit) R.string.budgets_exceeded_format else R.string.budgets_remaining_format,
-                            formatCents(if (overLimit) -remaining else remaining, currency)
-                        ),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (overLimit) MaterialTheme.colorScheme.error else BudgmentTheme.extraColors.success
+                        stringResource(R.string.budgets_categories_deleted_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (item.budget.scope == BudgetScope.CATEGORY && linkedCategories.isNotEmpty()) {
@@ -395,13 +403,7 @@ private fun BudgetCard(
                     }
                 }
             }
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.budgets_delete_content_description),
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            RowActionsMenu(deleteLabel = stringResource(R.string.budgets_delete_content_description), onDeleteClick = onDeleteClick)
         }
     }
 }
@@ -421,14 +423,14 @@ private fun CategoryMiniChip(category: CategoryEntity) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = accent,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(12.dp)
             )
             Spacer(Modifier.width(4.dp))
         }
         Text(
             category.name,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

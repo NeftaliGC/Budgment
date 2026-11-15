@@ -14,10 +14,10 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.BudgetScope
+import com.nintech.budgment.ui.common.SurfaceSystemBars
 
 @Composable
 fun BudgetFormScreen(
@@ -68,6 +68,8 @@ fun BudgetFormScreenContent(
 ) {
     var scopeMenuExpanded by remember { mutableStateOf(false) }
 
+    SurfaceSystemBars()
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -89,7 +91,12 @@ fun BudgetFormScreenContent(
                 onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.budget_form_name_label)) },
                 singleLine = true,
-                isError = state.errorMessage,
+                isError = state.nameError,
+                supportingText = if (state.nameError) {
+                    { Text(stringResource(R.string.form_error_name_required)) }
+                } else {
+                    null
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -100,7 +107,12 @@ fun BudgetFormScreenContent(
                 onValueChange = onAmountChange,
                 label = { Text(stringResource(R.string.budget_form_amount_label)) },
                 singleLine = true,
-                isError = state.errorMessage,
+                isError = state.amountError,
+                supportingText = if (state.amountError) {
+                    { Text(stringResource(R.string.budget_form_error_amount)) }
+                } else {
+                    null
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -125,28 +137,30 @@ fun BudgetFormScreenContent(
 
             if (state.scope == BudgetScope.CATEGORY) {
                 Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.budget_form_categories_label), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                Text(stringResource(R.string.budget_form_categories_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (state.categoriesError) {
+                    Text(
+                        stringResource(R.string.budget_form_error_categories_required),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
                 if (!state.isLoading && state.expenseCategories.isEmpty()) {
                     Spacer(Modifier.height(4.dp))
-                    Text(stringResource(R.string.budget_form_no_expense_categories), fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.budget_form_no_expense_categories), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
                 } else {
                     state.expenseCategories.forEach { category ->
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = category.id in state.selectedCategoryIds, onCheckedChange = { onCategoryToggle(category.id) })
-                            Text(category.name, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text(category.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
             }
 
-            if (state.errorMessage) {
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.budget_form_error), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-            }
-
             Spacer(Modifier.height(28.dp))
 
-            Button(onClick = onSaveClick, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+            Button(onClick = onSaveClick, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Text(stringResource(R.string.budget_form_save_button))
             }
         }

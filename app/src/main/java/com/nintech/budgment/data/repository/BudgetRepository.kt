@@ -19,6 +19,7 @@ interface BudgetRepository {
     suspend fun createBudget(userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long)
     suspend fun updateBudget(budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long)
     suspend fun deleteBudget(id: String)
+    suspend fun restoreBudget(id: String)
 }
 
 class BudgetRepositoryImpl @Inject constructor(
@@ -68,5 +69,9 @@ class BudgetRepositoryImpl @Inject constructor(
 
     override suspend fun deleteBudget(id: String) {
         budgetDao.softDelete(id)
+    }
+
+    override suspend fun restoreBudget(id: String) {
+        budgetDao.restore(id)
     }
 }

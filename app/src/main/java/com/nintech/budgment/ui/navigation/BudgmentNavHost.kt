@@ -166,7 +166,9 @@ fun BudgmentNavHost(
         ) {
             TransactionFormScreen(
                 onBackClick = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onSaved = { navController.popBackStack() },
+                onCreateAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
+                onCreateCategoryClick = { navController.navigate(BudgmentDestination.CategoryForm.createRoute()) }
             )
         }
     }

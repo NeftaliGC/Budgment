@@ -21,6 +21,10 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE userId = :userId AND deletedAt IS NULL ORDER BY name")
     fun observeAccounts(userId: String): Flow<List<AccountEntity>>
 
+    /** Incluye las cuentas eliminadas: sirve para mostrar el historial de movimientos. */
+    @Query("SELECT * FROM accounts WHERE userId = :userId ORDER BY name")
+    fun observeAllAccounts(userId: String): Flow<List<AccountEntity>>
+
     @Query("UPDATE accounts SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long = System.currentTimeMillis())
 

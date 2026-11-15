@@ -7,16 +7,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
@@ -26,6 +23,9 @@ import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.common.formatDate
 import com.nintech.budgment.ui.theme.BudgmentTheme
+import com.nintech.budgment.ui.common.RowActionsMenu
+import com.nintech.budgment.ui.common.rememberUndoableDelete
+import com.nintech.budgment.ui.theme.tabular
 
 @Composable
 fun TransactionsListScreen(
@@ -37,6 +37,7 @@ fun TransactionsListScreen(
 ) {
     if (viewModel != null) {
         val uiState by viewModel.uiState.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
 
         TransactionsListScreen(
             uiState = uiState,
@@ -44,7 +45,13 @@ fun TransactionsListScreen(
             onNavigateToTab = onNavigateToTab,
             onAddTransactionClick = onAddTransactionClick,
             onTransactionClick = onTransactionClick,
-            onDeleteTransaction = viewModel::deleteTransaction
+            onDeleteTransaction = rememberUndoableDelete(
+                snackbarHostState = snackbarHostState,
+                message = stringResource(R.string.transactions_deleted_message),
+                onDelete = viewModel::deleteTransaction,
+                onRestore = viewModel::restoreTransaction
+            ),
+            snackbarHostState = snackbarHostState
         )
     } else {
         TransactionsListScreen(
@@ -65,11 +72,13 @@ fun TransactionsListScreen(
     onNavigateToTab: (String) -> Unit,
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
-    onDeleteTransaction: (String) -> Unit
+    onDeleteTransaction: (String) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
         currentRoute = currentRoute,
         onNavigateToTab = onNavigateToTab,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddTransactionClick,
@@ -88,14 +97,14 @@ fun TransactionsListScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = stringResource(R.string.transactions_empty_title),
-                        fontSize = 18.sp, fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.transactions_empty_subtitle),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -125,32 +134,44 @@ private fun TransactionRow(item: TransactionWithDetails, onClick: () -> Unit, on
         MaterialTheme.colorScheme.tertiary
     }
 
+    val categoryLabel = if (item.categoryDeleted) {
+        stringResource(R.string.transactions_deleted_category_format, item.categoryName)
+    } else {
+        item.categoryName
+    }
+    val accountLabel = if (item.accountDeleted) {
+        stringResource(R.string.transactions_deleted_account_format, item.accountName)
+    } else {
+        item.accountName
+    }
+
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !item.accountDeleted, onClick = onClick)
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(item.categoryName, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+            Text(categoryLabel, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "${item.accountName} · ${formatDate(item.transaction.date)}",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                text = "$accountLabel · ${formatDate(item.transaction.date)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Text(
             text = formatCents(item.transaction.amount, item.transaction.currency ?: ""),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.titleMedium.tabular,
             color = amountColor
         )
-        IconButton(onClick = onDeleteClick) {
-            Icon(
-                Icons.Filled.Delete,
-                contentDescription = stringResource(R.string.transactions_delete_content_description),
-                tint = MaterialTheme.colorScheme.error
-            )
+        if (item.accountDeleted) {
+            // Conserva la alineación del monto con las filas que sí tienen menú.
+            Spacer(Modifier.width(48.dp))
+        } else {
+            RowActionsMenu(deleteLabel = stringResource(R.string.transactions_delete_content_description), onDeleteClick = onDeleteClick)
         }
     }
 }

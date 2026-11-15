@@ -20,7 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -34,11 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.AccountEntity
@@ -53,6 +53,7 @@ import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.navigation.BudgmentDestination
 import com.nintech.budgment.ui.theme.BudgmentTheme
+import com.nintech.budgment.ui.theme.tabular
 
 @Composable
 fun HomeScreen(
@@ -109,21 +110,20 @@ fun HomeScreenContent(
             // Saldo disponible
             Text(
                 text = stringResource(R.string.home_total_balance_title),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = formatCents(uiState.totalBalance, uiState.primaryCurrency),
-                fontSize = 34.sp,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.displaySmall.tabular,
                 color = MaterialTheme.colorScheme.onBackground
             )
             if (uiState.missingRateAccounts > 0) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = stringResource(R.string.home_currency_missing_rates, uiState.missingRateAccounts),
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -140,8 +140,8 @@ fun HomeScreenContent(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.home_currency_rate_note),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(Modifier.height(32.dp))
@@ -149,9 +149,8 @@ fun HomeScreenContent(
             // Acciones rápidas
             Text(
                 text = stringResource(R.string.home_quick_actions_title),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -197,8 +196,8 @@ fun HomeScreenContent(
             if (!uiState.isLoading && uiState.accounts.isEmpty()) {
                 Text(
                     text = stringResource(R.string.home_no_accounts),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 val shownAccounts = uiState.accounts.take(4)
@@ -232,8 +231,8 @@ fun HomeScreenContent(
             if (!uiState.isLoading && uiState.categories.isEmpty()) {
                 Text(
                     text = stringResource(R.string.home_no_categories),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -253,14 +252,14 @@ private fun SectionHeader(title: String, showSeeAll: Boolean, onSeeAllClick: () 
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (showSeeAll) {
-            Text(
-                text = stringResource(R.string.home_see_all),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.clickable(onClick = onSeeAllClick)
-            )
+            TextButton(
+                onClick = onSeeAllClick,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.tertiary)
+            ) {
+                Text(text = stringResource(R.string.home_see_all), style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }
@@ -282,7 +281,7 @@ private fun QuickActionItem(label: String, icon: @Composable () -> Unit, onClick
             icon()
         }
         Spacer(Modifier.height(6.dp))
-        Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground)
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onBackground)
     }
 }
 
@@ -305,8 +304,7 @@ private fun AccountCard(account: AccountEntity, onClick: () -> Unit, modifier: M
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = account.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -316,14 +314,13 @@ private fun AccountCard(account: AccountEntity, onClick: () -> Unit, modifier: M
             Spacer(Modifier.height(6.dp))
             Text(
                 text = account.accountType.label(),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = formatCents(account.balanceCache, account.currency),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.labelLarge.tabular,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -354,7 +351,7 @@ private fun CategoryChip(category: CategoryEntity, onClick: () -> Unit) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = accentColor,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(16.dp)
             )
         } else {
@@ -363,8 +360,7 @@ private fun CategoryChip(category: CategoryEntity, onClick: () -> Unit) {
         Spacer(Modifier.width(6.dp))
         Text(
             text = category.name,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
     }

@@ -10,15 +10,17 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.nintech.budgment.data.model.AccountType
+import androidx.annotation.StringRes
+import com.nintech.budgment.R
 
-enum class AccountIcon(val key: String) {
-    WALLET("wallet"),
-    CARD("card"),
-    CASH("cash"),
-    PAYMENTS("payments"),
-    SAVINGS("savings"),
-    BANK("bank"),
-    INVESTMENT("investment");
+enum class AccountIcon(val key: String, @StringRes val labelRes: Int) {
+    WALLET("wallet", R.string.icon_wallet),
+    CARD("card", R.string.icon_card),
+    CASH("cash", R.string.icon_cash),
+    PAYMENTS("payments", R.string.icon_payments),
+    SAVINGS("savings", R.string.icon_savings),
+    BANK("bank", R.string.icon_bank),
+    INVESTMENT("investment", R.string.icon_investment);
 
     val icon: ImageVector
         get() = try {

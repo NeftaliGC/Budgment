@@ -11,29 +11,43 @@ import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.session.SessionManager
+import com.nintech.budgment.ui.common.centsToInputText
+import com.nintech.budgment.ui.common.parseAmountToCents
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
-enum class TransactionFormError { MISSING_FIELDS, INVALID_AMOUNT }
+enum class AmountError { REQUIRED, INVALID }
 
 data class TransactionFormState(
-    val accountId: String? = null,
-    val accountName: String = "",
-    val categoryId: String? = null,
-    val categoryName: String = "",
-    val categoryType: CategoryType? = null,
+    /** Gasto o ingreso. Decide qué categorías se ofrecen y el signo del monto. */
+    val type: CategoryType = CategoryType.EXPENSE,
     val amountText: String = "",
-    val description: String = "",
+    val categoryId: String? = null,
+    val accountId: String? = null,
     val dateMillis: Long = System.currentTimeMillis(),
+    val description: String = "",
     val accounts: List<AccountEntity> = emptyList(),
     val categories: List<CategoryEntity> = emptyList(),
+    val amountError: AmountError? = null,
+    val categoryError: Boolean = false,
+    val accountError: Boolean = false,
     val isEditing: Boolean = false,
     val isSaved: Boolean = false,
-    val isLoading: Boolean = true,
-    val errorMessage: TransactionFormError? = null
-)
+    val isLoading: Boolean = true
+) {
+    /** Categorías del tipo elegido: las únicas que se pueden asignar. */
+    val categoriesOfType: List<CategoryEntity> get() = categories.filter { it.type == type }
+    val selectedAccount: AccountEntity? get() = accounts.firstOrNull { it.id == accountId }
+}
 
 @HiltViewModel
 class TransactionFormViewModel @Inject constructor(
@@ -53,74 +67,102 @@ class TransactionFormViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val userId = sessionManager.currentUserId.filterNotNull().first()
-            val accounts = accountRepository.observeAccounts(userId).first()
-            val categories = categoryRepository.observeCategories(userId).first()
 
-            _state.value = _state.value.copy(accounts = accounts, categories = categories, isLoading = false)
-
+            // Se carga antes de observar las listas para que el formulario aparezca ya relleno.
             val tx = transactionId?.let { transactionRepository.getTransaction(it) }
             if (tx != null) {
                 existingTransaction = tx
-                val account = accounts.find { it.id == tx.accountId }
-                val category = categories.find { it.id == tx.categoryId }
-                _state.value = _state.value.copy(
-                    accountId = tx.accountId,
-                    accountName = account?.name.orEmpty(),
-                    categoryId = tx.categoryId,
-                    categoryName = category?.name.orEmpty(),
-                    categoryType = category?.type,
-                    amountText = (kotlin.math.abs(tx.amount) / 100.0).toString(),
-                    description = tx.description.orEmpty(),
-                    dateMillis = tx.date
-                )
-            } else {
-                accounts.firstOrNull()?.let { acc ->
-                    _state.value = _state.value.copy(accountId = acc.id, accountName = acc.name)
+                _state.update {
+                    it.copy(
+                        type = if (tx.amount < 0) CategoryType.EXPENSE else CategoryType.INCOME,
+                        amountText = centsToInputText(abs(tx.amount)),
+                        categoryId = tx.categoryId,
+                        accountId = tx.accountId,
+                        dateMillis = tx.date,
+                        description = tx.description.orEmpty()
+                    )
                 }
             }
+
+            // Las listas se observan (no se leen una sola vez) para que una cuenta o categoría
+            // creada desde este formulario aparezca al volver.
+            combine(
+                accountRepository.observeAccounts(userId),
+                categoryRepository.observeCategories(userId)
+            ) { accounts, categories -> accounts to categories }
+                .collect { (accounts, categories) ->
+                    _state.update { s ->
+                        s.copy(
+                            accounts = accounts,
+                            categories = categories,
+                            // Con una sola cuenta, o al crear, se preselecciona la primera.
+                            accountId = s.accountId?.takeIf { id -> accounts.any { it.id == id } }
+                                ?: accounts.firstOrNull()?.id,
+                            // Si la categoría ya no existe (fue eliminada) hay que elegir otra.
+                            categoryId = s.categoryId?.takeIf { id -> categories.any { it.id == id } },
+                            isLoading = false
+                        )
+                    }
+                }
         }
     }
 
-    fun onAccountSelected(account: AccountEntity) {
-        _state.value = _state.value.copy(accountId = account.id, accountName = account.name, errorMessage = null)
+    fun onTypeChange(type: CategoryType) {
+        _state.update { s ->
+            val keepsCategory = s.categories.firstOrNull { it.id == s.categoryId }?.type == type
+            s.copy(type = type, categoryId = if (keepsCategory) s.categoryId else null, categoryError = false)
+        }
     }
 
-    fun onCategorySelected(category: CategoryEntity) {
-        _state.value = _state.value.copy(
-            categoryId = category.id, categoryName = category.name, categoryType = category.type, errorMessage = null
-        )
+    fun onAmountChange(value: String) {
+        _state.update { it.copy(amountText = value, amountError = null) }
     }
 
-    fun onAmountChange(value: String) { _state.value = _state.value.copy(amountText = value, errorMessage = null) }
-    fun onDescriptionChange(value: String) { _state.value = _state.value.copy(description = value) }
+    fun onCategorySelected(categoryId: String) {
+        _state.update { it.copy(categoryId = categoryId, categoryError = false) }
+    }
+
+    fun onAccountSelected(accountId: String) {
+        _state.update { it.copy(accountId = accountId, accountError = false) }
+    }
+
+    fun onDateChange(dateMillis: Long) {
+        _state.update { it.copy(dateMillis = dateMillis) }
+    }
+
+    fun onDescriptionChange(value: String) {
+        _state.update { it.copy(description = value) }
+    }
 
     fun save() {
         val s = _state.value
-        val accountId = s.accountId
-        val categoryId = s.categoryId
-        val categoryType = s.categoryType
-        val magnitude = s.amountText.toDoubleOrNull()
+        val cents = parseAmountToCents(s.amountText)
+        val amountError = when {
+            s.amountText.isBlank() -> AmountError.REQUIRED
+            cents == null || cents <= 0 -> AmountError.INVALID
+            else -> null
+        }
+        val category = s.categoriesOfType.firstOrNull { it.id == s.categoryId }
+        val account = s.selectedAccount
 
-        if (accountId == null || categoryId == null || categoryType == null || s.amountText.isBlank()) {
-            _state.value = s.copy(errorMessage = TransactionFormError.MISSING_FIELDS)
+        if (amountError != null || category == null || account == null || cents == null) {
+            _state.update {
+                it.copy(amountError = amountError, categoryError = category == null, accountError = account == null)
+            }
             return
         }
-        if (magnitude == null || magnitude <= 0) {
-            _state.value = s.copy(errorMessage = TransactionFormError.INVALID_AMOUNT)
-            return
-        }
 
-        val cents = (magnitude * 100).toLong()
-        val signedAmount = if (categoryType == CategoryType.EXPENSE) -cents else cents
+        val signedAmount = if (s.type == CategoryType.EXPENSE) -cents else cents
+        val description = s.description.trim().ifBlank { null }
 
         viewModelScope.launch {
             existingTransaction?.let { tx ->
-                transactionRepository.updateTransaction(tx, accountId, categoryId, signedAmount, s.description.ifBlank { null }, s.dateMillis)
+                transactionRepository.updateTransaction(tx, account.id, category.id, signedAmount, description, s.dateMillis)
             } ?: run {
                 val userId = sessionManager.currentUserId.filterNotNull().first()
-                transactionRepository.createTransaction(userId, accountId, categoryId, signedAmount, s.description.ifBlank { null }, s.dateMillis)
+                transactionRepository.createTransaction(userId, account.id, category.id, signedAmount, description, s.dateMillis)
             }
-            _state.value = _state.value.copy(isSaved = true)
+            _state.update { it.copy(isSaved = true) }
         }
     }
 }

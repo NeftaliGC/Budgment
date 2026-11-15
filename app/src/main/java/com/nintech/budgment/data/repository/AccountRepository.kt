@@ -9,18 +9,27 @@ import javax.inject.Inject
 
 interface AccountRepository {
     fun observeAccounts(userId: String): Flow<List<AccountEntity>>
+
+    /** Incluye las cuentas eliminadas, para resolver nombre y moneda de movimientos del historial. */
+    fun observeAccountsIncludingDeleted(userId: String): Flow<List<AccountEntity>>
     suspend fun getAccount(id: String): AccountEntity?
     suspend fun createAccount(
         userId: String, name: String, accountType: AccountType, currency: String,
         creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
-        icon: String? = null, color: String? = null
+        icon: String? = null, color: String? = null,
+        initialBalance: Long = 0
     )
     suspend fun updateAccount(
         account: AccountEntity, name: String, accountType: AccountType, currency: String,
         creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
         icon: String? = null, color: String? = null
     )
-    suspend fun deleteAccount(id: String)
+
+    /**
+     * Elimina la cuenta solo si su saldo es cero. Sus movimientos se conservan en el historial.
+     * @return false si la cuenta tiene saldo y no se eliminó.
+     */
+    suspend fun deleteAccount(id: String): Boolean
 
     suspend fun adjustBalance(accountId: String, delta: Long)
 }
@@ -32,13 +41,17 @@ class AccountRepositoryImpl @Inject constructor(
     override fun observeAccounts(userId: String): Flow<List<AccountEntity>> =
         accountDao.observeAccounts(userId)
 
+    override fun observeAccountsIncludingDeleted(userId: String): Flow<List<AccountEntity>> =
+        accountDao.observeAllAccounts(userId)
+
     override suspend fun getAccount(id: String): AccountEntity? =
         accountDao.getById(id)
 
     override suspend fun createAccount(
         userId: String, name: String, accountType: AccountType, currency: String,
         creditLimit: Long?, statementDay: Int?, paymentDueDay: Int?,
-        icon: String?, color: String?
+        icon: String?, color: String?,
+        initialBalance: Long
     ) {
         accountDao.insert(
             AccountEntity(
@@ -49,6 +62,7 @@ class AccountRepositoryImpl @Inject constructor(
                 currency = currency,
                 icon = icon,
                 color = color,
+                balanceCache = initialBalance,
                 creditLimit = creditLimit,
                 statementDay = statementDay,
                 paymentDueDay = paymentDueDay
@@ -76,8 +90,11 @@ class AccountRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun deleteAccount(id: String) {
+    override suspend fun deleteAccount(id: String): Boolean {
+        val account = accountDao.getById(id) ?: return false
+        if (account.balanceCache != 0L) return false
         accountDao.softDelete(id)
+        return true
     }
 
     override suspend fun adjustBalance(accountId: String, delta: Long) {

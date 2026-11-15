@@ -24,7 +24,9 @@ data class BudgetWithProgress(
     val budget: BudgetEntity,
     val spent: Long,
     val progress: Float,
-    val missingRate: Boolean
+    val missingRate: Boolean,
+    /** Presupuesto por categoría cuyas categorías ya fueron eliminadas todas. */
+    val allCategoriesDeleted: Boolean = false
 )
 
 data class BudgetsUiState(
@@ -60,8 +62,9 @@ class BudgetsViewModel @Inject constructor(
                 combine(
                     budgetRepository.observeBudgets(userId),
                     transactionRepository.observeTransactions(userId),
-                    categoryRepository.observeCategories(userId),
-                    accountRepository.observeAccounts(userId),
+                    // Incluye las eliminadas: lo ya gastado en ellas sigue contando en los presupuestos.
+                    categoryRepository.observeCategoriesIncludingDeleted(userId),
+                    accountRepository.observeAccountsIncludingDeleted(userId),
                     sessionManager.displayCurrency
                 ) { budgets, transactions, categories, accounts, preferredCurrency ->
                     val displayCurrency = preferredCurrency ?: defaultCurrency
@@ -70,7 +73,8 @@ class BudgetsViewModel @Inject constructor(
                         .map { it.id }
                         .toSet()
                     val linksByBudget = budgetRepository.getCategoryIdsForBudgets(budgets.map { it.id })
-                    val categoriesById = categories.associateBy { it.id }
+                    // Solo las activas se muestran como etiquetas en la tarjeta.
+                    val categoriesById = categories.filter { it.deletedAt == null }.associateBy { it.id }
                     val accountCurrencyById = accounts.associate { it.id to it.currency }
 
                     val coveredByAny = mutableSetOf<String>()
@@ -112,7 +116,10 @@ class BudgetsViewModel @Inject constructor(
                         } else {
                             0f
                         }
-                        BudgetWithProgress(budget, spent, progress, missingRate)
+                        val linkedIds = linksByBudget[budget.id].orEmpty()
+                        val allCategoriesDeleted = budget.scope == BudgetScope.CATEGORY &&
+                            linkedIds.isNotEmpty() && linkedIds.none { it in categoriesById }
+                        BudgetWithProgress(budget, spent, progress, missingRate, allCategoriesDeleted)
                     }
 
                     val rangeStart = budgets.mapNotNull { it.startDate }.minOrNull()
@@ -154,6 +161,10 @@ class BudgetsViewModel @Inject constructor(
 
     fun deleteBudget(id: String) {
         viewModelScope.launch { budgetRepository.deleteBudget(id) }
+    }
+
+    fun restoreBudget(id: String) {
+        viewModelScope.launch { budgetRepository.restoreBudget(id) }
     }
 
     fun setDisplayCurrency(code: String) {

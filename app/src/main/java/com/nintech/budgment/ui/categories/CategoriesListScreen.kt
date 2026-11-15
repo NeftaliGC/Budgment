@@ -2,32 +2,31 @@ package com.nintech.budgment.ui.categories
 
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.ui.theme.BudgmentTheme
+import com.nintech.budgment.ui.common.ColorIconTile
+import com.nintech.budgment.ui.common.SurfaceSystemBars
+import com.nintech.budgment.ui.common.RowActionsMenu
+import com.nintech.budgment.ui.common.rememberUndoableDelete
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.pluralStringResource
 
 @Composable
 fun CategoriesListScreen(
@@ -38,13 +37,20 @@ fun CategoriesListScreen(
 ) {
     if (viewModel != null) {
         val uiState by viewModel.uiState.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
 
         CategoriesListScreen(
             uiState = uiState,
             onBackClick = onBackClick,
             onAddCategoryClick = onAddCategoryClick,
             onCategoryClick = onCategoryClick,
-            onDeleteCategory = viewModel::deleteCategory
+            onDeleteCategory = rememberUndoableDelete(
+                snackbarHostState = snackbarHostState,
+                message = stringResource(R.string.categories_deleted_message),
+                onDelete = viewModel::deleteCategory,
+                onRestore = viewModel::restoreCategory
+            ),
+            snackbarHostState = snackbarHostState
         )
     } else {
         CategoriesListScreen(
@@ -64,8 +70,33 @@ fun CategoriesListScreen(
     onBackClick: () -> Unit,
     onAddCategoryClick: () -> Unit,
     onCategoryClick: (String) -> Unit,
-    onDeleteCategory: (String) -> Unit
+    onDeleteCategory: (String) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
+    SurfaceSystemBars()
+
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    uiState.categories.firstOrNull { it.id == pendingDeleteId }?.let { category ->
+        val count = uiState.transactionCounts[category.id] ?: 0
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text(stringResource(R.string.categories_delete_confirm_title, category.name)) },
+            text = { Text(pluralStringResource(R.plurals.categories_delete_confirm_message, count, count)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteCategory(category.id)
+                        pendingDeleteId = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.common_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteId = null }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -77,6 +108,7 @@ fun CategoriesListScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddCategoryClick,
@@ -95,14 +127,14 @@ fun CategoriesListScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = stringResource(R.string.categories_empty_title),
-                        fontSize = 18.sp, fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.categories_empty_subtitle),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -111,13 +143,36 @@ fun CategoriesListScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                items(uiState.categories, key = { it.id }) { category ->
-                    CategoryRow(
-                        category = category,
-                        onClick = { onCategoryClick(category.id) },
-                        onDeleteClick = { onDeleteCategory(category.id) }
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                CategoryType.entries.forEach { type ->
+                    val typeCategories = uiState.categories.filter { it.type == type }
+                    if (typeCategories.isNotEmpty()) {
+                        item(key = "header_${type.name}") {
+                            Text(
+                                text = stringResource(
+                                    if (type == CategoryType.EXPENSE) R.string.categories_section_expense
+                                    else R.string.categories_section_income
+                                ),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                            )
+                        }
+                        items(typeCategories, key = { it.id }) { category ->
+                            CategoryRow(
+                                category = category,
+                                onClick = { onCategoryClick(category.id) },
+                                onDeleteClick = {
+                                    // Con movimientos se avisa antes; sin ellos basta con "Deshacer".
+                                    if ((uiState.transactionCounts[category.id] ?: 0) > 0) {
+                                        pendingDeleteId = category.id
+                                    } else {
+                                        onDeleteCategory(category.id)
+                                    }
+                                }
+                            )
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        }
+                    }
                 }
             }
         }
@@ -138,38 +193,15 @@ private fun CategoryRow(category: CategoryEntity, onClick: () -> Unit, onDeleteC
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(accentColor.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                } else {
-                    Box(Modifier.size(10.dp).background(accentColor, CircleShape))
-                }
-            }
+            ColorIconTile(color = accentColor, icon = icon, size = 36.dp, cornerRadius = 10.dp)
             Spacer(Modifier.width(12.dp))
             Column {
-                Text(category.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
+                Text(category.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(Modifier.height(2.dp))
-                Text(category.type.label(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                Text(category.type.label(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        IconButton(onClick = onDeleteClick) {
-            Icon(
-                Icons.Filled.Delete,
-                contentDescription = stringResource(R.string.categories_delete_content_description),
-                tint = MaterialTheme.colorScheme.error
-            )
-        }
+        RowActionsMenu(deleteLabel = stringResource(R.string.categories_delete_content_description), onDeleteClick = onDeleteClick)
     }
 }
 

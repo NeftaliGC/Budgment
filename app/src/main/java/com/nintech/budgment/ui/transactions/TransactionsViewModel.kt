@@ -18,7 +18,11 @@ data class TransactionWithDetails(
     val transaction: TransactionEntity,
     val accountName: String,
     val categoryName: String,
-    val categoryType: CategoryType
+    val categoryType: CategoryType,
+    /** La cuenta fue eliminada: el movimiento queda en el historial, solo de lectura. */
+    val accountDeleted: Boolean = false,
+    /** La categoría fue eliminada: el movimiento se conserva y se puede reasignar al editarlo. */
+    val categoryDeleted: Boolean = false
 )
 
 data class TransactionsUiState(
@@ -42,8 +46,8 @@ class TransactionsViewModel @Inject constructor(
             } else {
                 combine(
                     transactionRepository.observeTransactions(userId),
-                    accountRepository.observeAccounts(userId),
-                    categoryRepository.observeCategories(userId)
+                    accountRepository.observeAccountsIncludingDeleted(userId),
+                    categoryRepository.observeCategoriesIncludingDeleted(userId)
                 ) { transactions, accounts, categories ->
                     val accountsById = accounts.associateBy { it.id }
                     val categoriesById = categories.associateBy { it.id }
@@ -51,11 +55,14 @@ class TransactionsViewModel @Inject constructor(
                         .sortedByDescending { it.date }
                         .mapNotNull { tx ->
                             val category = categoriesById[tx.categoryId] ?: return@mapNotNull null
+                            val account = accountsById[tx.accountId]
                             TransactionWithDetails(
                                 transaction = tx,
-                                accountName = accountsById[tx.accountId]?.name.orEmpty(),
+                                accountName = account?.name.orEmpty(),
                                 categoryName = category.name,
-                                categoryType = category.type
+                                categoryType = category.type,
+                                accountDeleted = account?.deletedAt != null,
+                                categoryDeleted = category.deletedAt != null
                             )
                         }
                     TransactionsUiState(transactions = details, isLoading = false)
@@ -66,5 +73,9 @@ class TransactionsViewModel @Inject constructor(
 
     fun deleteTransaction(id: String) {
         viewModelScope.launch { transactionRepository.deleteTransaction(id) }
+    }
+
+    fun restoreTransaction(id: String) {
+        viewModelScope.launch { transactionRepository.restoreTransaction(id) }
     }
 }

@@ -15,6 +15,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.nintech.budgment.ui.common.parseAmountToCents
+import com.nintech.budgment.ui.common.centsToInputText
 
 data class BudgetFormState(
     val name: String = "",
@@ -25,7 +27,9 @@ data class BudgetFormState(
     val isEditing: Boolean = false,
     val isSaved: Boolean = false,
     val isLoading: Boolean = true,
-    val errorMessage: Boolean = false
+    val nameError: Boolean = false,
+    val amountError: Boolean = false,
+    val categoriesError: Boolean = false
 )
 
 @HiltViewModel
@@ -54,7 +58,7 @@ class BudgetFormViewModel @Inject constructor(
                     val selected = budgetRepository.getCategoryIds(id).toSet()
                     _state.value = _state.value.copy(
                         name = budget.name,
-                        amountLimitText = (budget.amountLimit / 100.0).toString(),
+                        amountLimitText = centsToInputText(budget.amountLimit),
                         scope = budget.scope,
                         selectedCategoryIds = selected
                     )
@@ -63,30 +67,33 @@ class BudgetFormViewModel @Inject constructor(
         }
     }
 
-    fun onNameChange(v: String) { _state.value = _state.value.copy(name = v, errorMessage = false) }
-    fun onAmountChange(v: String) { _state.value = _state.value.copy(amountLimitText = v, errorMessage = false) }
-    fun onScopeChange(v: BudgetScope) { _state.value = _state.value.copy(scope = v) }
+    fun onNameChange(v: String) { _state.value = _state.value.copy(name = v, nameError = false) }
+    fun onAmountChange(v: String) { _state.value = _state.value.copy(amountLimitText = v, amountError = false) }
+    fun onScopeChange(v: BudgetScope) { _state.value = _state.value.copy(scope = v, categoriesError = false) }
     fun onCategoryToggle(categoryId: String) {
         val current = _state.value.selectedCategoryIds
-        _state.value = _state.value.copy(selectedCategoryIds = if (categoryId in current) current - categoryId else current + categoryId)
+        _state.value = _state.value.copy(selectedCategoryIds = if (categoryId in current) current - categoryId else current + categoryId, categoriesError = false)
     }
 
     fun save() {
         val s = _state.value
-        val limit = s.amountLimitText.toDoubleOrNull()
-        if (s.name.isBlank() || limit == null || limit <= 0 || (s.scope == BudgetScope.CATEGORY && s.selectedCategoryIds.isEmpty())) {
-            _state.value = s.copy(errorMessage = true)
+        val cents = parseAmountToCents(s.amountLimitText)
+        val name = s.name.trim()
+        val nameError = name.isBlank()
+        val amountError = cents == null || cents <= 0
+        val categoriesError = s.scope == BudgetScope.CATEGORY && s.selectedCategoryIds.isEmpty()
+        if (nameError || amountError || categoriesError || cents == null) {
+            _state.value = s.copy(nameError = nameError, amountError = amountError, categoriesError = categoriesError)
             return
         }
-        val cents = (limit * 100).toLong()
         val (start, end) = currentMonthRange()
 
         viewModelScope.launch {
             existingBudget?.let { budget ->
-                budgetRepository.updateBudget(budget, s.name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
+                budgetRepository.updateBudget(budget, name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
             } ?: run {
                 val userId = sessionManager.currentUserId.filterNotNull().first()
-                budgetRepository.createBudget(userId, s.name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
+                budgetRepository.createBudget(userId, name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
             }
             _state.value = _state.value.copy(isSaved = true)
         }

@@ -31,7 +31,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.nintech.budgment.R
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import com.nintech.budgment.ui.theme.ChromeBackground
@@ -64,7 +63,7 @@ fun BudgmentTopBar(
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.header_greeting, userName), fontSize = 16.sp)
+                    Text(stringResource(R.string.header_greeting, userName), style = MaterialTheme.typography.titleMedium)
                 }
 
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {

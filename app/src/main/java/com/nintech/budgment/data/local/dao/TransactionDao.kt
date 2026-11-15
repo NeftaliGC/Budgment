@@ -36,4 +36,7 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE transactions SET deletedAt = NULL WHERE id = :id")
+    suspend fun restore(id: String)
 }

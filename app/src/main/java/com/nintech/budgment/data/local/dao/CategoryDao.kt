@@ -21,9 +21,16 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE userId = :userId AND deletedAt IS NULL ORDER BY name")
     fun observeCategories(userId: String): Flow<List<CategoryEntity>>
 
+    /** Incluye las categorías eliminadas: sirve para mostrar el historial de movimientos. */
+    @Query("SELECT * FROM categories WHERE userId = :userId ORDER BY name")
+    fun observeAllCategories(userId: String): Flow<List<CategoryEntity>>
+
     @Query("SELECT * FROM categories WHERE parentCategoryId = :parentId AND deletedAt IS NULL ORDER BY name")
     fun observeSubcategories(parentId: String): Flow<List<CategoryEntity>>
 
     @Query("UPDATE categories SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE categories SET deletedAt = NULL WHERE id = :id")
+    suspend fun restore(id: String)
 }

@@ -5,6 +5,17 @@
     <string name="common_password_show">Mostrar</string>
     <string name="common_password_hide">Ocultar</string>
     <string name="common_back">Volver</string>
+    <string name="common_undo">Deshacer</string>
+    <string name="common_delete">Eliminar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_understood">Entendido</string>
+    <string name="common_accept">Aceptar</string>
+    <string name="common_today">Hoy</string>
+
+    <!-- Errores de formulario compartidos -->
+    <string name="form_error_name_required">Escribe un nombre</string>
+    <string name="form_error_invalid_amount">Ingresa un monto válido, por ejemplo 1500.50</string>
+    <string name="common_more_options">Más opciones</string>
 
     <!-- Header -->
     <string name="header_greeting">Hola, %1$s</string>
@@ -75,6 +86,10 @@
     <string name="accounts_count_format">%1$d cuentas</string>
     <string name="accounts_missing_rates">%1$d cuenta(s) sin convertir (tasa no disponible)</string>
     <string name="accounts_credit_limit_format">Límite: %1$s</string>
+    <string name="accounts_delete_confirm_title">¿Eliminar «%1$s»?</string>
+    <string name="accounts_delete_confirm_message">La cuenta dejará de aparecer en tus listas. Sus movimientos se conservan en el historial.</string>
+    <string name="accounts_delete_blocked_title">Esta cuenta tiene saldo</string>
+    <string name="accounts_delete_blocked_message">«%1$s» tiene un saldo de %2$s. Solo puedes eliminar una cuenta cuando su saldo es cero.</string>
 
     <!-- Account form -->
     <string name="account_form_title_new">Nueva cuenta</string>
@@ -86,6 +101,12 @@
     <string name="account_form_statement_day_label">Día de corte</string>
     <string name="account_form_payment_due_day_label">Día límite de pago</string>
     <string name="account_form_save_button">Guardar</string>
+    <string name="account_form_initial_balance_label">Saldo inicial (opcional)</string>
+    <string name="account_form_initial_balance_hint">El dinero que ya tienes en esta cuenta</string>
+    <string name="account_form_initial_debt_label">Deuda actual (opcional)</string>
+    <string name="account_form_initial_debt_hint">Lo que debes hoy en esta tarjeta</string>
+    <string name="account_form_initial_balance_error">Ingresa un monto válido, por ejemplo 1500.50</string>
+    <string name="account_form_error_day">Escribe un día del 1 al 31</string>
     <string name="account_form_color_auto_hint">si no eliges color se usa el automático según el tipo de cuenta</string>
 
     <!-- Account types -->
@@ -101,6 +122,15 @@
     <string name="categories_empty_subtitle">Agrega categorías para poder clasificar tus movimientos</string>
     <string name="categories_add_content_description">Agregar categoría</string>
     <string name="categories_delete_content_description">Eliminar categoría</string>
+    <string name="categories_deleted_message">Categoría eliminada</string>
+    <string name="categories_section_expense">Gastos</string>
+    <string name="categories_section_income">Ingresos</string>
+    <string name="categories_delete_confirm_title">¿Eliminar «%1$s»?</string>
+    <plurals name="categories_delete_confirm_message">
+        <item quantity="one">Tiene %1$d movimiento. Se conserva en el historial y sigue contando en tus saldos y presupuestos.</item>
+        <item quantity="many">Tiene %1$d movimientos. Se conservan en el historial y siguen contando en tus saldos y presupuestos.</item>
+        <item quantity="other">Tiene %1$d movimientos. Se conservan en el historial y siguen contando en tus saldos y presupuestos.</item>
+    </plurals>
 
     <!-- Category form -->
     <string name="category_form_title_new">Nueva categoría</string>
@@ -127,6 +157,9 @@
     <string name="transactions_empty_subtitle">Registra tu primer ingreso o gasto</string>
     <string name="transactions_add_content_description">Agregar movimiento</string>
     <string name="transactions_delete_content_description">Eliminar movimiento</string>
+    <string name="transactions_deleted_message">Movimiento eliminado</string>
+    <string name="transactions_deleted_account_format">%1$s (cuenta eliminada)</string>
+    <string name="transactions_deleted_category_format">%1$s (categoría eliminada)</string>
     <string name="transactions_no_description">Sin descripción</string>
 
     <!-- Transaction form -->
@@ -137,10 +170,17 @@
     <string name="transaction_form_amount_label">Monto</string>
     <string name="transaction_form_description_label">Descripción (opcional)</string>
     <string name="transaction_form_save_button">Guardar</string>
-    <string name="transaction_form_error_missing_fields">Selecciona cuenta y categoría, e ingresa un monto</string>
+    <string name="transaction_form_date_label">Fecha</string>
+    <string name="transaction_form_date_pick_content_description">Elegir fecha</string>
+    <string name="transaction_form_error_amount_required">Ingresa un monto</string>
+    <string name="transaction_form_error_category_required">Elige una categoría</string>
+    <string name="transaction_form_error_account_required">Elige una cuenta</string>
+    <string name="transaction_form_no_expense_categories">Aún no tienes categorías de gasto</string>
+    <string name="transaction_form_no_income_categories">Aún no tienes categorías de ingreso</string>
+    <string name="transaction_form_create_category">Crear categoría</string>
+    <string name="transaction_form_create_account">Crear cuenta</string>
     <string name="transaction_form_error_invalid_amount">Ingresa un monto válido mayor a cero</string>
     <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos</string>
-    <string name="transaction_form_no_categories">Primero crea una categoría para poder registrar movimientos</string>
 
     <!-- Budgets -->
     <string name="budgets_title">Presupuestos</string>
@@ -148,6 +188,8 @@
     <string name="budgets_empty_subtitle">Crea un presupuesto para controlar tu gasto mensual</string>
     <string name="budgets_add_content_description">Agregar presupuesto</string>
     <string name="budgets_delete_content_description">Eliminar presupuesto</string>
+    <string name="budgets_deleted_message">Presupuesto eliminado</string>
+    <string name="budgets_categories_deleted_note">Sus categorías fueron eliminadas. Sigue contando lo ya registrado.</string>
     <string name="budgets_spent_format">%1$s de %2$s</string>
     <string name="budgets_period_current_month">Este mes</string>
     <string name="budgets_summary_title">Resumen del mes</string>
@@ -168,11 +210,53 @@
     <string name="budget_form_scope_label">Alcance</string>
     <string name="budget_form_categories_label">Categorías incluidas</string>
     <string name="budget_form_save_button">Guardar</string>
-    <string name="budget_form_error">Completa el nombre, un límite válido, y al menos una categoría si el alcance es por categoría</string>
+    <string name="budget_form_error_amount">Ingresa un límite mayor a cero</string>
+    <string name="budget_form_error_categories_required">Elige al menos una categoría</string>
     <string name="budget_form_no_expense_categories">Primero crea una categoría de tipo Gasto para presupuestos por categoría</string>
 
     <!-- Budget scope -->
     <string name="budget_scope_global">Global</string>
     <string name="budget_scope_category">Por categoría</string>
+
+    <!-- Nombres de iconos (lector de pantalla) -->
+    <string name="icon_wallet">Billetera</string>
+    <string name="icon_card">Tarjeta</string>
+    <string name="icon_cash">Dinero</string>
+    <string name="icon_payments">Billetes</string>
+    <string name="icon_savings">Ahorro</string>
+    <string name="icon_bank">Banco</string>
+    <string name="icon_investment">Inversión</string>
+    <string name="icon_restaurant">Restaurante</string>
+    <string name="icon_fastfood">Comida rápida</string>
+    <string name="icon_grocery">Supermercado</string>
+    <string name="icon_cart">Compras</string>
+    <string name="icon_transport">Transporte</string>
+    <string name="icon_gas">Gasolina</string>
+    <string name="icon_home">Hogar</string>
+    <string name="icon_bed">Alojamiento</string>
+    <string name="icon_health">Salud y ejercicio</string>
+    <string name="icon_entertainment">Entretenimiento</string>
+    <string name="icon_games">Videojuegos</string>
+    <string name="icon_travel">Viajes</string>
+    <string name="icon_school">Educación</string>
+    <string name="icon_pets">Mascotas</string>
+    <string name="icon_phone">Teléfono</string>
+    <string name="icon_uses">Servicios</string>
+    <string name="icon_salary">Trabajo</string>
+    <string name="icon_income">Pagos</string>
+
+    <!-- Nombres de colores (lector de pantalla) -->
+    <string name="color_red">Rojo</string>
+    <string name="color_pink">Rosa</string>
+    <string name="color_purple">Púrpura</string>
+    <string name="color_indigo">Índigo</string>
+    <string name="color_blue">Azul</string>
+    <string name="color_teal">Verde azulado</string>
+    <string name="color_green">Verde</string>
+    <string name="color_light_green">Verde claro</string>
+    <string name="color_amber">Ámbar</string>
+    <string name="color_orange">Naranja</string>
+    <string name="color_brown">Café</string>
+    <string name="color_blue_grey">Gris azulado</string>
 
 </resources>

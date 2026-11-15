@@ -29,29 +29,31 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.StringRes
+import com.nintech.budgment.R
 
-enum class CategoryIcon(val key: String) {
-    RESTAURANT("restaurant"),
-    FASTFOOD("fastfood"),
-    GROCERY("grocery"),
-    CART("cart"),
-    TRANSPORT("transport"),
-    GAS("gas"),
-    HOME("home"),
-    BED("bed"),
-    HEALTH("health"),
-    ENTERTAINMENT("entertainment"),
-    GAMES("games"),
-    TRAVEL("travel"),
-    SCHOOL("school"),
-    PETS("pets"),
-    PHONE("phone"),
-    USES("uses"),
-    SALARY("salary"),
-    INCOME("income"),
-    BANK("bank"),
-    SAVINGS("savings"),
-    INVESTMENT("investment");
+enum class CategoryIcon(val key: String, @StringRes val labelRes: Int) {
+    RESTAURANT("restaurant", R.string.icon_restaurant),
+    FASTFOOD("fastfood", R.string.icon_fastfood),
+    GROCERY("grocery", R.string.icon_grocery),
+    CART("cart", R.string.icon_cart),
+    TRANSPORT("transport", R.string.icon_transport),
+    GAS("gas", R.string.icon_gas),
+    HOME("home", R.string.icon_home),
+    BED("bed", R.string.icon_bed),
+    HEALTH("health", R.string.icon_health),
+    ENTERTAINMENT("entertainment", R.string.icon_entertainment),
+    GAMES("games", R.string.icon_games),
+    TRAVEL("travel", R.string.icon_travel),
+    SCHOOL("school", R.string.icon_school),
+    PETS("pets", R.string.icon_pets),
+    PHONE("phone", R.string.icon_phone),
+    USES("uses", R.string.icon_uses),
+    SALARY("salary", R.string.icon_salary),
+    INCOME("income", R.string.icon_income),
+    BANK("bank", R.string.icon_bank),
+    SAVINGS("savings", R.string.icon_savings),
+    INVESTMENT("investment", R.string.icon_investment);
 
     val icon: ImageVector
         get() = try {

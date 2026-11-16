@@ -2,8 +2,10 @@ package com.nintech.budgment.di
 
 import android.content.Context
 import androidx.room.Room
+import com.nintech.budgment.data.backup.PendingRestore
 import com.nintech.budgment.data.local.ALL_MIGRATIONS
 import com.nintech.budgment.data.local.BudgmentDatabase
+import com.nintech.budgment.data.local.DATABASE_NAME
 import com.nintech.budgment.data.local.DATABASE_VERSION
 import com.nintech.budgment.data.local.PreMigrationBackup
 import com.nintech.budgment.data.local.dao.AccountDao
@@ -28,8 +30,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-private const val DATABASE_NAME = "budgment.db"
-
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -38,6 +38,8 @@ object DatabaseModule {
     fun provideBudgmentDatabase(
         @ApplicationContext context: Context
     ): BudgmentDatabase {
+        // Si el usuario restauró un respaldo, se aplica ahora que nadie tiene abierta la base.
+        PendingRestore.applyIfAny(context, DATABASE_NAME)
         // Antes de migrar se guarda una copia de la base tal como está.
         PreMigrationBackup.backupIfUpgrading(context, DATABASE_NAME, DATABASE_VERSION)
         return Room.databaseBuilder(

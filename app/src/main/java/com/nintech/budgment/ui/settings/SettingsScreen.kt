@@ -65,7 +65,8 @@ fun SettingsScreen(
                         onTimeoutChange = viewModel::setLockTimeout
                     )
                 }
-            }
+            },
+            backup = { BackupSection() }
         )
     } else {
         SettingsScreenContent(
@@ -74,7 +75,8 @@ fun SettingsScreen(
             onBackClick = onBackClick,
             security = {
                 SecuritySection(AppLockConfig(), onPinSetupClick, onBiometricChange = {}, onTimeoutChange = {})
-            }
+            },
+            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
         )
     }
 }
@@ -85,7 +87,8 @@ fun SettingsScreenContent(
     state: SettingsUiState,
     onDefaultCurrencyChange: (String) -> Unit,
     onBackClick: () -> Unit,
-    security: @Composable () -> Unit = {}
+    security: @Composable () -> Unit = {},
+    backup: @Composable () -> Unit = {}
 ) {
     SurfaceSystemBars()
 
@@ -176,6 +179,9 @@ fun SettingsScreenContent(
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))
             security()
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            backup()
         }
     }
 }
@@ -191,7 +197,8 @@ private fun SettingsScreenPreview() {
             onBackClick = {},
             security = {
                 SecuritySection(AppLockConfig(enabled = true, pinLength = 4), {}, {}, {})
-            }
+            },
+            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
         )
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nintech.budgment.ui.common.HeroSystemBars
 import com.nintech.budgment.ui.common.toMessage
+import com.nintech.budgment.ui.settings.RestoreBackupButton
 import com.nintech.budgment.ui.theme.ChromeBackground
 import com.nintech.budgment.ui.theme.ChromeContent
 
@@ -49,7 +50,8 @@ fun LoginScreen(
             onLoginClick = viewModel::login,
             onLoginSuccess = onLoginSuccess,
             onRegisterClick = onRegisterClick,
-            modifier = modifier
+            modifier = modifier,
+            restoreBackup = { RestoreBackupButton() }
         )
     } else {
         LoginContent(
@@ -74,7 +76,8 @@ fun LoginContent(
     onLoginClick: () -> Unit,
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    restoreBackup: @Composable () -> Unit = {}
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -256,6 +259,11 @@ fun LoginContent(
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
+                }
+
+                // En un teléfono nuevo no hay cuenta con la que entrar: el respaldo se restaura desde aquí.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    restoreBackup()
                 }
             }
         }

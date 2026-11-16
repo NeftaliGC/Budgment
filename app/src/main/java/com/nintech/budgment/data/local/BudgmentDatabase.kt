@@ -34,6 +34,8 @@ import com.nintech.budgment.data.local.entity.TransactionTagEntity
 import com.nintech.budgment.data.local.entity.TransferEntity
 import com.nintech.budgment.data.local.entity.UserEntity
 
+const val DATABASE_NAME = "budgment.db"
+
 /** Versión del esquema. Al subirla, agregar su migración en Migrations.kt. */
 const val DATABASE_VERSION = 6
 

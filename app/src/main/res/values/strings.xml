@@ -63,6 +63,47 @@
     <string name="settings_lock_timeout_minutes">Tras %1$d min fuera</string>
     <string name="settings_lock_note">Si olvidas el PIN, puedes desbloquear con la contraseña de tu cuenta.</string>
 
+    <!-- Respaldo -->
+    <string name="settings_backup_title">Respaldo</string>
+    <string name="settings_backup_description">Guarda una copia de tus datos en un archivo protegido con contraseña. Puedes dejarlo en tu teléfono, en Drive o donde prefieras.</string>
+    <string name="settings_backup_create">Crear respaldo</string>
+    <string name="settings_backup_restore">Restaurar un respaldo</string>
+    <string name="settings_backup_note">El respaldo incluye todo lo guardado en Budgment en este teléfono, también los datos de otros usuarios si los hay.</string>
+    <string name="backup_file_name">Budgment %1$s.budgment</string>
+    <string name="backup_password_title">Contraseña del respaldo</string>
+    <string name="backup_password_text">El archivo se cifra con esta contraseña. Sin ella no se puede restaurar y no hay forma de recuperarla.</string>
+    <string name="backup_password_label">Contraseña</string>
+    <string name="backup_password_confirm_label">Confirmar contraseña</string>
+    <string name="backup_password_too_short">Usa al menos %1$d caracteres</string>
+    <string name="backup_password_continue">Elegir dónde guardar</string>
+    <string name="backup_exporting">Creando respaldo…</string>
+    <string name="backup_export_done_title">Respaldo creado</string>
+    <string name="backup_export_done_text">Conserva la contraseña: sin ella el archivo no se puede abrir.</string>
+    <string name="backup_export_failed_title">No se pudo crear el respaldo</string>
+    <string name="backup_export_failed_text">Revisa que haya espacio en el lugar que elegiste e inténtalo de nuevo.</string>
+    <string name="backup_restore_title">Restaurar respaldo</string>
+    <string name="backup_restore_password_text">Respaldo del %1$s. Escribe la contraseña con la que se creó.</string>
+    <string name="backup_restore_wrong_password">Contraseña incorrecta</string>
+    <string name="backup_restore_open">Abrir</string>
+    <string name="backup_restore_checking">Abriendo respaldo…</string>
+    <string name="backup_restore_confirm_title">¿Reemplazar tus datos?</string>
+    <string name="backup_restore_confirm_text">Todo lo que hay ahora en Budgment se reemplazará por el respaldo del %1$s (%2$s y %3$s). Budgment se reiniciará y tendrás que iniciar sesión con un usuario de ese respaldo.</string>
+    <plurals name="backup_accounts_count">
+        <item quantity="one">%1$d cuenta</item>
+        <item quantity="other">%1$d cuentas</item>
+    </plurals>
+    <plurals name="backup_transactions_count">
+        <item quantity="one">%1$d movimiento</item>
+        <item quantity="other">%1$d movimientos</item>
+    </plurals>
+    <string name="backup_restore_confirm">Reemplazar</string>
+    <string name="backup_restoring">Restaurando…</string>
+    <string name="backup_restore_failed_title">No se pudo restaurar</string>
+    <string name="backup_error_not_a_backup">Ese archivo no es un respaldo de Budgment.</string>
+    <string name="backup_error_newer_version">Ese respaldo se creó con una versión más reciente de Budgment. Actualiza la app para restaurarlo.</string>
+    <string name="backup_error_corrupt">El archivo está dañado y no se puede restaurar.</string>
+    <string name="backup_error_read">No se pudo leer el archivo. Inténtalo de nuevo.</string>
+
     <!-- Bloqueo -->
     <string name="lock_title">Ingresa tu PIN</string>
     <string name="lock_wrong_pin">PIN incorrecto</string>

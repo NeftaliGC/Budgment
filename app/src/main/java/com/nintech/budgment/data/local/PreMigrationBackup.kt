@@ -8,7 +8,8 @@ import java.io.File
 /**
  * Antes de que Room actualice el esquema, copia la base de datos tal como está. Si una migración
  * resultara incorrecta (aunque no falle), los datos originales siguen en la copia y se pueden
- * recuperar en una versión posterior de la app.
+ * recuperar en una versión posterior de la app. También guarda la base actual antes de
+ * reemplazarla por un respaldo.
  *
  * Las copias van a `noBackupFilesDir/db-backups`, fuera del respaldo automático de Android, y se
  * conservan las [KEEP] más recientes.
@@ -29,19 +30,38 @@ object PreMigrationBackup {
         try {
             val currentVersion = readVersion(dbFile) ?: return
             if (currentVersion == 0 || currentVersion >= targetVersion) return
-
-            val dir = File(context.noBackupFilesDir, DIR).apply { mkdirs() }
-            val base = "${dbFile.nameWithoutExtension}-v$currentVersion-${System.currentTimeMillis()}"
-            // Con WAL, los cambios recientes pueden estar en -wal: se copian los tres archivos juntos.
-            listOf("", "-wal", "-shm").forEach { suffix ->
-                val source = File(dbFile.path + suffix)
-                if (source.exists()) source.copyTo(File(dir, "$base.db$suffix"), overwrite = true)
-            }
-            pruneOldBackups(dir)
-            Log.i(TAG, "Copia antes de migrar v$currentVersion → v$targetVersion: $base.db")
+            val name = copy(context, dbFile, "v$currentVersion")
+            Log.i(TAG, "Copia antes de migrar v$currentVersion → v$targetVersion: $name")
         } catch (e: Exception) {
             Log.w(TAG, "No se pudo copiar la base antes de migrar", e)
         }
+    }
+
+    /**
+     * Copia [databaseName] antes de reemplazarla por un respaldo, por si el usuario restauró el
+     * archivo equivocado. Nunca lanza.
+     */
+    fun backupBeforeRestore(context: Context, databaseName: String) {
+        val dbFile = context.getDatabasePath(databaseName)
+        if (!dbFile.exists()) return
+        try {
+            val name = copy(context, dbFile, "antes-de-restaurar")
+            Log.i(TAG, "Copia antes de restaurar un respaldo: $name")
+        } catch (e: Exception) {
+            Log.w(TAG, "No se pudo copiar la base antes de restaurar", e)
+        }
+    }
+
+    private fun copy(context: Context, dbFile: File, label: String): String {
+        val dir = File(context.noBackupFilesDir, DIR).apply { mkdirs() }
+        val base = "${dbFile.nameWithoutExtension}-$label-${System.currentTimeMillis()}"
+        // Con WAL, los cambios recientes pueden estar en -wal: se copian los tres archivos juntos.
+        listOf("", "-wal", "-shm").forEach { suffix ->
+            val source = File(dbFile.path + suffix)
+            if (source.exists()) source.copyTo(File(dir, "$base.db$suffix"), overwrite = true)
+        }
+        pruneOldBackups(dir)
+        return "$base.db"
     }
 
     /** Lee `PRAGMA user_version` sin modificar el archivo. */

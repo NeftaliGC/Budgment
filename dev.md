@@ -174,6 +174,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - **DatabaseModule**: Crea `BudgmentDatabase` singleton con `ALL_MIGRATIONS` (v1→v6), sin fallback destructivo; antes de migrar guarda una copia (`PreMigrationBackup`)
 - **RepositoryModule**: Binds de los 8 repositorios
 - **NetworkModule**: Retrofit + OkHttpClient → `ExchangeRateApi` (Frankfurter API, base URL: `https://api.frankfurter.app/`)
+- **BackupManager** (`data/backup/`): `@Singleton` con `@Inject constructor`, sin módulo propio
 - **SessionModule**: DataStore (`budgment_session`) para user_id y display_currency
 
 ### SessionManager
@@ -282,15 +283,16 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 |---------|----------------|------------|
 | ✅ ~~Estadísticas~~ | Hecho: `ui/statistics/` (ver «Estadísticas» abajo). Pendiente: exportar reporte, filtrar por cuenta | — |
 | ✅ ~~PIN / biometría~~ | Hecho: ver «Bloqueo de la app» abajo | — |
-| Cifrar la base de datos | SQLCipher (o similar) con la clave en Android Keystore; migrar la BD existente sin cifrar a una cifrada sin perder datos; revisar el respaldo automático y el de Drive | Bloqueo de la app ✅ |
-| Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
+| ⏸️ Cifrar la base de datos | Descartado por ahora: ver «Descartado por ahora: cifrar la base de datos» | — |
+| ✅ ~~Respaldo a archivo~~ | Hecho: ver «Respaldo a archivo» abajo. Con el selector del sistema el archivo se puede guardar en Drive sin API ni credenciales | — |
+| Respaldo automático en Google Drive | Drive REST API + Worker programado, reutilizando el formato de «Respaldo a archivo». Necesita un proyecto de Google Cloud (cliente OAuth con el SHA-1 de la firma) | Respaldo a archivo ✅ |
 | ✅ ~~Notificaciones~~ | Hecho: bandeja, ajustes, recurrentes y alertas de presupuesto (ver «Notificaciones» abajo) | — |
 
 ### C. Funciones parciales
 
 | Feature | Estado | Falta |
 |---------|--------|-------|
-| Configuración | 🟡 Moneda por defecto y seguridad (PIN, huella o rostro) | Cambio de contraseña, borrar usuario, tema, respaldo, exportar CSV |
+| Configuración | 🟡 Moneda por defecto, seguridad (PIN, huella o rostro) y respaldo a archivo | Cambio de contraseña, borrar usuario, tema, exportar CSV |
 | Movimientos | 🟡 Lista por día con búsqueda y filtros | Filtro por etiqueta (cuando existan) |
 
 ### D. Deuda técnica
@@ -300,9 +302,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | ✅ ~~Quitar `fallbackToDestructiveMigration`~~ | Cadena completa v1→v6 + copia previa + `tools/verify_migrations.py` | Hecho |
 | ✅ ~~Versionar `app/schemas/`~~ | Versionados desde `38db1c3` (el 1.json no existe; el verificador lo reconstruye del 2) | Hecho |
-| Restaurar una copia previa a la migración | `noBackupFilesDir/db-backups`; sin UI | Con el respaldo en Drive |
+| Restaurar una copia previa a la migración o a una restauración | `noBackupFilesDir/db-backups`; sin UI | Pendiente |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest` y `AppLockPolicyTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest`, `AppLockPolicyTest` y `BackupCryptoTest`; instrumentado: `BackupRoundTripTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | ✅ ~~`backup_rules.xml` / `data_extraction_rules.xml`~~ | `res/xml/` | Hecho: respaldo automático de Android configurado |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -314,8 +316,8 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 4. ✅ ~~**Estadísticas**~~.
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
 6. ✅ ~~**Metas**~~, ✅ ~~filtros de movimientos~~. ⏸️ Etiquetas y subcategorías descartadas por ahora (ver «Descartado por ahora»).
-7. ✅ ~~**Migraciones reales**~~ → ✅ ~~**PIN/biometría**~~ → **respaldo en Drive**.
-8. **Adjuntos**. Más adelante: **cifrar la base de datos**.
+7. ✅ ~~**Migraciones reales**~~ → ✅ ~~**PIN/biometría**~~ → ✅ ~~**respaldo a archivo**~~.
+8. **Adjuntos** (y sumarlos al respaldo). Opcional: respaldo automático en Drive.
 9. Tests, pulido, README, publicación.
 
 ---
@@ -337,6 +339,26 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - **Etiquetas** (`TagEntity`, `TransactionTagEntity`): su caso principal (agrupar gastos de distintas categorías, p. ej. un viaje) ya lo cubren la nota + la búsqueda con rango de fechas, que además da el total
 - **Subcategorías** (`CategoryEntity.parentCategoryId`): mucha complejidad (selector en dos niveles, cómo suman en presupuestos y estadísticas, borrar un padre) para poco beneficio; basta con crear categorías más específicas
 - Las tablas y el campo se quedan sin uso: quitarlos exigiría otra migración sin ganar nada. Retomar solo si hay una necesidad concreta
+
+### ⏸️ Descartado por ahora: cifrar la base de datos (2026-11-16)
+- **Por qué no:** la clave tendría que poder usarse sin el usuario presente (`RecurringReminderWorker` abre la BD en segundo plano, el PIN es opcional y `users` vive en la misma BD), así que solo podría custodiarla el Android Keystore. Eso protege únicamente si alguien obtiene el archivo sin poder ejecutar nada en el teléfono; contra root o el teléfono desbloqueado no añade nada a lo que ya dan el cifrado del almacenamiento de Android, el aislamiento entre apps y el bloqueo de la app
+- **Qué costaría:** una forma nueva de perder todos los datos (clave del Keystore perdida, error al convertir la BD), un `BackupAgent` para que la clave viaje en el respaldo automático (solo se prueba a mano con `bmgr`), ~5 MB más de APK por arquitectura y perder el Database Inspector
+- **En su lugar:** se cifra lo que sale del teléfono (ver «Respaldo a archivo»)
+- **Retomar si:** la clave puede depender de un secreto del usuario (PIN obligatorio y avisos en segundo plano rediseñados) o hay un requisito externo de «base de datos cifrada». El diseño evaluado: SQLCipher + clave aleatoria envuelta por el Keystore en `noBackupFilesDir`, conversión de la BD con `sqlcipher_export` y clave escrita en claro solo durante el respaldo de Android
+
+### Respaldo a archivo
+- En Configuración → Respaldo (`ui/settings/BackupSection.kt`, `BackupViewModel`). «Crear respaldo»: pide una contraseña (mínimo 8 caracteres, dos veces) y abre el selector del sistema (`CreateDocument`) para elegir dónde guardar `Budgment <fecha>.budgment`: teléfono, Drive, USB… «Restaurar un respaldo»: selector (`OpenDocument`), contraseña, confirmación con fecha y cuántas cuentas y movimientos trae, y reinicio
+- «Restaurar un respaldo» también está en la pantalla de inicio de sesión (`RestoreBackupButton`), para un teléfono nuevo donde aún no hay ninguna cuenta. Ahí no se espera al desbloqueo: sin sesión no hay pantalla de bloqueo
+- **Qué contiene:** la base de datos completa, con **todos** los usuarios del teléfono. No incluye preferencias (DataStore) ni el PIN
+- **Formato** (`data/backup/BackupCrypto.kt`, puro, con tests): cabecera sin cifrar de 48 bytes (`BDGMBKUP`, versión del formato, fecha, versión del esquema, iteraciones, sal, prefijo del nonce) + contenido = BD comprimida con gzip y cifrada con AES-256-GCM en bloques de 64 KiB. Clave: PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal nueva por archivo. El número de bloque y la marca de «último» van en el nonce y la cabecera es dato autenticado de cada bloque: no se puede alterar, reordenar ni cortar sin que falle. Fallo en el primer bloque = contraseña incorrecta; en otro = archivo dañado
+- **Copia coherente** (`DatabaseSnapshot.create`): abre una BD nueva, le adjunta la que está en uso y copia tablas e índices en una transacción (Android 7 no tiene `VACUUM INTO`). No depende de cerrar Room ni de vaciar el -wal
+- **Restaurar en dos tiempos** (`PendingRestore`): con la app abierta solo se descifra a caché, se valida (`DatabaseSnapshot.inspect`: versión ≤ actual, `integrity_check`, tablas mínimas) y se deja como `budgment.db.restore`; se cierra la sesión y se reinicia el proceso. El reemplazo ocurre en `DatabaseModule` antes de abrir Room: copia de la BD actual a `db-backups` (`budgment-antes-de-restaurar-<fecha>.db`), borrar -wal/-shm y renombrar. Si el respaldo es de un esquema anterior, las migraciones lo ponen al día
+- `BackupManager` usa su propio `CoroutineScope`: cerrar la sesión destruye la pantalla de Configuración antes de terminar
+- **Bloqueo de la app:** el selector de archivos manda la app al fondo y al volver puede pedir el PIN; los diálogos del respaldo esperan a que se desbloquee (`BackupViewModel.unlocked`)
+- **Olvidar la contraseña = respaldo perdido.** No hay recuperación, y así se le dice al usuario
+- `Pbkdf2` (`data/local/security/`): usa el del sistema y, en Android 7 (API 24–25, donde `PBKDF2WithHmacSHA256` no existe), uno propio con el mismo resultado. `PasswordHasher` también lo usa: antes el inicio de sesión fallaba en esas versiones
+- **Pendiente:** adjuntos (cuando existan), respaldo automático programado, pantalla para recuperar las copias de `db-backups`
+- **Probar:** `./gradlew connectedDebugAndroidTest` corre `BackupRoundTripTest` con bases de nombre propio. ⚠️ Al terminar, Gradle puede desinstalar la app del dispositivo: usar un emulador o un teléfono sin datos reales
 
 ### WorkManager
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
@@ -395,7 +417,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - **¿Olvidaste tu PIN?:** con la contraseña de la cuenta se desbloquea y se quita el PIN
 - **Apps recientes:** con el bloqueo activo la miniatura no se muestra (`setRecentsScreenshotEnabled`, Android 13+). No se usa `FLAG_SECURE` para no bloquear capturas
 - `MainActivity` es `FragmentActivity` (lo exige `BiometricPrompt`)
-- **Límite:** protege la interfaz, no cifra la BD. Quien saque el archivo del teléfono (root, ADB con depuración) puede leerlo. Cifrado real: pendiente para después (ver «Cifrar la base de datos» en la tabla B)
+- **Límite:** protege la interfaz, no cifra la BD. Quien saque el archivo del teléfono (root, ADB con depuración) puede leerlo. Cifrar la BD se evaluó y se descartó por ahora (ver «Descartado por ahora: cifrar la base de datos»)
 
 ### Respaldo automático de Android (`backup_rules.xml` / `data_extraction_rules.xml`)
 - Se respaldan `database/budgment.db` (con -wal/-shm) y `file/datastore/` (sesión recordada y preferencias). Todo lo demás queda fuera; `noBackupFilesDir` (WorkManager, copias previas a migrar) y el caché nunca se respaldan

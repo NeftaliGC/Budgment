@@ -104,7 +104,10 @@ scope: BudgetScope, periodInterval, periodUnit: PeriodUnit,
 startDate, endDate, createdAt, updatedAt, deletedAt
 ```
 - `BudgetScope`: GLOBAL, CATEGORY
-- `PeriodUnit`: DAY, WEEK, MONTH, YEAR
+- `PeriodUnit`: DAY, WEEK, MONTH, YEAR (el formulario ofrece semanal, mensual y anual; intervalo 1)
+- **Periodos renovables**: `startDate` es el ancla (inicio del primer periodo, alineado al calendario: lunes, día 1 o 1 de enero). `BudgetPeriod.current()` / `BudgetEntity.currentPeriod()` calculan el periodo vigente al leer, sin trabajo en segundo plano. `endDate` ya no se usa (se guarda `null`)
+- `BudgetOverviewSource` se recalcula a medianoche (`dayTicks()`), así el presupuesto se renueva con la app abierta
+- El resumen usa una sola periodicidad: la del global, o sin global la más usada entre los de categoría (empate → mensual); los demás se marcan con `hasOtherPeriods`
 
 ### TransactionEntity
 ```kotlin
@@ -241,7 +244,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - `BudgetWithProgress` con spent calculado y progreso
 - `BudgetCard` con linkedCategories, delete button
 - Formulario: name, amountLimit, scope (GLOBAL/CATEGORY), category selector
-- `currentMonthRange()` helper para fechas
+- Selector de periodicidad (semanal/mensual/anual); cada tarjeta muestra «Mensual · se renueva el 1 dic»
 
 ---
 
@@ -272,7 +275,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Feature | Estado | Falta |
 |---------|--------|-------|
 | Subcategorías | 🟡 `parentCategoryId` en modelo | UI no lo usa: selector de padre en `CategoryFormScreen`, agrupar en lista, sumar hijas en presupuestos |
-| Periodos de presupuesto | 🟡 `BudgetRepository` fija `PeriodUnit.MONTH`, intervalo 1; el formulario usa `currentMonthRange()` | El presupuesto queda anclado al mes de creación y no se renueva. Calcular el periodo vigente a partir de `startDate` + `periodUnit`/`periodInterval`; permitir elegir periodo en el formulario |
 | Configuración | 🟡 Solo moneda por defecto | Cambio de contraseña, borrar usuario, tema, seguridad (PIN), respaldo, exportar CSV |
 | Movimientos | 🟡 Lista agrupada por día | Búsqueda y filtros (cuenta, categoría, rango de fechas, etiqueta) |
 
@@ -283,7 +285,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | Quitar `fallbackToDestructiveMigration` y escribir migraciones | `di/DatabaseModule.kt:44` (BD versión 3) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | Solo `AmountParserTest` y `BuildTransactionDetailsTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | Solo `AmountParserTest`, `BuildTransactionDetailsTest` y `BudgetPeriodTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -291,7 +293,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 1. ✅ ~~Deuda trivial: typo + este documento al día.~~
 2. ✅ ~~**Transferencias**~~.
-3. **WorkManager** como base → **recurrentes** + **renovación de periodos de presupuesto**.
+3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). **WorkManager** como base → **recurrentes**.
 4. **Estadísticas**.
 5. **Notificaciones** (reusa WorkManager).
 6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
@@ -373,7 +375,7 @@ android.application, kotlin.compose, hilt, ksp
 - `testImplementation libs.junit`
 - `androidTestImplementation libs.androidx.junit`
 - `androidTestImplementation libs.androidx.espresso.core`
-- `AmountParserTest` y `BuildTransactionDetailsTest` (unitarios). Sin tests de repos, ViewModels ni DAOs.
+- `AmountParserTest`, `BuildTransactionDetailsTest` y `BudgetPeriodTest` (unitarios). Sin tests de repos, ViewModels ni DAOs.
 
 ### KSP
 - `ksp` plugin aplicado

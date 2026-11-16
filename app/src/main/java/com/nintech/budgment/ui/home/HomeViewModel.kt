@@ -2,6 +2,7 @@ package com.nintech.budgment.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nintech.budgment.data.model.PeriodUnit
 import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.CategoryRepository
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -31,15 +31,17 @@ data class HomeUiState(
     val totalBalance: Long = 0,
     val missingRateAccounts: Int = 0,
     /**
-     * Límite y gastado del mes: los del presupuesto global si hay; si no, la suma de los
+     * Límite y gastado del periodo vigente: los del presupuesto global si hay; si no, la suma de los
      * presupuestos por categoría. Mismas cifras que el resumen de la pestaña Presupuestos.
      */
     val budgetAllocated: Long = 0,
     val budgetSpent: Long = 0,
     val budgetFromGlobal: Boolean = false,
     val topBudgets: List<BudgetWithProgress> = emptyList(),
-    val dayOfMonth: Int = 1,
-    val daysInMonth: Int = 30,
+    /** Periodicidad del resumen (semana, mes o año): da el título de la tarjeta. */
+    val budgetPeriodUnit: PeriodUnit = PeriodUnit.MONTH,
+    /** Días que faltan para que el presupuesto del resumen se renueve, contando hoy. */
+    val budgetDaysLeft: Int = 1,
     val recentTransactions: List<TransactionWithDetails> = emptyList(),
     val isLoading: Boolean = true
 ) {
@@ -48,11 +50,8 @@ data class HomeUiState(
 
     val budgetSpentFraction: Float get() = if (hasBudgets) budgetSpent.toFloat() / budgetAllocated else 0f
 
-    /** Días que faltan del mes, contando hoy. */
-    val daysLeftInMonth: Int get() = (daysInMonth - dayOfMonth + 1).coerceAtLeast(1)
-
-    /** Lo que se puede gastar por día para llegar a fin de mes sin pasarse. */
-    val budgetPerDayLeft: Long get() = if (budgetRemaining > 0) budgetRemaining / daysLeftInMonth else 0
+    /** Lo que se puede gastar por día para llegar al final del periodo sin pasarse. */
+    val budgetPerDayLeft: Long get() = if (budgetRemaining > 0) budgetRemaining / budgetDaysLeft else 0
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -100,7 +99,6 @@ class HomeViewModel @Inject constructor(
                         if (converted == null) missing++ else total += converted
                     }
 
-                    val today = Calendar.getInstance()
                     HomeUiState(
                         primaryCurrency = displayCurrency,
                         hasAccounts = accounts.isNotEmpty(),
@@ -115,8 +113,8 @@ class HomeViewModel @Inject constructor(
                             .filter { it.budget.id != budgets.summaryBudgetId }
                             .sortedByDescending { it.progress }
                             .take(TOP_BUDGETS),
-                        dayOfMonth = today.get(Calendar.DAY_OF_MONTH),
-                        daysInMonth = today.getActualMaximum(Calendar.DAY_OF_MONTH),
+                        budgetPeriodUnit = budgets.summaryPeriod?.unit ?: PeriodUnit.MONTH,
+                        budgetDaysLeft = budgets.summaryPeriod?.daysLeft() ?: 1,
                         recentTransactions = transactions,
                         isLoading = false
                     )

@@ -12,7 +12,8 @@ import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.data.repository.BudgetRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.session.SessionManager
-import com.nintech.budgment.ui.common.currentMonthRange
+import com.nintech.budgment.data.model.BudgetPeriod
+import com.nintech.budgment.data.model.PeriodUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -24,6 +25,8 @@ data class BudgetFormState(
     val name: String = "",
     val amountLimitText: String = "",
     val scope: BudgetScope = BudgetScope.GLOBAL,
+    /** Cada cuánto se renueva: semana, mes o año. */
+    val periodUnit: PeriodUnit = PeriodUnit.MONTH,
     val expenseCategories: List<CategoryEntity> = emptyList(),
     val selectedCategoryIds: Set<String> = emptySet(),
     /** Los límites siempre están en la moneda por defecto del usuario. */
@@ -80,6 +83,7 @@ class BudgetFormViewModel @Inject constructor(
                         name = budget.name,
                         amountLimitText = centsToInputText(budget.amountLimit),
                         scope = budget.scope,
+                        periodUnit = budget.periodUnit,
                         selectedCategoryIds = selected
                     )
                 }
@@ -89,6 +93,7 @@ class BudgetFormViewModel @Inject constructor(
 
     fun onNameChange(v: String) { _state.value = _state.value.copy(name = v, nameError = false) }
     fun onAmountChange(v: String) { _state.value = _state.value.copy(amountLimitText = v, amountError = false) }
+    fun onPeriodUnitChange(v: PeriodUnit) { _state.value = _state.value.copy(periodUnit = v) }
     fun onScopeChange(v: BudgetScope) { _state.value = _state.value.copy(scope = v, categoriesError = false) }
     fun onCategoryToggle(categoryId: String) {
         val current = _state.value.selectedCategoryIds
@@ -107,14 +112,19 @@ class BudgetFormViewModel @Inject constructor(
             _state.value = s.copy(nameError = nameError, amountError = amountError, categoriesError = categoriesError)
             return
         }
-        val (start, end) = currentMonthRange()
+        val now = System.currentTimeMillis()
 
         viewModelScope.launch {
             existingBudget?.let { budget ->
-                budgetRepository.updateBudget(budget, name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
+                // Si cambia la periodicidad, el ancla se reinicia al periodo actual de la nueva
+                // unidad; si no, se conserva para no mover el historial de periodos.
+                val anchor = budget.startDate?.takeIf { budget.periodUnit == s.periodUnit }
+                    ?: BudgetPeriod.alignedStart(now, s.periodUnit)
+                budgetRepository.updateBudget(budget, name, cents, s.scope, s.selectedCategoryIds.toList(), s.periodUnit, anchor)
             } ?: run {
                 val userId = sessionManager.currentUserId.filterNotNull().first()
-                budgetRepository.createBudget(userId, name, cents, s.scope, s.selectedCategoryIds.toList(), start, end)
+                val anchor = BudgetPeriod.alignedStart(now, s.periodUnit)
+                budgetRepository.createBudget(userId, name, cents, s.scope, s.selectedCategoryIds.toList(), s.periodUnit, anchor)
             }
             _state.value = _state.value.copy(isSaved = true)
         }

@@ -32,6 +32,7 @@ import com.nintech.budgment.ui.categories.CategoryIcon
 import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.formatCents
+import com.nintech.budgment.ui.common.formatShortDate
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import kotlin.math.roundToInt
 import com.nintech.budgment.ui.common.RowActionsMenu
@@ -139,6 +140,8 @@ fun BudgetsListScreen(
                         categoryLimitsExceedGlobal = uiState.categoryLimitsExceedGlobal,
                         primaryCurrency = uiState.primaryCurrency,
                         missingRateCount = uiState.missingRateCount,
+                        periodUnit = uiState.summaryPeriod?.unit ?: PeriodUnit.MONTH,
+                        hasOtherPeriods = uiState.hasOtherPeriods,
                         onCurrencyChange = onCurrencyChange
                     )
                 }
@@ -201,6 +204,8 @@ private fun BudgetSummaryHeader(
     categoryLimitsExceedGlobal: Boolean,
     primaryCurrency: String,
     missingRateCount: Int,
+    periodUnit: PeriodUnit,
+    hasOtherPeriods: Boolean,
     onCurrencyChange: (String) -> Unit
 ) {
     val remaining = totalAllocated - totalSpent
@@ -226,7 +231,7 @@ private fun BudgetSummaryHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    stringResource(R.string.budgets_summary_title),
+                    periodUnit.summaryTitle(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -272,6 +277,14 @@ private fun BudgetSummaryHeader(
                         formatCents(categoryLimitsTotal, primaryCurrency),
                         formatCents(totalAllocated, primaryCurrency)
                     ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (hasOtherPeriods) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.budgets_summary_other_periods),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -359,7 +372,11 @@ private fun BudgetCard(
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    item.budget.scope.label(),
+                    stringResource(
+                        R.string.budgets_renews_format,
+                        item.period.unit.label(),
+                        formatShortDate(item.period.endExclusive)
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

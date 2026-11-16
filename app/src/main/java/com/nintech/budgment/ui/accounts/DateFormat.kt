@@ -9,6 +9,10 @@ import java.util.TimeZone
 fun formatDate(millis: Long): String =
     SimpleDateFormat("d MMM yyyy", Locale("es", "MX")).format(Date(millis))
 
+/** «1 dic»: fecha corta sin año, para fechas cercanas como la renovación de un presupuesto. */
+fun formatShortDate(millis: Long): String =
+    SimpleDateFormat("d MMM", Locale("es", "MX")).format(Date(millis))
+
 /** Medianoche local del día al que pertenece [millis]: sirve para agrupar por día. */
 fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
     timeInMillis = millis
@@ -34,16 +38,6 @@ fun relativeDayLabel(millis: Long, today: String, yesterday: String): String {
                 .replaceFirstChar { it.titlecase(Locale("es", "MX")) }
         }
     }
-}
-
-fun currentMonthRange(): Pair<Long, Long> {
-    val cal = Calendar.getInstance()
-    cal.set(Calendar.DAY_OF_MONTH, 1)
-    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
-    val start = cal.timeInMillis
-    cal.add(Calendar.MONTH, 1)
-    cal.add(Calendar.MILLISECOND, -1)
-    return start to cal.timeInMillis
 }
 
 fun isToday(millis: Long): Boolean {

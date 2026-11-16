@@ -46,6 +46,7 @@ import com.nintech.budgment.data.model.BudgetScope
 import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.data.model.PeriodUnit
 import com.nintech.budgment.ui.budgets.BudgetWithProgress
+import com.nintech.budgment.ui.budgets.homeCardTitle
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.CurrencyMenu
 import com.nintech.budgment.ui.common.formatCents
@@ -287,7 +288,7 @@ private fun MonthSummary(
 
 /**
  * Resumen del presupuesto del mes en tres datos, cada uno con su etiqueta: cuánto queda,
- * cuánto se ha gastado del total y cuánto se puede gastar por día hasta fin de mes.
+ * cuánto se ha gastado del total y cuánto se puede gastar por día hasta que se renueve.
  */
 @Composable
 private fun BudgetMonthCard(uiState: HomeUiState, onClick: () -> Unit) {
@@ -307,9 +308,11 @@ private fun BudgetMonthCard(uiState: HomeUiState, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(
-                        if (uiState.budgetFromGlobal) R.string.home_budget_card_title else R.string.home_budget_card_title_categories
-                    ),
+                    text = if (uiState.budgetFromGlobal) {
+                        uiState.budgetPeriodUnit.homeCardTitle()
+                    } else {
+                        stringResource(R.string.home_budget_card_title_categories)
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -350,8 +353,8 @@ private fun BudgetMonthCard(uiState: HomeUiState, onClick: () -> Unit) {
                 Text(
                     text = pluralStringResource(
                         R.plurals.home_budget_per_day,
-                        uiState.daysLeftInMonth,
-                        uiState.daysLeftInMonth,
+                        uiState.budgetDaysLeft,
+                        uiState.budgetDaysLeft,
                         formatCents(uiState.budgetPerDayLeft, currency)
                     ),
                     style = MaterialTheme.typography.bodyMedium.tabular,
@@ -474,8 +477,7 @@ fun HomeScreenPreview() {
                     sampleBudget("1", "Entretenimiento", 500000, 780000),
                     sampleBudget("3", "Alimentación", 400000, 230000)
                 ),
-                dayOfMonth = 15,
-                daysInMonth = 30,
+                budgetDaysLeft = 16,
                 recentTransactions = listOf(
                     sampleTransaction("1", "Supermercado", CategoryType.EXPENSE, -35000),
                     sampleTransaction("2", "Sueldo", CategoryType.INCOME, 2500000)

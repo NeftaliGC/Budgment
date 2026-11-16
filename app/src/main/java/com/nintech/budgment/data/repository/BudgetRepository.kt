@@ -16,8 +16,9 @@ interface BudgetRepository {
     suspend fun getBudget(id: String): BudgetEntity?
     suspend fun getCategoryIds(budgetId: String): List<String>
     suspend fun getCategoryIdsForBudgets(budgetIds: List<String>): Map<String, List<String>>
-    suspend fun createBudget(userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long)
-    suspend fun updateBudget(budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long)
+    /** [anchor] es el inicio del primer periodo; desde ahí se renueva cada [periodUnit]. */
+    suspend fun createBudget(userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long)
+    suspend fun updateBudget(budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long)
     suspend fun deleteBudget(id: String)
     suspend fun restoreBudget(id: String)
 }
@@ -38,7 +39,7 @@ class BudgetRepositoryImpl @Inject constructor(
         budgetCategoryDao.getForBudgets(budgetIds).groupBy({ it.budgetId }, { it.categoryId })
 
     override suspend fun createBudget(
-        userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long
+        userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long
     ) {
         val budget = BudgetEntity(
             id = UUID.randomUUID().toString(),
@@ -47,9 +48,10 @@ class BudgetRepositoryImpl @Inject constructor(
             amountLimit = amountLimit,
             scope = scope,
             periodInterval = 1,
-            periodUnit = PeriodUnit.MONTH,
-            startDate = startDate,
-            endDate = endDate
+            periodUnit = periodUnit,
+            startDate = anchor,
+            // Sin fin: se renueva cada periodo.
+            endDate = null
         )
         budgetDao.insert(budget)
         if (scope == BudgetScope.CATEGORY) {
@@ -58,9 +60,15 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateBudget(
-        budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, startDate: Long, endDate: Long
+        budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long
     ) {
-        budgetDao.update(budget.copy(name = name, amountLimit = amountLimit, scope = scope, startDate = startDate, endDate = endDate, updatedAt = System.currentTimeMillis()))
+        budgetDao.update(
+            budget.copy(
+                name = name, amountLimit = amountLimit, scope = scope,
+                periodUnit = periodUnit, startDate = anchor, endDate = null,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
         budgetCategoryDao.observeByBudget(budget.id).first().forEach { budgetCategoryDao.delete(it) }
         if (scope == BudgetScope.CATEGORY) {
             categoryIds.forEach { catId -> budgetCategoryDao.insert(BudgetCategoryEntity(budgetId = budget.id, categoryId = catId)) }

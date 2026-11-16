@@ -53,14 +53,17 @@
 
     <string name="home_see_all">Ver todo</string>
     <string name="home_budget_card_title">Presupuesto de este mes</string>
+    <string name="home_budget_card_title_day">Presupuesto de hoy</string>
+    <string name="home_budget_card_title_week">Presupuesto de esta semana</string>
+    <string name="home_budget_card_title_year">Presupuesto de este año</string>
     <string name="home_budget_card_title_categories">Presupuesto de tus categorías</string>
     <string name="home_budget_spent_format">Has gastado %1$s de %2$s</string>
     <plurals name="home_budget_per_day">
-        <item quantity="one">Hoy es el último día del mes</item>
+        <item quantity="one">Hoy es el último día: puedes gastar %2$s</item>
         <item quantity="many">Faltan %1$d días: unos %2$s por día</item>
         <item quantity="other">Faltan %1$d días: unos %2$s por día</item>
     </plurals>
-    <string name="home_no_budgets_message">Crea un presupuesto para ver aquí cuánto te queda este mes.</string>
+    <string name="home_no_budgets_message">Crea un presupuesto para ver aquí cuánto te queda por gastar.</string>
     <string name="home_recent_transactions_title">Últimos movimientos</string>
     <string name="home_no_transactions">Aún no tienes movimientos</string>
     <string name="home_get_started_title">Empieza por una cuenta</string>
@@ -220,13 +223,18 @@
     <!-- Budgets -->
     <string name="budgets_title">Presupuestos</string>
     <string name="budgets_empty_title">Aún no tienes presupuestos</string>
-    <string name="budgets_empty_subtitle">Ponle un límite a tu gasto del mes, en total o por categoría.</string>
+    <string name="budgets_empty_subtitle">Ponle un límite a tu gasto de la semana, del mes o del año, en total o por categoría.</string>
     <string name="budgets_add_content_description">Nuevo presupuesto</string>
     <string name="budgets_delete_content_description">Eliminar presupuesto</string>
     <string name="budgets_deleted_message">Presupuesto eliminado</string>
     <string name="budgets_categories_deleted_note">Sus categorías fueron eliminadas. Sigue contando lo ya registrado.</string>
     <string name="budgets_spent_format">%1$s de %2$s</string>
     <string name="budgets_summary_title">Resumen del mes</string>
+    <string name="budgets_summary_title_day">Resumen de hoy</string>
+    <string name="budgets_summary_title_week">Resumen de la semana</string>
+    <string name="budgets_summary_title_year">Resumen del año</string>
+    <string name="budgets_renews_format">%1$s · se renueva el %2$s</string>
+    <string name="budgets_summary_other_periods">Los presupuestos con otra periodicidad no entran en este resumen.</string>
     <string name="budgets_summary_allocated">Límite</string>
     <string name="budgets_summary_spent">Gastado</string>
     <string name="budgets_summary_remaining">Te queda</string>
@@ -251,6 +259,10 @@
     <string name="budget_form_amount_currency_hint">En tu moneda por defecto, %1$s</string>
     <string name="budget_form_scope_label">Alcance</string>
     <string name="budget_form_categories_label">Categorías incluidas</string>
+    <string name="budget_form_period_label">Se renueva cada</string>
+    <string name="budget_form_period_hint_week">Cada lunes empieza de cero.</string>
+    <string name="budget_form_period_hint_month">El día 1 de cada mes empieza de cero.</string>
+    <string name="budget_form_period_hint_year">Cada 1 de enero empieza de cero.</string>
     <string name="budget_form_save_button">Guardar</string>
     <string name="budget_form_error_amount">Escribe un límite mayor a cero</string>
     <string name="budget_form_error_categories_required">Elige al menos una categoría</string>
@@ -261,6 +273,10 @@
     <!-- Budget scope -->
     <string name="budget_scope_global">Global</string>
     <string name="budget_scope_category">Por categoría</string>
+    <string name="period_unit_day">Diario</string>
+    <string name="period_unit_week">Semanal</string>
+    <string name="period_unit_month">Mensual</string>
+    <string name="period_unit_year">Anual</string>
 
     <!-- Nombres de iconos (lector de pantalla) -->
     <string name="icon_wallet">Billetera</string>

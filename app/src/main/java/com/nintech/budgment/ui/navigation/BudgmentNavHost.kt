@@ -22,6 +22,10 @@ import com.nintech.budgment.ui.transactions.TransactionsListScreen
 import com.nintech.budgment.ui.transfers.TransferFormScreen
 import com.nintech.budgment.ui.recurring.RecurringListScreen
 import com.nintech.budgment.ui.settings.SettingsScreen
+import com.nintech.budgment.ui.goals.GoalDetailScreen
+import com.nintech.budgment.ui.goals.GoalDetailViewModel
+import com.nintech.budgment.ui.goals.GoalFormScreen
+import com.nintech.budgment.ui.goals.GoalFormViewModel
 import com.nintech.budgment.ui.notifications.NotificationsScreen
 import com.nintech.budgment.ui.statistics.StatisticsScreen
 
@@ -78,7 +82,30 @@ fun BudgmentNavHost(
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
                 onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) },
-                onReviewRecurring = { id -> navController.navigate(BudgmentDestination.TransactionForm.createOccurrenceRoute(id)) }
+                onReviewRecurring = { id -> navController.navigate(BudgmentDestination.TransactionForm.createOccurrenceRoute(id)) },
+                onGoalClick = { id -> navController.navigate(BudgmentDestination.GoalDetail.createRoute(id)) },
+                onAddGoalClick = { navController.navigate(BudgmentDestination.GoalForm.createRoute()) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.GoalForm.route,
+            arguments = listOf(navArgument(GoalFormViewModel.ARG_GOAL_ID) { type = NavType.StringType; nullable = true })
+        ) {
+            GoalFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                onCreateAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) }
+            )
+        }
+        composable(
+            route = BudgmentDestination.GoalDetail.route,
+            arguments = listOf(navArgument(GoalDetailViewModel.ARG_GOAL_ID) { type = NavType.StringType })
+        ) {
+            GoalDetailScreen(
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { id -> navController.navigate(BudgmentDestination.GoalForm.createRoute(id)) },
+                onTransferToAccount = { id -> navController.navigate(BudgmentDestination.TransferForm.createToAccountRoute(id)) }
             )
         }
 
@@ -234,6 +261,10 @@ fun BudgmentNavHost(
             route = BudgmentDestination.TransferForm.route,
             arguments = listOf(
                 navArgument(BudgmentDestination.TransferForm.ARG_TRANSFER_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                },
+                navArgument(BudgmentDestination.TransferForm.ARG_TO_ACCOUNT_ID) {
                     type = NavType.StringType
                     nullable = true
                 }

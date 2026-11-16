@@ -10,6 +10,8 @@ import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.CategoryRepositoryImpl
 import com.nintech.budgment.data.repository.ExchangeRateRepository
 import com.nintech.budgment.data.repository.ExchangeRateRepositoryImpl
+import com.nintech.budgment.data.repository.GoalRepository
+import com.nintech.budgment.data.repository.GoalRepositoryImpl
 import com.nintech.budgment.data.repository.NotificationRepository
 import com.nintech.budgment.data.repository.NotificationRepositoryImpl
 import com.nintech.budgment.data.repository.TransactionRepository
@@ -23,6 +25,8 @@ import com.nintech.budgment.data.repository.UserRepositoryImpl
 import com.nintech.budgment.data.session.NotificationSettings
 import com.nintech.budgment.data.session.NotificationSettingsImpl
 import com.nintech.budgment.data.session.SessionManager
+import com.nintech.budgment.data.session.UiPreferences
+import com.nintech.budgment.data.session.UiPreferencesImpl
 import com.nintech.budgment.data.session.SessionManagerImpl
 import dagger.Binds
 import dagger.Module
@@ -72,4 +76,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNotificationSettings(impl: NotificationSettingsImpl): NotificationSettings
+
+    @Binds
+    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUiPreferences(impl: UiPreferencesImpl): UiPreferences
 }

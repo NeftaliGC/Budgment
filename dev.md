@@ -51,7 +51,7 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 
 | Entity | DAO | Repo | ViewModel | Screen | Estado |
 |--------|-----|------|-----------|--------|--------|
-| `GoalEntity` | `GoalDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
+| `GoalEntity`, `GoalContributionEntity` | `GoalDao`, `GoalContributionDao` | ✅ `GoalRepository` | ✅ | ✅ | ✅ Completo |
 | `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `AttachmentEntity` | `AttachmentDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `BudgetCategoryEntity` | `BudgetCategoryDao` | ✅ (dentro de `BudgetRepositoryImpl`) | ✅ | ✅ | ✅ Completo |
@@ -146,8 +146,13 @@ notifyBeforeDays, snoozedUntil, createdAt, updatedAt, deletedAt
 
 ### GoalEntity
 ```kotlin
-id, userId, name, targetAmount, currentAmount, targetDate,
-completed, deletedAt
+id, userId, accountId?, name, targetAmount, currentAmount, currency?,
+targetDate?, icon?, color?, createdAt, updatedAt?, deletedAt?
+```
+
+### GoalContributionEntity
+```kotlin
+id, goalId, amount (con signo), note?, date, createdAt
 ```
 
 ### TagEntity
@@ -266,7 +271,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
 |---------|--------------|------|----|--------|------------|-------|
-| Metas de ahorro | ✅ `GoalEntity`, `GoalDao` | ❌ | ❌ | ❌ | (Transferencias, opcional) | Aportes manuales o vinculados a una cuenta de ahorro |
 | Etiquetas | ✅ `TagEntity`, `TagDao`, `TransactionTagDao` | ❌ | ❌ | ❌ | — | Selector en `TransactionFormScreen` + filtro en Movimientos |
 | Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | Etiquetas no | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
 
@@ -292,9 +296,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Tarea | Ubicación | Prioridad |
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
-| Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 5) | Bloquea publicación y respaldo |
+| Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5→v6 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 6) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest` y `BudgetAlertsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest` y `BuildGoalItemsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -305,7 +309,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. ✅ ~~**Estadísticas**~~.
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
-6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
+6. ✅ ~~**Metas**~~, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
 7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
 8. **Adjuntos**.
 9. Tests, pulido, README, publicación.
@@ -329,6 +333,16 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
 - Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
 - También revisa las alertas de presupuesto (`BudgetAlertChecker`)
+
+### Metas de ahorro
+- Sección desplegable en Inicio, antes de «Últimos movimientos» (`ui/home/GoalsSection.kt`); el estado plegado/desplegado se guarda en `UiPreferences` (DataStore). Botón + para crear; cada tarjeta abre el detalle
+- Dos modos, elegidos al crear y cambiables al editar:
+  - **En una cuenta** (`accountId`): el avance es el `balanceCache` de la cuenta, en su moneda. Si la cuenta se elimina, se avisa y se pide editar la meta. El detalle ofrece «Transferir a esta cuenta» (ruta `transfer_form?toAccountId=`)
+  - **Aportes manuales** (`accountId == null`): `goal_contributions` (aporte +, retiro −) y `GoalEntity.currentAmount` como suma cacheada, actualizada en la misma transacción. No mueven dinero de las cuentas. No se puede retirar más de lo ahorrado; borrar un aporte tiene deshacer. Lo «ya ahorrado» al crear se guarda como primer aporte
+- `GoalEntity.currency` (nuevo en v6): moneda de la meta; en las vinculadas, la de la cuenta. La moneda de una meta manual no se puede cambiar si ya tiene aportes
+- `goalProgress` (puro, `data/model/GoalProgress.kt`): estado alcanzada / a tiempo / vencida / sin fecha; con fecha, aporte mensual = lo que falta ÷ meses restantes (mes parcial cuenta entero, redondeo hacia arriba)
+- `MIGRATION_5_6`: `ALTER TABLE goals ADD COLUMN currency` + tabla `goal_contributions`
+- Eliminar una meta: confirmación y borrado lógico (`deletedAt`)
 
 ### Notificaciones
 - Acceso desde el menú de perfil (junto a Estadísticas y Configuración); ruta `notifications`. Punto en el ícono de perfil y contador en el menú si hay avisos sin leer

@@ -13,6 +13,8 @@
     <string name="common_today">Hoy</string>
     <string name="common_show">Mostrar</string>
     <string name="common_hide">Ocultar</string>
+    <string name="common_expanded">Desplegado</string>
+    <string name="common_collapsed">Plegado</string>
     <string name="common_yesterday">Ayer</string>
 
     <!-- Errores de formulario compartidos -->
@@ -453,4 +455,71 @@
     <string name="budget_alert_limit_body">Llevas %1$s de %2$s. Se renueva el %3$s.</string>
     <string name="budget_alert_over_title">%1$s superó su límite</string>
     <string name="budget_alert_over_body">Llevas %1$s de %2$s: te pasaste por %3$s. Se renueva el %4$s.</string>
+
+    <!-- Metas de ahorro -->
+    <string name="goals_title">Metas de ahorro</string>
+    <plurals name="goals_summary">
+        <item quantity="one">%1$d meta</item>
+        <item quantity="many">%1$d metas</item>
+        <item quantity="other">%1$d metas</item>
+    </plurals>
+    <plurals name="goals_summary_reached">
+        <item quantity="one">%1$d meta · %2$d alcanzada</item>
+        <item quantity="many">%1$d metas · %2$d alcanzadas</item>
+        <item quantity="other">%1$d metas · %2$d alcanzadas</item>
+    </plurals>
+    <string name="goals_empty">Aparta dinero para algo concreto y ve cuánto te falta.</string>
+    <string name="goals_create_first">Crear una meta</string>
+    <string name="goal_amount_of_format">%1$s de %2$s</string>
+    <string name="goal_status_reached">Meta alcanzada</string>
+    <string name="goal_status_remaining">Faltan %1$s</string>
+    <string name="goal_status_on_track">Faltan %1$s · aparta %2$s al mes hasta el %3$s</string>
+    <string name="goal_status_overdue">La fecha era el %1$s · faltan %2$s</string>
+    <string name="goal_source_account">Saldo de %1$s</string>
+    <string name="goal_source_manual">Aportes manuales</string>
+    <string name="goal_source_account_missing">La cuenta vinculada se eliminó</string>
+    <string name="goal_form_title_new">Nueva meta</string>
+    <string name="goal_form_title_edit">Editar meta</string>
+    <string name="goal_form_name_label">Nombre</string>
+    <string name="goal_form_name_placeholder">Viaje, fondo de emergencia…</string>
+    <string name="goal_form_source_label">¿Cómo vas a ahorrar?</string>
+    <string name="goal_form_source_account">En una cuenta</string>
+    <string name="goal_form_source_manual">Aportes manuales</string>
+    <string name="goal_form_source_account_hint">El avance es el saldo de la cuenta que elijas; se actualiza solo.</string>
+    <string name="goal_form_source_manual_hint">Tú registras cada aporte o retiro. No mueve dinero de tus cuentas.</string>
+    <string name="goal_form_switch_to_manual_hint">Con aportes manuales, el avance es la suma de los aportes registrados: %1$s.</string>
+    <string name="goal_form_no_accounts">Aún no tienes cuentas para vincular.</string>
+    <string name="goal_form_account_label">Cuenta</string>
+    <string name="goal_form_account_balance">Saldo actual: %1$s</string>
+    <string name="goal_form_error_account">Elige una cuenta</string>
+    <string name="goal_form_target_label">Monto objetivo</string>
+    <string name="goal_form_initial_label">Ya tengo ahorrado (opcional)</string>
+    <string name="goal_form_initial_hint">Se registra como primer aporte.</string>
+    <string name="goal_form_date_label">Fecha objetivo</string>
+    <string name="goal_form_date_none">Sin fecha objetivo. Con una fecha te decimos cuánto apartar al mes.</string>
+    <string name="goal_form_date_add">Agregar fecha objetivo</string>
+    <string name="goal_form_date_remove">Quitar fecha objetivo</string>
+    <string name="goal_form_error_date">La fecha objetivo debe ser hoy o después.</string>
+    <string name="goal_form_save">Guardar meta</string>
+    <string name="goal_edit">Editar meta</string>
+    <string name="goal_delete">Eliminar meta</string>
+    <string name="goal_delete_confirm_title">¿Eliminar «%1$s»?</string>
+    <string name="goal_delete_confirm_manual">Se borra la meta con su historial de aportes. Tus cuentas no cambian.</string>
+    <string name="goal_delete_confirm_linked">Se borra la meta. La cuenta vinculada y su saldo no cambian.</string>
+    <string name="goal_detail_linked_explanation">El avance es el saldo de %1$s. Para aportar, transfiere dinero a esa cuenta.</string>
+    <string name="goal_detail_account_missing">La cuenta vinculada se eliminó y el avance ya no se actualiza. Edita la meta para elegir otra cuenta o pasarla a aportes manuales.</string>
+    <string name="goal_detail_transfer">Transferir a esta cuenta</string>
+    <string name="goal_contribute">Aportar</string>
+    <string name="goal_withdraw">Retirar</string>
+    <string name="goal_contribute_title">Nuevo aporte</string>
+    <string name="goal_withdraw_title">Retirar de la meta</string>
+    <string name="goal_contribution_amount">Monto</string>
+    <string name="goal_contribution_note">Nota (opcional)</string>
+    <string name="goal_withdraw_available">Ahorrado: %1$s</string>
+    <string name="goal_error_exceeds">No puedes retirar más de lo ahorrado (%1$s).</string>
+    <string name="goal_contribution">Aporte</string>
+    <string name="goal_withdrawal">Retiro</string>
+    <string name="goal_history_title">Historial</string>
+    <string name="goal_history_empty">Aún no hay aportes.</string>
+    <string name="goal_contribution_deleted">Movimiento de la meta eliminado</string>
 </resources>

@@ -14,7 +14,11 @@ import com.nintech.budgment.ui.common.dayTicks
 import com.nintech.budgment.ui.recurring.RecurringItem
 import com.nintech.budgment.ui.recurring.buildRecurringItems
 import java.util.Calendar
+import com.nintech.budgment.data.repository.GoalRepository
 import com.nintech.budgment.data.session.SessionManager
+import com.nintech.budgment.data.session.UiPreferences
+import com.nintech.budgment.ui.goals.GoalItem
+import com.nintech.budgment.ui.goals.buildGoalItems
 import com.nintech.budgment.ui.budgets.BudgetOverviewSource
 import com.nintech.budgment.ui.budgets.BudgetWithProgress
 import com.nintech.budgment.ui.transactions.TransactionWithDetails
@@ -52,6 +56,8 @@ data class HomeUiState(
     val pendingRecurring: List<RecurringItem> = emptyList(),
     /** Vencidos que el usuario pospuso: no se anuncian, pero se pueden registrar desde la tarjeta. */
     val snoozedRecurring: List<RecurringItem> = emptyList(),
+    val goals: List<GoalItem> = emptyList(),
+    val goalsExpanded: Boolean = true,
     val isLoading: Boolean = true
 ) {
     val hasBudgets: Boolean get() = budgetAllocated > 0
@@ -73,6 +79,8 @@ class HomeViewModel @Inject constructor(
     private val recurringRepository: RecurringRepository,
     private val exchangeRateRepository: ExchangeRateRepository,
     private val budgetOverviewSource: BudgetOverviewSource,
+    private val goalRepository: GoalRepository,
+    private val uiPreferences: UiPreferences,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -100,14 +108,23 @@ class HomeViewModel @Inject constructor(
                     buildRecurringItems(recurrings, accounts, categories, now).filter { it.isDue }
                 }
 
+                val goals = combine(
+                    goalRepository.observeGoals(userId),
+                    // Incluye las eliminadas para avisar si se borró la cuenta de una meta.
+                    accountRepository.observeAccountsIncludingDeleted(userId),
+                    uiPreferences.homeGoalsExpanded,
+                    dayTicks()
+                ) { goals, accounts, expanded, now -> buildGoalItems(goals, accounts, now) to expanded }
+
                 combine(
                     accountRepository.observeAccounts(userId),
                     // Misma fuente que la pestaña Presupuestos: las cifras coinciden y ya vienen
                     // convertidas a la moneda de visualización.
                     budgetOverviewSource.observe(userId),
                     recentTransactions,
-                    pendingRecurring
-                ) { accounts, budgets, transactions, pending ->
+                    pendingRecurring,
+                    goals
+                ) { accounts, budgets, transactions, pending, (goalItems, goalsExpanded) ->
                     val displayCurrency = budgets.primaryCurrency
                     var missing = 0
                     var total = 0L
@@ -139,12 +156,18 @@ class HomeViewModel @Inject constructor(
                         recentTransactions = transactions,
                         pendingRecurring = pending.filter { it.isPending },
                         snoozedRecurring = pending.filter { it.isSnoozed },
+                        goals = goalItems,
+                        goalsExpanded = goalsExpanded,
                         isLoading = false
                     )
                 }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
+
+    fun setGoalsExpanded(expanded: Boolean) {
+        viewModelScope.launch { uiPreferences.setHomeGoalsExpanded(expanded) }
+    }
 
     fun onDisplayCurrencyChange(code: String) {
         viewModelScope.launch { sessionManager.setDisplayCurrency(code) }

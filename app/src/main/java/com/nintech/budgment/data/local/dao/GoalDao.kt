@@ -22,6 +22,15 @@ interface GoalDao {
     @Query("SELECT * FROM goals WHERE userId = :userId AND deletedAt IS NULL ORDER BY targetDate")
     fun observeByUser(userId: String): Flow<List<GoalEntity>>
 
+    @Query("SELECT * FROM goals WHERE id = :id")
+    fun observeById(id: String): Flow<GoalEntity?>
+
+    @Query("UPDATE goals SET currentAmount = currentAmount + :delta, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun addToCurrent(id: String, delta: Long, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET deletedAt = NULL WHERE id = :id")
+    suspend fun restore(id: String)
+
     @Query("UPDATE goals SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long = System.currentTimeMillis())
 }

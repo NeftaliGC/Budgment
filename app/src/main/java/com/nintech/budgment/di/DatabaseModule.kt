@@ -10,6 +10,7 @@ import com.nintech.budgment.data.local.dao.BudgetCategoryDao
 import com.nintech.budgment.data.local.dao.BudgetDao
 import com.nintech.budgment.data.local.dao.CategoryDao
 import com.nintech.budgment.data.local.dao.ExchangeRateDao
+import com.nintech.budgment.data.local.dao.GoalContributionDao
 import com.nintech.budgment.data.local.dao.GoalDao
 import com.nintech.budgment.data.local.dao.NotificationDao
 import com.nintech.budgment.data.local.dao.RecurringTransactionDao
@@ -98,6 +99,10 @@ object DatabaseModule {
     @Provides
     fun provideExchangeRateDao(database: BudgmentDatabase): ExchangeRateDao =
         database.exchangeRateDao()
+
+    @Provides
+    fun provideGoalContributionDao(database: BudgmentDatabase): GoalContributionDao =
+        database.goalContributionDao()
 
     @Provides
     fun provideNotificationDao(database: BudgmentDatabase): NotificationDao =

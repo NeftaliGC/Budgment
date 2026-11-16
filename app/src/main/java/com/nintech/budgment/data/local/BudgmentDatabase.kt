@@ -9,6 +9,7 @@ import com.nintech.budgment.data.local.dao.BudgetCategoryDao
 import com.nintech.budgment.data.local.dao.BudgetDao
 import com.nintech.budgment.data.local.dao.CategoryDao
 import com.nintech.budgment.data.local.dao.ExchangeRateDao
+import com.nintech.budgment.data.local.dao.GoalContributionDao
 import com.nintech.budgment.data.local.dao.GoalDao
 import com.nintech.budgment.data.local.dao.NotificationDao
 import com.nintech.budgment.data.local.dao.RecurringTransactionDao
@@ -23,6 +24,7 @@ import com.nintech.budgment.data.local.entity.BudgetCategoryEntity
 import com.nintech.budgment.data.local.entity.BudgetEntity
 import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.local.entity.ExchangeRateEntity
+import com.nintech.budgment.data.local.entity.GoalContributionEntity
 import com.nintech.budgment.data.local.entity.GoalEntity
 import com.nintech.budgment.data.local.entity.NotificationEntity
 import com.nintech.budgment.data.local.entity.RecurringTransactionEntity
@@ -47,9 +49,10 @@ import com.nintech.budgment.data.local.entity.UserEntity
         TransactionTagEntity::class,
         AttachmentEntity::class,
         ExchangeRateEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        GoalContributionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -68,4 +71,5 @@ abstract class BudgmentDatabase : RoomDatabase() {
     abstract fun attachmentDao(): AttachmentDao
     abstract fun exchangeRateDao(): ExchangeRateDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun goalContributionDao(): GoalContributionDao
 }

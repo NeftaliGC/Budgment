@@ -76,8 +76,9 @@ class TransferFormViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val transferId: String? = savedStateHandle.get<String>("transferId")?.ifBlank { null }
+    private val presetToAccountId: String? = savedStateHandle.get<String>("toAccountId")?.ifBlank { null }
 
-    private val _state = MutableStateFlow(TransferFormState(isEditing = transferId != null))
+    private val _state = MutableStateFlow(TransferFormState(isEditing = transferId != null, toAccountId = presetToAccountId))
     val state: StateFlow<TransferFormState> = _state.asStateFlow()
 
     private var conversionJob: Job? = null
@@ -109,6 +110,8 @@ class TransferFormViewModel @Inject constructor(
             accountRepository.observeAccounts(userId).collect { accounts ->
                 _state.update { s ->
                     val from = s.fromAccountId?.takeIf { id -> accounts.any { it.id == id } }
+                        // Si el destino ya viene elegido, el origen propuesto es otra cuenta.
+                        ?: accounts.firstOrNull { it.id != s.toAccountId }?.id
                         ?: accounts.firstOrNull()?.id
                     val to = s.toAccountId?.takeIf { id -> accounts.any { it.id == id } }
                         ?: accounts.firstOrNull { it.id != from }?.id

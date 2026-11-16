@@ -77,6 +77,8 @@ fun HomeScreen(
     onTransactionClick: (String) -> Unit,
     onTransferClick: (String) -> Unit = {},
     onReviewRecurring: (String) -> Unit = {},
+    onGoalClick: (String) -> Unit = {},
+    onAddGoalClick: () -> Unit = {},
     viewModel: HomeViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     val uiState = if (viewModel != null) viewModel.uiState.collectAsState().value else HomeUiState()
@@ -97,7 +99,10 @@ fun HomeScreen(
         onRegisterRecurring = { viewModel?.registerRecurring(it) },
         onReviewRecurring = { onReviewRecurring(it.recurring.id) },
         onSnoozeRecurring = { viewModel?.snoozeRecurring(it) },
-        onSkipRecurring = { viewModel?.skipRecurring(it) }
+        onSkipRecurring = { viewModel?.skipRecurring(it) },
+        onGoalClick = onGoalClick,
+        onAddGoalClick = onAddGoalClick,
+        onGoalsExpandedChange = { viewModel?.setGoalsExpanded(it) }
     )
 }
 
@@ -123,7 +128,10 @@ fun HomeScreenContent(
     onRegisterRecurring: (RecurringItem) -> Unit = {},
     onReviewRecurring: (RecurringItem) -> Unit = {},
     onSnoozeRecurring: (RecurringItem) -> Unit = {},
-    onSkipRecurring: (RecurringItem) -> Unit = {}
+    onSkipRecurring: (RecurringItem) -> Unit = {},
+    onGoalClick: (String) -> Unit = {},
+    onAddGoalClick: () -> Unit = {},
+    onGoalsExpandedChange: (Boolean) -> Unit = {}
 ) {
     // Si el usuario ya ve los pendientes en la app, la notificación que los anunciaba sobra.
     val context = LocalContext.current
@@ -200,6 +208,15 @@ fun HomeScreenContent(
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(32.dp))
+                    GoalsSection(
+                        goals = uiState.goals,
+                        expanded = uiState.goalsExpanded,
+                        onExpandedChange = onGoalsExpandedChange,
+                        onGoalClick = onGoalClick,
+                        onAddGoalClick = onAddGoalClick
+                    )
 
                     Spacer(Modifier.height(32.dp))
                     SectionHeader(

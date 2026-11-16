@@ -43,9 +43,21 @@ sealed class BudgmentDestination(val route: String) {
 
     object Recurring : BudgmentDestination("recurring")
 
-    object TransferForm : BudgmentDestination("transfer_form?transferId={transferId}") {
+    object TransferForm : BudgmentDestination("transfer_form?transferId={transferId}&toAccountId={toAccountId}") {
         const val ARG_TRANSFER_ID = "transferId"
+        const val ARG_TO_ACCOUNT_ID = "toAccountId"
         fun createRoute(transferId: String? = null) = "transfer_form?transferId=${transferId ?: ""}"
+
+        /** Nueva transferencia con la cuenta destino ya elegida (p. ej. la de una meta). */
+        fun createToAccountRoute(toAccountId: String) = "transfer_form?toAccountId=$toAccountId"
+    }
+
+    object GoalForm : BudgmentDestination("goal_form?goalId={goalId}") {
+        fun createRoute(goalId: String? = null) = "goal_form?goalId=${goalId ?: ""}"
+    }
+
+    object GoalDetail : BudgmentDestination("goal_detail/{goalId}") {
+        fun createRoute(goalId: String) = "goal_detail/$goalId"
     }
 
     object Budgets : BudgmentDestination("budgets")

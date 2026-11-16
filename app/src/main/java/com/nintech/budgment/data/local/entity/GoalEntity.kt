@@ -16,10 +16,15 @@ import androidx.room.PrimaryKey
 data class GoalEntity(
     @PrimaryKey val id: String,
     val userId: String,
+    /** Meta vinculada a una cuenta: su avance es el saldo de la cuenta. Null = aportes manuales. */
     val accountId: String? = null,
     val name: String,
+    /** Centavos, en [currency]. */
     val targetAmount: Long,
+    /** Suma de los aportes manuales (derivado); no se usa si la meta está vinculada a una cuenta. */
     val currentAmount: Long = 0,
+    /** Moneda de la meta; en las vinculadas es la de la cuenta. */
+    val currency: String? = null,
     val targetDate: Long? = null,
     val icon: String? = null,
     val color: String? = null,

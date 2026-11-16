@@ -20,9 +20,10 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
- * Revisa una vez al día, a la hora elegida en Notificaciones, si hay movimientos recurrentes
- * vencidos: los agrega a la bandeja y, si el usuario lo permite, los anuncia con una
- * notificación. Nunca registra nada: eso lo decide el usuario desde la app.
+ * Revisión diaria, a la hora elegida en Notificaciones:
+ * - Movimientos recurrentes vencidos: los agrega a la bandeja y, si el usuario lo permite, los
+ *   anuncia. Nunca registra nada: eso lo decide el usuario desde la app.
+ * - Presupuestos: avisa los que llegaron al porcentaje elegido o a su límite.
  */
 class RecurringReminderWorker(
     context: Context,
@@ -37,6 +38,7 @@ class RecurringReminderWorker(
         fun categoryRepository(): CategoryRepository
         fun notificationRepository(): NotificationRepository
         fun notificationSettings(): NotificationSettings
+        fun budgetAlertChecker(): BudgetAlertChecker
     }
 
     override suspend fun doWork(): Result {
@@ -45,6 +47,7 @@ class RecurringReminderWorker(
         val userId = deps.sessionManager().currentUserId.first() ?: return Result.success()
 
         deps.notificationRepository().syncRecurring(userId)
+        deps.budgetAlertChecker().check(userId)
 
         val pending = deps.recurringRepository().getPending(userId)
         if (pending.isEmpty() || !deps.notificationSettings().preferences.first().recurringEnabled) {

@@ -22,6 +22,9 @@ interface NotificationRepository {
     fun observeInbox(userId: String): Flow<List<NotificationEntity>>
     fun observeUnreadCount(userId: String): Flow<Int>
     suspend fun markAllRead(userId: String)
+
+    /** Guarda el aviso si no existía uno igual; devuelve true si es nuevo. */
+    suspend fun insertIfNew(notification: NotificationEntity): Boolean
     suspend fun delete(notifications: List<NotificationEntity>)
     suspend fun restore(notifications: List<NotificationEntity>)
 
@@ -48,6 +51,9 @@ class NotificationRepositoryImpl @Inject constructor(
         notificationDao.observeUnreadCount(userId)
 
     override suspend fun markAllRead(userId: String) = notificationDao.markAllRead(userId)
+
+    override suspend fun insertIfNew(notification: NotificationEntity): Boolean =
+        notificationDao.insertIfNew(notification) != -1L
 
     override suspend fun delete(notifications: List<NotificationEntity>) =
         notificationDao.deleteByIds(notifications.map { it.id })

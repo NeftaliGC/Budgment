@@ -127,6 +127,10 @@ class NotificationsViewModel @Inject constructor(
         viewModelScope.launch { notificationSettings.setBudgetsEnabled(enabled) }
     }
 
+    fun setBudgetWarningPercent(percent: Int) {
+        viewModelScope.launch { notificationSettings.setBudgetWarningPercent(percent) }
+    }
+
     fun setReminderHour(hour: Int) {
         viewModelScope.launch {
             notificationSettings.setReminderHour(hour)

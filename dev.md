@@ -277,7 +277,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Estadísticas~~ | Hecho: `ui/statistics/` (ver «Estadísticas» abajo). Pendiente: exportar reporte, filtrar por cuenta | — |
 | PIN / biometría | `BiometricPrompt` + PIN de respaldo, bloqueo al volver de segundo plano, opción en Configuración | Configuración |
 | Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
-| Notificaciones | 🟡 Bandeja, ajustes y avisos de recurrentes hechos (ver «Notificaciones» abajo). Falta: alertas de presupuesto (80 %/100 %) | WorkManager |
+| ✅ ~~Notificaciones~~ | Hecho: bandeja, ajustes, recurrentes y alertas de presupuesto (ver «Notificaciones» abajo) | — |
 
 ### C. Funciones parciales
 
@@ -294,7 +294,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 5) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest` y `GroupByDayTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest` y `BudgetAlertsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -304,7 +304,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 2. ✅ ~~**Transferencias**~~.
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. ✅ ~~**Estadísticas**~~.
-5. 🟡 **Notificaciones**: bandeja y ajustes hechos; siguen las alertas de presupuesto.
+5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
 6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
 7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
 8. **Adjuntos**.
@@ -328,7 +328,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 ### WorkManager
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
 - Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
-- Pendiente: reutilizarlo para alertas de presupuesto (80 %/100 %)
+- También revisa las alertas de presupuesto (`BudgetAlertChecker`)
 
 ### Notificaciones
 - Acceso desde el menú de perfil (junto a Estadísticas y Configuración); ruta `notifications`. Punto en el ícono de perfil y contador en el menú si hay avisos sin leer
@@ -337,6 +337,10 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - Al abrir la bandeja todo se marca leído, pero lo nuevo conserva su punto mientras se ve. Recurrente aún pendiente → botón Registrar; ya registrado/omitido/pausado → «Ya no está pendiente». Deslizar para borrar con deshacer
 - Ajustes (hoja con ⚙): qué tipos llegan como notificación del teléfono (`NotificationSettings` en DataStore, no se borra al cerrar sesión) y hora del recordatorio (6:00–22:00; reprograma el worker con `CANCEL_AND_REENQUEUE`). Aviso si el sistema tiene las notificaciones desactivadas, con botón que pide permiso o abre los ajustes del sistema
 - La bandeja registra todo aunque el tipo esté desactivado: los interruptores solo controlan la notificación del teléfono
+- Alertas de presupuesto: `budgetAlertLevel` (puro, `data/model/BudgetAlerts.kt`) da el umbral más alto alcanzado: el porcentaje elegido (50–95 %, por defecto 80, uno para todos los presupuestos, en la hoja de ajustes) o el límite (100 %). Si un gasto salta directo al límite, solo llega ese aviso
+- `notifications/BudgetAlertChecker.kt`: calcula lo gastado en el periodo vigente en la moneda por defecto (la de los límites); `dedupKey` = `budget:<id>:<inicio del periodo>:<nivel>`, así cada umbral avisa una vez por periodo y vuelve a avisar al renovarse. Lo llaman `HeaderViewModel` (al cambiar movimientos, presupuestos o preferencias, y cada día) y el worker diario
+- Canal `budgets`; una notificación por presupuesto (la de límite reemplaza a la previa); ícono `ic_notification_budget`
+- `BudgetEntity.notifyThresholdPercent` sigue sin usarse: el porcentaje es global por decisión de producto
 
 ### Estadísticas
 - Acceso desde el menú de perfil (junto a Configuración); ruta `statistics`

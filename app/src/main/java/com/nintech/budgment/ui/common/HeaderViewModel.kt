@@ -2,8 +2,12 @@ package com.nintech.budgment.ui.common
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nintech.budgment.data.repository.BudgetRepository
 import com.nintech.budgment.data.repository.NotificationRepository
 import com.nintech.budgment.data.repository.RecurringRepository
+import com.nintech.budgment.data.repository.TransactionRepository
+import com.nintech.budgment.data.session.NotificationSettings
+import com.nintech.budgment.notifications.BudgetAlertChecker
 import com.nintech.budgment.data.repository.UserRepository
 import com.nintech.budgment.data.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +22,11 @@ class HeaderViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository,
-    private val recurringRepository: RecurringRepository
+    private val recurringRepository: RecurringRepository,
+    private val transactionRepository: TransactionRepository,
+    private val budgetRepository: BudgetRepository,
+    private val notificationSettings: NotificationSettings,
+    private val budgetAlertChecker: BudgetAlertChecker
 ) : ViewModel() {
 
     val userName: StateFlow<String> = sessionManager.currentUserId
@@ -41,6 +49,21 @@ class HeaderViewModel @Inject constructor(
                 .filterNotNull()
                 .flatMapLatest { id -> combine(recurringRepository.observeRecurring(id), dayTicks()) { _, now -> id to now } }
                 .collect { (id, now) -> notificationRepository.syncRecurring(id, now) }
+        }
+        // Los avisos de presupuesto salen en cuanto un gasto cruza el umbral, sin esperar al día
+        // siguiente; también al renovarse el periodo o al cambiar el porcentaje.
+        viewModelScope.launch {
+            sessionManager.currentUserId
+                .filterNotNull()
+                .flatMapLatest { id ->
+                    combine(
+                        transactionRepository.observeTransactions(id),
+                        budgetRepository.observeBudgets(id),
+                        notificationSettings.preferences,
+                        dayTicks()
+                    ) { _, _, _, now -> id to now }
+                }
+                .collect { (id, now) -> budgetAlertChecker.check(id, now) }
         }
     }
 

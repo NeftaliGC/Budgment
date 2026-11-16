@@ -90,6 +90,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.NotificationEntity
 import com.nintech.budgment.data.local.entity.NotificationType
+import com.nintech.budgment.data.model.BUDGET_WARNING_OPTIONS
 import com.nintech.budgment.data.session.NotificationPreferences
 import com.nintech.budgment.ui.common.SurfaceSystemBars
 import com.nintech.budgment.ui.common.formatShortDate
@@ -122,6 +123,7 @@ fun NotificationsScreen(
         ),
         onRecurringEnabledChange = { viewModel?.setRecurringEnabled(it) },
         onBudgetsEnabledChange = { viewModel?.setBudgetsEnabled(it) },
+        onBudgetWarningPercentChange = { viewModel?.setBudgetWarningPercent(it) },
         onReminderHourChange = { viewModel?.setReminderHour(it) }
     )
 }
@@ -137,6 +139,7 @@ fun NotificationsScreen(
     onDelete: (String) -> Unit,
     onRecurringEnabledChange: (Boolean) -> Unit,
     onBudgetsEnabledChange: (Boolean) -> Unit,
+    onBudgetWarningPercentChange: (Int) -> Unit,
     onReminderHourChange: (Int) -> Unit
 ) {
     SurfaceSystemBars()
@@ -209,6 +212,7 @@ fun NotificationsScreen(
             onDismiss = { showSettings = false },
             onRecurringEnabledChange = onRecurringEnabledChange,
             onBudgetsEnabledChange = onBudgetsEnabledChange,
+            onBudgetWarningPercentChange = onBudgetWarningPercentChange,
             onReminderHourChange = onReminderHourChange
         )
     }
@@ -438,6 +442,7 @@ private fun NotificationSettingsSheet(
     onDismiss: () -> Unit,
     onRecurringEnabledChange: (Boolean) -> Unit,
     onBudgetsEnabledChange: (Boolean) -> Unit,
+    onBudgetWarningPercentChange: (Int) -> Unit,
     onReminderHourChange: (Int) -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -471,13 +476,29 @@ private fun NotificationSettingsSheet(
             )
             SwitchRow(
                 title = stringResource(R.string.inbox_settings_budgets),
-                description = stringResource(R.string.inbox_settings_budgets_description),
+                description = stringResource(R.string.inbox_settings_budgets_description, preferences.budgetWarningPercent),
                 checked = preferences.budgetsEnabled,
                 enabled = systemEnabled,
                 onCheckedChange = onBudgetsEnabledChange
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            ReminderHourField(preferences.reminderHour, onReminderHourChange)
+            OptionField(
+                label = stringResource(R.string.inbox_settings_budget_percent),
+                supporting = stringResource(R.string.inbox_settings_budget_percent_description),
+                selected = preferences.budgetWarningPercent,
+                options = BUDGET_WARNING_OPTIONS,
+                optionLabel = { stringResource(R.string.stats_percent_format, it) },
+                onChange = onBudgetWarningPercentChange
+            )
+            Spacer(Modifier.height(8.dp))
+            OptionField(
+                label = stringResource(R.string.inbox_settings_hour),
+                supporting = stringResource(R.string.inbox_settings_hour_description),
+                selected = preferences.reminderHour,
+                options = REMINDER_HOURS.toList(),
+                optionLabel = { hourLabel(it) },
+                onChange = onReminderHourChange
+            )
             Text(
                 stringResource(R.string.inbox_settings_note),
                 style = MaterialTheme.typography.bodySmall,
@@ -513,27 +534,35 @@ private fun SwitchRow(
     }
 }
 
+/** Campo de solo lectura con una lista de opciones. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReminderHourField(hour: Int, onChange: (Int) -> Unit) {
+private fun OptionField(
+    label: String,
+    supporting: String,
+    selected: Int,
+    options: List<Int>,
+    optionLabel: @Composable (Int) -> String,
+    onChange: (Int) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = hourLabel(hour),
+            value = optionLabel(selected),
             onValueChange = {},
             readOnly = true,
-            label = { Text(stringResource(R.string.inbox_settings_hour)) },
-            supportingText = { Text(stringResource(R.string.inbox_settings_hour_description)) },
+            label = { Text(label) },
+            supportingText = { Text(supporting) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            REMINDER_HOURS.forEach { option ->
+            options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(hourLabel(option)) },
+                    text = { Text(optionLabel(option)) },
                     onClick = {
                         expanded = false
-                        if (option != hour) onChange(option)
+                        if (option != selected) onChange(option)
                     }
                 )
             }
@@ -573,6 +602,7 @@ private fun NotificationsScreenPreview() {
             onDelete = {},
             onRecurringEnabledChange = {},
             onBudgetsEnabledChange = {},
+            onBudgetWarningPercentChange = {},
             onReminderHourChange = {}
         )
     }

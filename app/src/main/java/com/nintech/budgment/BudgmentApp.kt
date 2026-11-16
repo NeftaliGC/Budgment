@@ -2,6 +2,7 @@ package com.nintech.budgment
 
 import android.app.Application
 import com.nintech.budgment.data.session.NotificationSettings
+import com.nintech.budgment.notifications.BudgetNotifications
 import com.nintech.budgment.notifications.RecurringNotifications
 import com.nintech.budgment.notifications.RecurringReminderWorker
 import dagger.hilt.android.HiltAndroidApp
@@ -23,6 +24,7 @@ class BudgmentApp : Application() {
     override fun onCreate() {
         super.onCreate()
         RecurringNotifications.ensureChannel(this)
+        BudgetNotifications.ensureChannel(this)
         appScope.launch {
             val hour = notificationSettings.preferences.first().reminderHour
             RecurringReminderWorker.schedule(this@BudgmentApp, hour)

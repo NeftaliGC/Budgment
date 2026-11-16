@@ -264,6 +264,8 @@
     <string name="recurring_status_paused">En pausa</string>
     <string name="recurring_status_finished">Terminado</string>
     <string name="recurring_status_needs_attention">Su cuenta o categoría se eliminó: edítalo</string>
+    <string name="notification_channel_budgets">Presupuestos</string>
+    <string name="notification_channel_budgets_description">Avisos cuando un presupuesto se acerca a su límite o lo alcanza</string>
     <string name="notification_channel_recurring">Movimientos recurrentes</string>
     <string name="notification_channel_recurring_description">Avisos cuando toca registrar un movimiento que se repite</string>
     <plurals name="notification_recurring_title">
@@ -436,8 +438,19 @@
     <string name="inbox_settings_recurring">Movimientos recurrentes</string>
     <string name="inbox_settings_recurring_description">Cuando toca registrar uno</string>
     <string name="inbox_settings_budgets">Presupuestos</string>
-    <string name="inbox_settings_budgets_description">Al llegar al 80 % y al 100 % del límite</string>
+    <string name="inbox_settings_budgets_description">Al llegar al %1$d %% y al 100 %% del límite</string>
+    <string name="inbox_settings_budget_percent">Avisar de presupuestos al llegar al</string>
+    <string name="inbox_settings_budget_percent_description">Aplica a todos tus presupuestos. Al llegar al límite siempre se avisa.</string>
     <string name="inbox_settings_hour">Hora del recordatorio</string>
     <string name="inbox_settings_hour_description">Una vez al día, Budgment revisa lo pendiente a esta hora.</string>
     <string name="inbox_settings_note">La bandeja guarda todos los avisos aunque estén desactivados aquí. Se borran solos a los 90 días.</string>
+
+    <!-- Alertas de presupuesto -->
+    <string name="budget_alert_unnamed">Tu presupuesto</string>
+    <string name="budget_alert_warning_title">%1$s llegó al %2$d %%</string>
+    <string name="budget_alert_warning_body">Llevas %1$s de %2$s. Te quedan %3$s hasta que se renueve el %4$s.</string>
+    <string name="budget_alert_limit_title">%1$s llegó a su límite</string>
+    <string name="budget_alert_limit_body">Llevas %1$s de %2$s. Se renueva el %3$s.</string>
+    <string name="budget_alert_over_title">%1$s superó su límite</string>
+    <string name="budget_alert_over_body">Llevas %1$s de %2$s: te pasaste por %3$s. Se renueva el %4$s.</string>
 </resources>

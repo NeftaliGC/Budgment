@@ -72,3 +72,46 @@ object RecurringNotifications {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_PENDING_RECURRING)
     }
 }
+
+private const val CHANNEL_BUDGETS = "budgets"
+
+object BudgetNotifications {
+
+    fun ensureChannel(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            CHANNEL_BUDGETS,
+            context.getString(R.string.notification_channel_budgets),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply { description = context.getString(R.string.notification_channel_budgets_description) }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    /** Un aviso por presupuesto: el de límite reemplaza al previo del mismo presupuesto. */
+    fun show(context: Context, budgetId: String, title: String, body: String) {
+        if (needsNotificationPermission(context)) return
+        ensureChannel(context)
+
+        val openApp = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_BUDGETS)
+            .setSmallIcon(R.drawable.ic_notification_budget)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openApp)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+
+        try {
+            NotificationManagerCompat.from(context).notify(CHANNEL_BUDGETS, budgetId.hashCode(), notification)
+        } catch (_: SecurityException) {
+            // El permiso se revocó entre la comprobación y el aviso.
+        }
+    }
+}

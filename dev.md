@@ -302,7 +302,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Restaurar una copia previa a la migración | `noBackupFilesDir/db-backups`; sin UI | Con el respaldo en Drive |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
 | Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest` y `TransactionFilterTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
-| `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
+| ✅ ~~`backup_rules.xml` / `data_extraction_rules.xml`~~ | `res/xml/` | Hecho: respaldo automático de Android configurado |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
 ### Orden sugerido
@@ -384,8 +384,14 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 ### Drawables sin uso
 - (`logo_mark.png` ya se usa en Login y en la barra superior; los strings sin uso se eliminaron en `5d5e54f`)
 
-### backup_rules.xml / data_extraction_rules.xml
-- Existen en `res/xml/` pero no configurados para nada funcional
+### Respaldo automático de Android (`backup_rules.xml` / `data_extraction_rules.xml`)
+- Se respaldan `database/budgment.db` (con -wal/-shm) y `file/datastore/` (sesión recordada y preferencias). Todo lo demás queda fuera; `noBackupFilesDir` (WorkManager, copias previas a migrar) y el caché nunca se respaldan
+- Nube: solo con cifrado de extremo a extremo (`disableIfNoEncryptionCapabilities` en API 31+, `requireFlags="clientSideEncryption"` en API ≤30). Sin bloqueo de pantalla no se sube nada
+- Transferencia directa a un teléfono nuevo: mismas reglas, sin requisito de cifrado
+- Cuándo: Android decide (aprox. una vez al día con el teléfono cargando, en wifi e inactivo); límite 25 MB. Restaura al reinstalar o al configurar otro teléfono con la misma cuenta de Google
+- Una copia restaurada de una versión anterior del esquema la ponen al día las migraciones al abrir la app
+- Probar a mano: `adb shell bmgr backupnow com.nintech.budgment`, desinstalar, reinstalar desde Android Studio y luego `adb shell bmgr restore <token> com.nintech.budgment` (el token sale de `adb shell bmgr list sets`), o reinstalar desde Play Store
+- No sustituye el respaldo en Drive desde la app: el usuario no controla ni ve cuándo se hace
 
 ### Cálculo de balance
 - `AccountRepository.adjustBalance()` ajusta `balanceCache` directamente

@@ -1,19 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Respaldo de Android 12+ (API 31+). Lo que se incluye aquí sobrevive a desinstalar,
+    reinstalar y cambiar de teléfono; si la copia restaurada es de una versión anterior del
+    esquema, las migraciones de Room la ponen al día al abrir la app.
+
+    Se respalda:
+    - database/budgment.db (y sus -wal/-shm): cuentas, movimientos, presupuestos, metas…
+    - file/datastore/: sesión recordada, moneda de visualización y preferencias de avisos.
+
+    No se respalda (Android lo excluye siempre): noBackupFilesDir, donde viven la base de
+    WorkManager y las copias previas a una migración, y el caché.
 -->
 <data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-    </cloud-backup>
     <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
+        Nube (Google Drive del usuario). Son datos financieros: solo se suben si el teléfono
+        puede cifrarlos de extremo a extremo, es decir, si tiene bloqueo de pantalla.
     -->
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
+    </cloud-backup>
+
+    <!-- Transferencia directa al configurar un teléfono nuevo (cable o wifi). -->
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
+    </device-transfer>
 </data-extraction-rules>

@@ -58,6 +58,17 @@ class BackupCryptoTest {
     }
 
     @Test
+    fun `un respaldo del formato anterior se sigue abriendo`() {
+        val plain = bytes(5000)
+        val out = ByteArrayOutputStream()
+        BackupCrypto.encrypt(out, password, createdAt = 1L, schemaVersion = 6, iterations = iterations, formatVersion = 1)
+            .use { it.write(plain) }
+        val (header, content) = BackupCrypto.decrypt(ByteArrayInputStream(out.toByteArray()), password)
+        assertEquals(1, header.formatVersion)
+        assertArrayEquals(plain, content.use { it.readBytes() })
+    }
+
+    @Test
     fun `el contenido no queda a la vista y cada archivo es distinto`() {
         val plain = "saldo secreto ".repeat(100).toByteArray()
         val a = encrypt(plain)

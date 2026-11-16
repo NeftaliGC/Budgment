@@ -63,6 +63,53 @@
     <string name="settings_lock_timeout_minutes">Tras %1$d min fuera</string>
     <string name="settings_lock_note">Si olvidas el PIN, puedes desbloquear con la contraseña de tu cuenta.</string>
 
+    <!-- Fotos de recibos -->
+    <string name="receipt_photos_label">Fotos del recibo</string>
+    <string name="receipt_photos_count">%1$d de %2$d</string>
+    <string name="receipt_photos_add">Tomar foto</string>
+    <string name="receipt_photos_item">Foto %1$d del recibo</string>
+    <string name="receipt_photos_open">Ver foto</string>
+    <string name="receipt_photos_close">Cerrar</string>
+    <string name="receipt_photos_delete">Quitar foto</string>
+    <string name="receipt_photos_delete_confirm_title">¿Quitar esta foto?</string>
+    <string name="receipt_photos_delete_confirm_text">La foto se quitará de este movimiento y no se podrá recuperar.</string>
+    <string name="receipt_photos_delete_confirm">Quitar</string>
+    <string name="receipt_photos_view">Ver fotos del recibo</string>
+    <string name="receipt_photos_previous">Foto anterior</string>
+    <string name="receipt_photos_next">Foto siguiente</string>
+    <string name="receipt_photos_error_no_camera">Este teléfono no tiene una app de cámara.</string>
+    <string name="receipt_photos_error_failed">No se pudo guardar la foto. Inténtalo de nuevo.</string>
+    <plurals name="receipt_photos_note">
+        <item quantity="one">Se guardan reducidas y se borran solas al mes. Puedes cambiarlo en Configuración.</item>
+        <item quantity="other">Se guardan reducidas y se borran solas a los %1$d meses. Puedes cambiarlo en Configuración.</item>
+    </plurals>
+    <string name="receipt_photos_note_forever">Se guardan reducidas y se conservan hasta que las quites.</string>
+    <string name="settings_photos_title">Fotos de recibos</string>
+    <string name="settings_photos_description">Las fotos se guardan reducidas para ocupar poco y se borran solas pasado el tiempo que elijas. Los movimientos no se tocan.</string>
+    <string name="settings_photos_retention">Conservar las fotos</string>
+    <plurals name="settings_photos_months">
+        <item quantity="one">%1$d mes</item>
+        <item quantity="other">%1$d meses</item>
+    </plurals>
+    <string name="settings_photos_one_year">1 año</string>
+    <string name="settings_photos_forever">Siempre</string>
+    <string name="settings_photos_usage_none">Aún no hay fotos guardadas.</string>
+    <plurals name="settings_photos_usage">
+        <item quantity="one">%1$d foto guardada · %2$s</item>
+        <item quantity="other">%1$d fotos guardadas · %2$s</item>
+    </plurals>
+    <string name="settings_photos_confirm_title">¿Borrar fotos antiguas?</string>
+    <plurals name="settings_photos_confirm_text">
+        <item quantity="one">Con este plazo se borrará ahora %1$d foto. No se puede deshacer.</item>
+        <item quantity="other">Con este plazo se borrarán ahora %1$d fotos. No se puede deshacer.</item>
+    </plurals>
+    <string name="settings_photos_confirm">Borrar</string>
+    <string name="backup_include_photos">Incluir las fotos de recibos (%1$s)</string>
+    <plurals name="backup_photos_count">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d fotos</item>
+    </plurals>
+
     <!-- Respaldo -->
     <string name="settings_backup_title">Respaldo</string>
     <string name="settings_backup_description">Guarda una copia de tus datos en un archivo protegido con contraseña. Puedes dejarlo en tu teléfono, en Drive o donde prefieras.</string>
@@ -87,7 +134,7 @@
     <string name="backup_restore_open">Abrir</string>
     <string name="backup_restore_checking">Abriendo respaldo…</string>
     <string name="backup_restore_confirm_title">¿Reemplazar tus datos?</string>
-    <string name="backup_restore_confirm_text">Todo lo que hay ahora en Budgment se reemplazará por el respaldo del %1$s (%2$s y %3$s). Budgment se reiniciará y tendrás que iniciar sesión con un usuario de ese respaldo.</string>
+    <string name="backup_restore_confirm_text">Todo lo que hay ahora en Budgment se reemplazará por el respaldo del %1$s (%2$s, %3$s y %4$s). Budgment se reiniciará y tendrás que iniciar sesión con un usuario de ese respaldo.</string>
     <plurals name="backup_accounts_count">
         <item quantity="one">%1$d cuenta</item>
         <item quantity="other">%1$d cuentas</item>
@@ -288,6 +335,9 @@
     <string name="transactions_add_content_description">Nuevo movimiento</string>
     <string name="transactions_delete_content_description">Eliminar movimiento</string>
     <string name="transactions_deleted_message">Movimiento eliminado</string>
+    <string name="transactions_delete_confirm_title">¿Eliminar este movimiento?</string>
+    <string name="transactions_delete_confirm_message">El saldo de la cuenta se ajustará.</string>
+    <string name="transactions_delete_confirm_message_photos">El saldo de la cuenta se ajustará y las fotos del recibo se borrarán.</string>
     <string name="transactions_deleted_account_format">%1$s (cuenta eliminada)</string>
     <string name="transactions_deleted_category_format">%1$s (categoría eliminada)</string>
 
@@ -382,6 +432,8 @@
     <string name="transfer_add_content_description">Nueva transferencia</string>
     <string name="transfer_delete_content_description">Eliminar transferencia</string>
     <string name="transfer_deleted_message">Transferencia eliminada</string>
+    <string name="transfer_delete_confirm_title">¿Eliminar esta transferencia?</string>
+    <string name="transfer_delete_confirm_message">El saldo de las dos cuentas se ajustará.</string>
     <string name="transfer_form_title_new">Nueva transferencia</string>
     <string name="transfer_form_title_edit">Editar transferencia</string>
     <string name="transfer_form_from_label">Desde</string>

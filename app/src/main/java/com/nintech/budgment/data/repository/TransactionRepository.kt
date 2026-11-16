@@ -9,7 +9,11 @@ import javax.inject.Inject
 interface TransactionRepository {
     fun observeTransactions(userId: String): Flow<List<TransactionEntity>>
     suspend fun getTransaction(id: String): TransactionEntity?
-    suspend fun createTransaction(userId: String, accountId: String, categoryId: String, amount: Long, description: String?, date: Long)
+    /** [transactionId]: quien necesita conocer el id de antemano (p. ej. para adjuntarle fotos) lo elige. */
+    suspend fun createTransaction(
+        userId: String, accountId: String, categoryId: String, amount: Long, description: String?, date: Long,
+        transactionId: String = UUID.randomUUID().toString()
+    )
     suspend fun updateTransaction(transaction: TransactionEntity, accountId: String, categoryId: String, amount: Long, description: String?, date: Long)
     suspend fun deleteTransaction(id: String)
     suspend fun restoreTransaction(id: String)
@@ -27,11 +31,12 @@ class TransactionRepositoryImpl @Inject constructor(
         transactionDao.getById(id)
 
     override suspend fun createTransaction(
-        userId: String, accountId: String, categoryId: String, amount: Long, description: String?, date: Long
+        userId: String, accountId: String, categoryId: String, amount: Long, description: String?, date: Long,
+        transactionId: String
     ) {
         transactionDao.insert(
             TransactionEntity(
-                id = UUID.randomUUID().toString(),
+                id = transactionId,
                 userId = userId,
                 accountId = accountId,
                 categoryId = categoryId,

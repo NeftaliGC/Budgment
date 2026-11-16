@@ -60,7 +60,11 @@ class BackupHeader(
  * que no se pueden reordenar, quitar ni cortar el archivo sin que se note.
  */
 object BackupCrypto {
-    const val FORMAT_VERSION = 1
+    /**
+     * 1: el contenido es la base de datos comprimida con gzip.
+     * 2: el contenido es un ZIP con la base de datos y, si se incluyeron, las fotos de recibos.
+     */
+    const val FORMAT_VERSION = 2
     const val DEFAULT_ITERATIONS = 600_000
     const val MIN_PASSWORD_LENGTH = 8
 
@@ -105,10 +109,11 @@ object BackupCrypto {
         createdAt: Long,
         schemaVersion: Int,
         iterations: Int = DEFAULT_ITERATIONS,
-        random: SecureRandom = SecureRandom()
+        random: SecureRandom = SecureRandom(),
+        formatVersion: Int = FORMAT_VERSION
     ): OutputStream {
         val header = BackupHeader(
-            formatVersion = FORMAT_VERSION,
+            formatVersion = formatVersion,
             createdAt = createdAt,
             schemaVersion = schemaVersion,
             iterations = iterations,

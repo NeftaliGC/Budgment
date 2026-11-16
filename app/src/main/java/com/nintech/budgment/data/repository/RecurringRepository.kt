@@ -36,7 +36,7 @@ interface RecurringRepository {
      */
     suspend fun createTransactionAndRecurring(
         userId: String, accountId: String, categoryId: String, amount: Long, description: String?,
-        frequency: RecurrenceFrequency, date: Long
+        frequency: RecurrenceFrequency, date: Long, transactionId: String = UUID.randomUUID().toString()
     )
 
     /** Si cambia la frecuencia o la fecha, la serie se recalcula desde hoy. */
@@ -57,7 +57,7 @@ interface RecurringRepository {
      */
     suspend fun registerOccurrence(
         id: String, occurrence: Long, accountId: String, categoryId: String, amount: Long,
-        description: String?, date: Long
+        description: String?, date: Long, transactionId: String = UUID.randomUUID().toString()
     ): Boolean
 
     /** Registra la ocurrencia tal cual la define el recurrente. */
@@ -100,7 +100,7 @@ class RecurringRepositoryImpl @Inject constructor(
 
     override suspend fun createTransactionAndRecurring(
         userId: String, accountId: String, categoryId: String, amount: Long, description: String?,
-        frequency: RecurrenceFrequency, date: Long
+        frequency: RecurrenceFrequency, date: Long, transactionId: String
     ) {
         val anchor = CalendarMath.startOfDay(date)
         // La ocurrencia del ancla ya queda registrada; tampoco se piden las que hayan pasado
@@ -112,7 +112,7 @@ class RecurringRepositoryImpl @Inject constructor(
         val recurring = newRecurring(userId, accountId, categoryId, amount, description, frequency, anchor, next)
         database.withTransaction {
             recurringDao.insert(recurring)
-            insertTransaction(recurring, accountId, categoryId, amount, description, date)
+            insertTransaction(recurring, accountId, categoryId, amount, description, date, transactionId)
         }
     }
 
@@ -164,11 +164,11 @@ class RecurringRepositoryImpl @Inject constructor(
 
     override suspend fun registerOccurrence(
         id: String, occurrence: Long, accountId: String, categoryId: String, amount: Long,
-        description: String?, date: Long
+        description: String?, date: Long, transactionId: String
     ): Boolean = database.withTransaction {
         val recurring = recurringDao.getById(id)
         if (recurring == null || recurring.nextOccurrence != occurrence) return@withTransaction false
-        insertTransaction(recurring, accountId, categoryId, amount, description, date)
+        insertTransaction(recurring, accountId, categoryId, amount, description, date, transactionId)
         advance(recurring)
         true
     }
@@ -192,11 +192,11 @@ class RecurringRepositoryImpl @Inject constructor(
 
     private suspend fun insertTransaction(
         recurring: RecurringTransactionEntity, accountId: String, categoryId: String, amount: Long,
-        description: String?, date: Long
+        description: String?, date: Long, transactionId: String
     ) {
         transactionDao.insert(
             TransactionEntity(
-                id = UUID.randomUUID().toString(),
+                id = transactionId,
                 userId = recurring.userId,
                 accountId = accountId,
                 categoryId = categoryId,

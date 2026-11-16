@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.nintech.budgment.data.attachments.AttachmentRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.NotificationRepository
 import com.nintech.budgment.data.repository.RecurringRepository
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit
  * - Movimientos recurrentes vencidos: los agrega a la bandeja y, si el usuario lo permite, los
  *   anuncia. Nunca registra nada: eso lo decide el usuario desde la app.
  * - Presupuestos: avisa los que llegaron al porcentaje elegido o a su límite.
+ * - Fotos de recibos: borra las que cumplieron el plazo elegido en Configuración.
  */
 class RecurringReminderWorker(
     context: Context,
@@ -39,10 +41,14 @@ class RecurringReminderWorker(
         fun notificationRepository(): NotificationRepository
         fun notificationSettings(): NotificationSettings
         fun budgetAlertChecker(): BudgetAlertChecker
+        fun attachmentRepository(): AttachmentRepository
     }
 
     override suspend fun doWork(): Result {
         val deps = EntryPointAccessors.fromApplication(applicationContext, Dependencies::class.java)
+        // Las fotos son del teléfono, no de un usuario: se limpian aunque no haya sesión.
+        runCatching { deps.attachmentRepository().cleanUp() }
+
         // Solo hay usuario en segundo plano si eligió «Recordarme»; sin sesión no se avisa.
         val userId = deps.sessionManager().currentUserId.first() ?: return Result.success()
 

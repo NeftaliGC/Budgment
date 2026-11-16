@@ -26,7 +26,7 @@ import java.util.zip.GZIPOutputStream
  * Recorre el respaldo completo con una base de datos real: copiarla mientras está abierta,
  * cifrarla, descifrarla, dejarla pendiente y abrirla con Room tras el «reinicio».
  *
- * Usa bases con nombres propios: nunca toca la base de datos de la app.
+ * Usa bases y carpetas con nombres propios: nunca toca los datos de la app.
  */
 @RunWith(AndroidJUnit4::class)
 class BackupRoundTripTest {
@@ -34,6 +34,8 @@ class BackupRoundTripTest {
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val sourceName = "backup-test-source.db"
     private val targetName = "backup-test-target.db"
+    private val photosName = "backup-test-attachments"
+    private val photosDir = File(context.filesDir, photosName)
     private val workDir = File(context.cacheDir, "backup-test")
     private val password = "contraseña de prueba".toCharArray()
 
@@ -46,6 +48,8 @@ class BackupRoundTripTest {
         context.deleteDatabase(sourceName)
         context.deleteDatabase(targetName)
         File(context.getDatabasePath(targetName).path + ".restore").delete()
+        photosDir.deleteRecursively()
+        File(context.filesDir, "$photosName.restore").deleteRecursively()
         workDir.deleteRecursively()
         workDir.mkdirs()
     }
@@ -96,9 +100,16 @@ class BackupRoundTripTest {
             )
             close()
         }
-        PendingRestore.stage(context, targetName, restored)
-        assertTrue(PendingRestore.applyIfAny(context, targetName))
-        assertFalse(PendingRestore.applyIfAny(context, targetName)) // ya no queda nada pendiente
+        // Las fotos que había se reemplazan por las del respaldo.
+        photosDir.mkdirs()
+        File(photosDir, "vieja.jpg").writeText("vieja")
+        val restoredPhotos = File(workDir, "fotos").apply { mkdirs() }
+        File(restoredPhotos, "nueva.jpg").writeText("nueva")
+
+        PendingRestore.stage(context, targetName, restored, restoredPhotos, photosName)
+        assertTrue(PendingRestore.applyIfAny(context, targetName, photosName))
+        assertFalse(PendingRestore.applyIfAny(context, targetName, photosName)) // ya no queda nada pendiente
+        assertEquals(listOf("nueva.jpg"), photosDir.list()?.toList())
 
         // Room valida el esquema al abrir: si la copia no fuera fiel, fallaría aquí.
         val target = open(targetName)

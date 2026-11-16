@@ -1,5 +1,7 @@
 package com.nintech.budgment.ui.transactions
 
+import kotlinx.coroutines.flow.asStateFlow
+import com.nintech.budgment.data.attachments.AttachmentRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nintech.budgment.data.local.entity.TransactionEntity
@@ -76,6 +78,8 @@ data class TransactionsUiState(
     val summary: FilterSummary? = null,
     val accountOptions: List<FilterOption> = emptyList(),
     val categoryOptions: List<FilterOption> = emptyList(),
+    /** Ids de los movimientos que tienen fotos del recibo. */
+    val withPhotos: Set<String> = emptySet(),
     val isLoading: Boolean = true
 )
 
@@ -159,10 +163,23 @@ class TransactionsViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val transferRepository: TransferRepository,
+    private val attachmentRepository: AttachmentRepository,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val filter = MutableStateFlow(TransactionFilter())
+
+    /** Fotos que se están viendo desde el menú de una fila; vacío si no hay ninguna abierta. */
+    private val _viewingPhotos = MutableStateFlow<List<String>>(emptyList())
+    val viewingPhotos: StateFlow<List<String>> = _viewingPhotos.asStateFlow()
+
+    fun onViewPhotos(transactionId: String) {
+        viewModelScope.launch { _viewingPhotos.value = attachmentRepository.photoPaths(transactionId) }
+    }
+
+    fun onPhotosDismissed() {
+        _viewingPhotos.value = emptyList()
+    }
 
     val uiState: StateFlow<TransactionsUiState> = sessionManager.currentUserId
         .flatMapLatest { userId ->
@@ -189,7 +206,9 @@ class TransactionsViewModel @Inject constructor(
                         .map { FilterOption(it.id, it.name, it.deletedAt != null, it.type, it.icon, it.color) }
                     Triple(details, accountOptions, categoryOptions)
                 }
-                combine(data, filter, dayTicks()) { (details, accountOptions, categoryOptions), currentFilter, now ->
+                combine(
+                    data, filter, dayTicks(), attachmentRepository.transactionIdsWithPhotos
+                ) { (details, accountOptions, categoryOptions), currentFilter, now, withPhotos ->
                     val filtered = applyFilter(details, currentFilter, now)
                     TransactionsUiState(
                         transactions = filtered,
@@ -198,6 +217,7 @@ class TransactionsViewModel @Inject constructor(
                         summary = if (currentFilter.isActive) summarize(filtered) else null,
                         accountOptions = accountOptions,
                         categoryOptions = categoryOptions,
+                        withPhotos = withPhotos,
                         isLoading = false
                     )
                 }

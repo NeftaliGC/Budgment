@@ -29,6 +29,7 @@ import com.nintech.budgment.data.local.entity.TransactionEntity
 import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.theme.BudgmentTheme
+import com.nintech.budgment.ui.attachments.ReceiptPhotoViewer
 import com.nintech.budgment.ui.common.RowActionsMenu
 import com.nintech.budgment.ui.common.rememberUndoableDelete
 import androidx.compose.material.icons.filled.Category
@@ -51,7 +52,13 @@ fun TransactionsListScreen(
 ) {
     if (viewModel != null) {
         val uiState by viewModel.uiState.collectAsState()
+        val viewingPhotos by viewModel.viewingPhotos.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
+
+        if (viewingPhotos.isNotEmpty()) {
+            // Solo para ver: las fotos se quitan desde el formulario del movimiento.
+            ReceiptPhotoViewer(paths = viewingPhotos, onDismiss = viewModel::onPhotosDismissed)
+        }
 
         TransactionsListScreen(
             uiState = uiState,
@@ -63,6 +70,7 @@ fun TransactionsListScreen(
             onAddTransactionClick = onAddTransactionClick,
             onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
+            onViewPhotos = viewModel::onViewPhotos,
             onDeleteTransaction = rememberUndoableDelete(
                 snackbarHostState = snackbarHostState,
                 message = stringResource(R.string.transactions_deleted_message),
@@ -125,9 +133,50 @@ fun TransactionsListScreen(
     onTransferClick: (String) -> Unit = {},
     onDeleteTransfer: (String) -> Unit = {},
     onRecurringClick: () -> Unit = {},
+    onViewPhotos: (String) -> Unit = {},
     filterActions: TransactionFilterActions = TransactionFilterActions(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
+    // Eliminar pide confirmación; después sigue pudiéndose deshacer desde el aviso.
+    var pendingDelete by remember { mutableStateOf<TransactionWithDetails?>(null) }
+    pendingDelete?.let { item ->
+        val transfer = item.transfer
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = {
+                Text(
+                    stringResource(
+                        if (transfer != null) R.string.transfer_delete_confirm_title
+                        else R.string.transactions_delete_confirm_title
+                    )
+                )
+            },
+            text = {
+                Text(
+                    stringResource(
+                        when {
+                            transfer != null -> R.string.transfer_delete_confirm_message
+                            item.transaction.id in uiState.withPhotos -> R.string.transactions_delete_confirm_message_photos
+                            else -> R.string.transactions_delete_confirm_message
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDelete = null
+                    if (transfer != null) onDeleteTransfer(transfer.transferId)
+                    else onDeleteTransaction(item.transaction.id)
+                }) {
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
+    }
+
     BudgmentScaffold(
         currentRoute = currentRoute,
         title = stringResource(R.string.transactions_title),
@@ -219,10 +268,10 @@ fun TransactionsListScreen(
                                         if (transfer != null) R.string.transfer_delete_content_description
                                         else R.string.transactions_delete_content_description
                                     ),
-                                    onDeleteClick = {
-                                        if (transfer != null) onDeleteTransfer(transfer.transferId)
-                                        else onDeleteTransaction(item.transaction.id)
-                                    }
+                                    onDeleteClick = { pendingDelete = item },
+                                    onViewPhotosClick = if (item.transaction.id in uiState.withPhotos) {
+                                        { onViewPhotos(item.transaction.id) }
+                                    } else null
                                 )
                             }
                         }

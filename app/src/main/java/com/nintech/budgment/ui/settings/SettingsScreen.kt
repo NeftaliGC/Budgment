@@ -66,6 +66,7 @@ fun SettingsScreen(
                     )
                 }
             },
+            photos = { PhotosSection() },
             backup = { BackupSection() }
         )
     } else {
@@ -76,6 +77,7 @@ fun SettingsScreen(
             security = {
                 SecuritySection(AppLockConfig(), onPinSetupClick, onBiometricChange = {}, onTimeoutChange = {})
             },
+            photos = { PhotosSectionContent(PhotosSettingsState(), onRetentionSelected = {}) },
             backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
         )
     }
@@ -88,6 +90,7 @@ fun SettingsScreenContent(
     onDefaultCurrencyChange: (String) -> Unit,
     onBackClick: () -> Unit,
     security: @Composable () -> Unit = {},
+    photos: @Composable () -> Unit = {},
     backup: @Composable () -> Unit = {}
 ) {
     SurfaceSystemBars()
@@ -181,6 +184,9 @@ fun SettingsScreenContent(
             security()
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            photos()
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
             backup()
         }
     }
@@ -198,6 +204,7 @@ private fun SettingsScreenPreview() {
             security = {
                 SecuritySection(AppLockConfig(enabled = true, pinLength = 4), {}, {}, {})
             },
+            photos = { PhotosSectionContent(PhotosSettingsState(), onRetentionSelected = {}) },
             backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
         )
     }

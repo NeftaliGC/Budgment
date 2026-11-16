@@ -53,7 +53,7 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 |--------|-----|------|-----------|--------|--------|
 | `GoalEntity`, `GoalContributionEntity` | `GoalDao`, `GoalContributionDao` | ✅ `GoalRepository` | ✅ | ✅ | ✅ Completo |
 | `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | ⏸️ Descartado por ahora |
-| `AttachmentEntity` | `AttachmentDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
+| `AttachmentEntity` | `AttachmentDao` | ✅ `AttachmentRepository` (`data/attachments/`) | ✅ `TransactionFormViewModel`, `PhotosSettingsViewModel` | ✅ En el formulario de movimiento y en Configuración | ✅ Completo |
 | `BudgetCategoryEntity` | `BudgetCategoryDao` | ✅ (dentro de `BudgetRepositoryImpl`) | ✅ | ✅ | ✅ Completo |
 | `TransactionTagEntity` | `TransactionTagDao` | ❌ | ❌ | ❌ | ⏸️ Descartado por ahora |
 
@@ -275,7 +275,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
 |---------|--------------|------|----|--------|------------|-------|
-| Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | — | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
+| ✅ ~~Adjuntos~~ | ✅ | ✅ | ✅ | ✅ | — | Hecho: ver «Fotos de recibos» abajo |
 
 ### B. Funciones sin ningún código
 
@@ -304,7 +304,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Versionar `app/schemas/`~~ | Versionados desde `38db1c3` (el 1.json no existe; el verificador lo reconstruye del 2) | Hecho |
 | Restaurar una copia previa a la migración o a una restauración | `noBackupFilesDir/db-backups`; sin UI | Pendiente |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest`, `AppLockPolicyTest` y `BackupCryptoTest`; instrumentado: `BackupRoundTripTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest`, `AppLockPolicyTest`, `BackupCryptoTest` y `AttachmentPolicyTest`; instrumentado: `BackupRoundTripTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | ✅ ~~`backup_rules.xml` / `data_extraction_rules.xml`~~ | `res/xml/` | Hecho: respaldo automático de Android configurado |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -317,7 +317,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
 6. ✅ ~~**Metas**~~, ✅ ~~filtros de movimientos~~. ⏸️ Etiquetas y subcategorías descartadas por ahora (ver «Descartado por ahora»).
 7. ✅ ~~**Migraciones reales**~~ → ✅ ~~**PIN/biometría**~~ → ✅ ~~**respaldo a archivo**~~.
-8. **Adjuntos** (y sumarlos al respaldo). Opcional: respaldo automático en Drive.
+8. ✅ ~~**Adjuntos**~~ (fotos de recibos, incluidas en el respaldo a archivo). Opcional: respaldo automático en Drive.
 9. Tests, pulido, README, publicación.
 
 ---
@@ -349,16 +349,27 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 ### Respaldo a archivo
 - En Configuración → Respaldo (`ui/settings/BackupSection.kt`, `BackupViewModel`). «Crear respaldo»: pide una contraseña (mínimo 8 caracteres, dos veces) y abre el selector del sistema (`CreateDocument`) para elegir dónde guardar `Budgment <fecha>.budgment`: teléfono, Drive, USB… «Restaurar un respaldo»: selector (`OpenDocument`), contraseña, confirmación con fecha y cuántas cuentas y movimientos trae, y reinicio
 - «Restaurar un respaldo» también está en la pantalla de inicio de sesión (`RestoreBackupButton`), para un teléfono nuevo donde aún no hay ninguna cuenta. Ahí no se espera al desbloqueo: sin sesión no hay pantalla de bloqueo
-- **Qué contiene:** la base de datos completa, con **todos** los usuarios del teléfono. No incluye preferencias (DataStore) ni el PIN
-- **Formato** (`data/backup/BackupCrypto.kt`, puro, con tests): cabecera sin cifrar de 48 bytes (`BDGMBKUP`, versión del formato, fecha, versión del esquema, iteraciones, sal, prefijo del nonce) + contenido = BD comprimida con gzip y cifrada con AES-256-GCM en bloques de 64 KiB. Clave: PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal nueva por archivo. El número de bloque y la marca de «último» van en el nonce y la cabecera es dato autenticado de cada bloque: no se puede alterar, reordenar ni cortar sin que falle. Fallo en el primer bloque = contraseña incorrecta; en otro = archivo dañado
+- **Qué contiene:** la base de datos completa, con **todos** los usuarios del teléfono, y las fotos de recibos si se deja marcada la casilla «Incluir las fotos de recibos (tamaño)» del diálogo (solo aparece si hay fotos). No incluye preferencias (DataStore) ni el PIN
+- **Formato** (`data/backup/BackupCrypto.kt`, puro, con tests): cabecera sin cifrar de 48 bytes (`BDGMBKUP`, versión del formato, fecha, versión del esquema, iteraciones, sal, prefijo del nonce) + contenido cifrado con AES-256-GCM en bloques de 64 KiB. El contenido depende de la versión del formato: **1** = BD comprimida con gzip (se sigue pudiendo restaurar); **2** (actual) = ZIP con `budgment.db` y `attachments/<id>.jpg` (las fotos sin recomprimir). Al leer el ZIP el nombre de cada foto se valida entero. Clave: PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal nueva por archivo. El número de bloque y la marca de «último» van en el nonce y la cabecera es dato autenticado de cada bloque: no se puede alterar, reordenar ni cortar sin que falle. Fallo en el primer bloque = contraseña incorrecta; en otro = archivo dañado
 - **Copia coherente** (`DatabaseSnapshot.create`): abre una BD nueva, le adjunta la que está en uso y copia tablas e índices en una transacción (Android 7 no tiene `VACUUM INTO`). No depende de cerrar Room ni de vaciar el -wal
-- **Restaurar en dos tiempos** (`PendingRestore`): con la app abierta solo se descifra a caché, se valida (`DatabaseSnapshot.inspect`: versión ≤ actual, `integrity_check`, tablas mínimas) y se deja como `budgment.db.restore`; se cierra la sesión y se reinicia el proceso. El reemplazo ocurre en `DatabaseModule` antes de abrir Room: copia de la BD actual a `db-backups` (`budgment-antes-de-restaurar-<fecha>.db`), borrar -wal/-shm y renombrar. Si el respaldo es de un esquema anterior, las migraciones lo ponen al día
+- **Restaurar en dos tiempos** (`PendingRestore`): con la app abierta solo se descifra a caché, se valida (`DatabaseSnapshot.inspect`: versión ≤ actual, `integrity_check`, tablas mínimas) y se deja como `budgment.db.restore`, con las fotos en `filesDir/attachments.restore` (la carpeta se crea siempre, aunque el respaldo no traiga fotos: las actuales pertenecen a movimientos que dejan de existir); se cierra la sesión y se reinicia el proceso. El reemplazo ocurre en `DatabaseModule` antes de abrir Room: copia de la BD actual a `db-backups` (`budgment-antes-de-restaurar-<fecha>.db`), borrar -wal/-shm, cambiar la carpeta de fotos y renombrar la BD al final. De las fotos anteriores no se guarda copia. Si el respaldo es de un esquema anterior, las migraciones lo ponen al día
 - `BackupManager` usa su propio `CoroutineScope`: cerrar la sesión destruye la pantalla de Configuración antes de terminar
 - **Bloqueo de la app:** el selector de archivos manda la app al fondo y al volver puede pedir el PIN; los diálogos del respaldo esperan a que se desbloquee (`BackupViewModel.unlocked`)
 - **Olvidar la contraseña = respaldo perdido.** No hay recuperación, y así se le dice al usuario
 - `Pbkdf2` (`data/local/security/`): usa el del sistema y, en Android 7 (API 24–25, donde `PBKDF2WithHmacSHA256` no existe), uno propio con el mismo resultado. `PasswordHasher` también lo usa: antes el inicio de sesión fallaba en esas versiones
-- **Pendiente:** adjuntos (cuando existan), respaldo automático programado, pantalla para recuperar las copias de `db-backups`
+- **Pendiente:** respaldo automático programado, pantalla para recuperar las copias de `db-backups`
 - **Probar:** `./gradlew connectedDebugAndroidTest` corre `BackupRoundTripTest` con bases de nombre propio. ⚠️ Al terminar, Gradle puede desinstalar la app del dispositivo: usar un emulador o un teléfono sin datos reales
+
+### Fotos de recibos (adjuntos)
+- **Dónde:** en el formulario de movimiento (nuevo, editar y confirmar una ocurrencia; no en la plantilla de un recurrente ni en transferencias), debajo de la nota: miniaturas, «Tomar foto» y visor a pantalla completa con zoom (`ui/attachments/ReceiptPhotos.kt`). En la lista de Movimientos, el menú ⋮ de una fila con fotos ofrece «Ver fotos del recibo» (visor de solo lectura, `ReceiptPhotoViewer`); la fila en sí no lleva ningún indicador. Quitar una foto desde el formulario pide confirmación
+- **Solo desde la cámara** (`ActivityResultContracts.TakePicture` + `FileProvider`, autoridad `<applicationId>.files`, `res/xml/file_paths.xml`): la app de cámara del teléfono deja la foto en `cacheDir/captures/`. No se pide el permiso `CAMERA` (no hay que declararlo: si se declarara, habría que pedirlo) y no se puede elegir de la galería
+- **Para que ocupen poco** (`AttachmentPolicy`, puro, con tests): lado mayor de 1600 px, JPEG al 80 %, giro EXIF aplicado; máximo **3 por movimiento**
+- **Archivos** (`AttachmentStore`): definitivos en `filesDir/attachments/<id>.jpg`; `AttachmentEntity.filePath` guarda solo el nombre, para que un respaldo sirva en otro teléfono
+- **Se aplican al guardar:** las fotos nuevas viven en caché y las quitadas no se borran hasta guardar el movimiento (`AttachmentRepository.applyChanges`); salir sin guardar no cambia nada. Para conocer el id de un movimiento nuevo, `createTransaction`, `createTransactionAndRecurring` y `registerOccurrence` aceptan un `transactionId`
+- **Si el sistema cierra la app con la cámara abierta:** las fotos ya tomadas se recuperan (`SavedStateHandle`), pero el resto del formulario no se guarda ahí y se pierde, igual que antes
+- **Borrado periódico** (`AttachmentRepository.cleanUp`): corre en la revisión diaria (`RecurringReminderWorker`, aunque no haya sesión), al abrir la app y al cambiar el plazo. Borra las fotos que cumplieron el plazo (meses de calendario desde que se tomaron), las de movimientos eliminados hace más de un día, los registros sin archivo y los archivos sin registro. El movimiento nunca se toca
+- **Plazo** (Configuración → Fotos de recibos, `AttachmentSettings` en DataStore): 3 meses (por defecto), 6 meses, 1 año o siempre. Si el plazo elegido borraría fotos en el acto, se pide confirmación con el número. Ahí mismo se ve cuántas fotos hay y cuánto ocupan; el formulario avisa del plazo junto a las fotos
+- **Respaldos:** van en el respaldo a archivo (opcional). **No** van en el respaldo automático de Android: su límite es de 25 MB y, si se supera, falla el respaldo entero; tras una restauración automática los registros sin archivo se limpian solos
 
 ### WorkManager
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
@@ -420,7 +431,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - **Límite:** protege la interfaz, no cifra la BD. Quien saque el archivo del teléfono (root, ADB con depuración) puede leerlo. Cifrar la BD se evaluó y se descartó por ahora (ver «Descartado por ahora: cifrar la base de datos»)
 
 ### Respaldo automático de Android (`backup_rules.xml` / `data_extraction_rules.xml`)
-- Se respaldan `database/budgment.db` (con -wal/-shm) y `file/datastore/` (sesión recordada y preferencias). Todo lo demás queda fuera; `noBackupFilesDir` (WorkManager, copias previas a migrar) y el caché nunca se respaldan
+- Se respaldan `database/budgment.db` (con -wal/-shm) y `file/datastore/` (sesión recordada y preferencias). Todo lo demás queda fuera, incluidas las fotos de recibos (`file/attachments/`); `noBackupFilesDir` (WorkManager, copias previas a migrar) y el caché nunca se respaldan
 - Nube: solo con cifrado de extremo a extremo (`disableIfNoEncryptionCapabilities` en API 31+, `requireFlags="clientSideEncryption"` en API ≤30). Sin bloqueo de pantalla no se sube nada
 - Transferencia directa a un teléfono nuevo: mismas reglas, sin requisito de cifrado
 - Cuándo: Android decide (aprox. una vez al día con el teléfono cargando, en wifi e inactivo); límite 25 MB. Restaura al reinstalar o al configurar otro teléfono con la misma cuenta de Google

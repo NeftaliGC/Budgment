@@ -4,6 +4,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nintech.budgment.data.attachments.AttachmentRepository
+import com.nintech.budgment.data.attachments.AttachmentUsage
 import com.nintech.budgment.data.backup.BackupError
 import com.nintech.budgment.data.backup.BackupException
 import com.nintech.budgment.data.backup.BackupManager
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -24,8 +27,8 @@ import javax.inject.Inject
 sealed interface BackupStep {
     data object Idle : BackupStep
 
-    /** Pide la contraseña del respaldo nuevo. */
-    data object ExportPassword : BackupStep
+    /** Pide la contraseña del respaldo nuevo. [photos]: las fotos de recibos que se pueden incluir. */
+    data class ExportPassword(val photos: AttachmentUsage) : BackupStep
 
     data object Exporting : BackupStep
     data object ExportDone : BackupStep
@@ -48,6 +51,7 @@ sealed interface BackupStep {
 @HiltViewModel
 class BackupViewModel @Inject constructor(
     private val backupManager: BackupManager,
+    private val attachmentRepository: AttachmentRepository,
     appLock: AppLockManager
 ) : ViewModel() {
 
@@ -63,6 +67,7 @@ class BackupViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, appLock.state.value == LockState.UNLOCKED)
 
     private var exportPassword: CharArray? = null
+    private var exportIncludesPhotos = true
     private var restoreSource: Uri? = null
 
     fun dismiss() {
@@ -75,12 +80,15 @@ class BackupViewModel @Inject constructor(
     // Crear un respaldo
 
     fun onCreateClick() {
-        _step.value = BackupStep.ExportPassword
+        viewModelScope.launch {
+            _step.value = BackupStep.ExportPassword(attachmentRepository.usage.first())
+        }
     }
 
     /** La pantalla abre a continuación el selector para decidir dónde guardar el archivo. */
-    fun onExportPasswordChosen(password: String) {
+    fun onExportPasswordChosen(password: String, includePhotos: Boolean) {
         exportPassword = password.toCharArray()
+        exportIncludesPhotos = includePhotos
         _step.value = BackupStep.Idle
     }
 
@@ -101,7 +109,7 @@ class BackupViewModel @Inject constructor(
         _step.value = BackupStep.Exporting
         viewModelScope.launch {
             _step.value = try {
-                backupManager.export(target, password)
+                backupManager.export(target, password, exportIncludesPhotos)
                 BackupStep.ExportDone
             } catch (e: Exception) {
                 Log.w(TAG, "No se pudo crear el respaldo", e)

@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,8 +29,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -36,7 +40,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.text.format.Formatter
 import com.nintech.budgment.R
+import com.nintech.budgment.data.attachments.AttachmentUsage
 import com.nintech.budgment.data.backup.BackupCrypto
 import com.nintech.budgment.data.backup.BackupError
 import com.nintech.budgment.data.backup.RestorePreview
@@ -75,8 +81,8 @@ fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
         BackupDialogs(
             step = step,
             viewModel = viewModel,
-            onExportPasswordChosen = { password ->
-                viewModel.onExportPasswordChosen(password)
+            onExportPasswordChosen = { password, includePhotos ->
+                viewModel.onExportPasswordChosen(password, includePhotos)
                 createFile.launch(fileName)
             }
         )
@@ -95,7 +101,7 @@ fun RestoreBackupButton(modifier: Modifier = Modifier, viewModel: BackupViewMode
     TextButton(onClick = openFile, enabled = step == BackupStep.Idle, modifier = modifier) {
         Text(stringResource(R.string.settings_backup_restore))
     }
-    BackupDialogs(step = step, viewModel = viewModel, onExportPasswordChosen = {})
+    BackupDialogs(step = step, viewModel = viewModel, onExportPasswordChosen = { _, _ -> })
 }
 
 @Composable
@@ -113,11 +119,12 @@ private fun rememberRestoreFilePicker(viewModel: BackupViewModel): () -> Unit {
 private fun BackupDialogs(
     step: BackupStep,
     viewModel: BackupViewModel,
-    onExportPasswordChosen: (String) -> Unit
+    onExportPasswordChosen: (password: String, includePhotos: Boolean) -> Unit
 ) {
     when (step) {
         BackupStep.Idle -> Unit
-        BackupStep.ExportPassword -> NewPasswordDialog(
+        is BackupStep.ExportPassword -> NewPasswordDialog(
+            photos = step.photos,
             onConfirm = onExportPasswordChosen,
             onDismiss = viewModel::dismiss
         )
@@ -232,7 +239,12 @@ private fun PasswordField(
 }
 
 @Composable
-private fun NewPasswordDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun NewPasswordDialog(
+    photos: AttachmentUsage,
+    onConfirm: (password: String, includePhotos: Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var includePhotos by rememberSaveable { mutableStateOf(true) }
     var password by rememberSaveable { mutableStateOf("") }
     var confirmation by rememberSaveable { mutableStateOf("") }
     var visible by rememberSaveable { mutableStateOf(false) }
@@ -271,12 +283,33 @@ private fun NewPasswordDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit
                         stringResource(R.string.auth_error_passwords_do_not_match)
                     } else null
                 )
+                // Sin fotos el respaldo pesa mucho menos; la opción solo aparece si hay alguna.
+                if (photos.count > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(value = includePhotos, role = Role.Checkbox, onValueChange = { includePhotos = it })
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = includePhotos, onCheckedChange = null)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            stringResource(
+                                R.string.backup_include_photos,
+                                Formatter.formatShortFileSize(LocalContext.current, photos.bytes)
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 submitted = true
-                if (!tooShort && !mismatch) onConfirm(password)
+                if (!tooShort && !mismatch) onConfirm(password, includePhotos && photos.count > 0)
             }) {
                 Text(stringResource(R.string.backup_password_continue))
             }
@@ -343,7 +376,8 @@ private fun RestoreConfirmDialog(preview: RestorePreview, onConfirm: () -> Unit,
                     R.string.backup_restore_confirm_text,
                     formatDate(preview.createdAt),
                     pluralStringResource(R.plurals.backup_accounts_count, preview.accounts, preview.accounts),
-                    pluralStringResource(R.plurals.backup_transactions_count, preview.transactions, preview.transactions)
+                    pluralStringResource(R.plurals.backup_transactions_count, preview.transactions, preview.transactions),
+                    pluralStringResource(R.plurals.backup_photos_count, preview.photos, preview.photos)
                 )
             )
         },

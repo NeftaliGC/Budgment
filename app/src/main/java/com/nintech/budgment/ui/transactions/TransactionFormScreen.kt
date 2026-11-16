@@ -3,6 +3,8 @@ package com.nintech.budgment.ui.transactions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
 import android.Manifest
+import android.content.ActivityNotFoundException
+import com.nintech.budgment.ui.attachments.ReceiptPhotosField
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -115,6 +117,12 @@ fun TransactionFormScreen(
             }
         }
 
+        // La cámara del teléfono toma la foto y la deja en un archivo temporal de la app.
+        val takePicture = rememberLauncherForActivityResult(
+            ActivityResultContracts.TakePicture(),
+            viewModel::onPhotoCaptureResult
+        )
+
         TransactionFormScreen(
             state = state,
             onTypeChange = viewModel::onTypeChange,
@@ -124,6 +132,16 @@ fun TransactionFormScreen(
             onDateChange = viewModel::onDateChange,
             onDescriptionChange = viewModel::onDescriptionChange,
             onFrequencyChange = viewModel::onFrequencyChange,
+            onAddPhotoClick = {
+                viewModel.startPhotoCapture()?.let { uri ->
+                    try {
+                        takePicture.launch(uri)
+                    } catch (_: ActivityNotFoundException) {
+                        viewModel.onNoCameraApp()
+                    }
+                }
+            },
+            onRemovePhoto = viewModel::onPhotoRemoved,
             onSaveClick = viewModel::save,
             onBackClick = onBackClick,
             onCreateAccountClick = onCreateAccountClick,
@@ -161,7 +179,9 @@ fun TransactionFormScreen(
     onCreateAccountClick: () -> Unit,
     onCreateCategoryClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onFrequencyChange: (RecurrenceFrequency?) -> Unit = {}
+    onFrequencyChange: (RecurrenceFrequency?) -> Unit = {},
+    onAddPhotoClick: () -> Unit = {},
+    onRemovePhoto: (FormPhoto) -> Unit = {}
 ) {
     SurfaceSystemBars()
 
@@ -259,10 +279,25 @@ fun TransactionFormScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                if (state.supportsPhotos) {
+                    Spacer(Modifier.height(20.dp))
+                    ReceiptPhotosField(
+                        photos = state.photos,
+                        canAdd = state.canAddPhoto,
+                        processing = state.processingPhoto,
+                        error = state.photoError,
+                        retentionMonths = state.photoRetentionMonths,
+                        onAddClick = onAddPhotoClick,
+                        onRemove = onRemovePhoto,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 Spacer(Modifier.height(28.dp))
 
                 Button(
                     onClick = onSaveClick,
+                    enabled = !state.processingPhoto,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
                 ) {
                     Text(

@@ -3,6 +3,7 @@ package com.nintech.budgment.ui.common
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -27,9 +28,11 @@ import kotlinx.coroutines.launch
 /**
  * Menú "más opciones" de una fila. Eliminar queda a dos toques para que no se dispare
  * por accidente al tocar la fila para editarla.
+ *
+ * [onViewPhotosClick]: si no es null, se ofrece antes «Ver fotos del recibo».
  */
 @Composable
-fun RowActionsMenu(deleteLabel: String, onDeleteClick: () -> Unit) {
+fun RowActionsMenu(deleteLabel: String, onDeleteClick: () -> Unit, onViewPhotosClick: (() -> Unit)? = null) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
@@ -41,6 +44,16 @@ fun RowActionsMenu(deleteLabel: String, onDeleteClick: () -> Unit) {
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            if (onViewPhotosClick != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.receipt_photos_view)) },
+                    leadingIcon = { Icon(Icons.Filled.Image, contentDescription = null) },
+                    onClick = {
+                        expanded = false
+                        onViewPhotosClick()
+                    }
+                )
+            }
             DropdownMenuItem(
                 text = { Text(deleteLabel, color = MaterialTheme.colorScheme.error) },
                 leadingIcon = {

@@ -2,13 +2,9 @@ package com.nintech.budgment.data.local.security
 
 import android.util.Base64
 import java.security.SecureRandom
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
 object PasswordHasher {
     private const val ITERATIONS = 120_000
-    private const val KEY_LENGTH = 256
-    private const val ALGORITHM = "PBKDF2WithHmacSHA256"
 
     fun hash(password: String): String {
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
@@ -25,8 +21,6 @@ object PasswordHasher {
         return pbkdf2(password, salt, iterations).contentEquals(expected)
     }
 
-    private fun pbkdf2(password: String, salt: ByteArray, iterations: Int): ByteArray {
-        val spec = PBEKeySpec(password.toCharArray(), salt, iterations, KEY_LENGTH)
-        return SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).encoded
-    }
+    private fun pbkdf2(password: String, salt: ByteArray, iterations: Int): ByteArray =
+        Pbkdf2.derive(password.toCharArray(), salt, iterations)
 }

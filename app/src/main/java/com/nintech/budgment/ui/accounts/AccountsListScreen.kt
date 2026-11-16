@@ -39,6 +39,7 @@ fun AccountsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
+    onStatisticsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAddTransferClick: () -> Unit = {},
@@ -52,6 +53,7 @@ fun AccountsListScreen(
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
+            onStatisticsClick = onStatisticsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onAddTransferClick = onAddTransferClick,
@@ -64,6 +66,7 @@ fun AccountsListScreen(
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
+            onStatisticsClick = onStatisticsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onAddTransferClick = onAddTransferClick,
@@ -79,6 +82,7 @@ fun AccountsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
+    onStatisticsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onDeleteAccount: (String) -> Unit,
@@ -103,6 +107,7 @@ fun AccountsListScreen(
         title = stringResource(R.string.accounts_title),
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
+        onStatisticsClick = onStatisticsClick,
         topBarActions = {
             // Mover dinero entre cuentas requiere al menos dos.
             if (uiState.accounts.size >= 2) {

@@ -23,6 +23,7 @@ fun BudgmentScaffold(
     onNavigateToTab: (String) -> Unit,
     title: String? = null,
     onSettingsClick: () -> Unit = {},
+    onStatisticsClick: () -> Unit = {},
     topBarActions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
@@ -44,6 +45,7 @@ fun BudgmentScaffold(
                 title = title,
                 userName = userName,
                 onSettingsClick = onSettingsClick,
+                onStatisticsClick = onStatisticsClick,
                 onLogoutClick = { headerViewModel?.logout() },
                 actions = topBarActions
             )

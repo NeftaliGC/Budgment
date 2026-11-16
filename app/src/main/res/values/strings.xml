@@ -22,6 +22,7 @@
 
     <!-- Header -->
     <string name="header_greeting">Hola, %1$s</string>
+    <string name="header_menu_statistics">Estadísticas</string>
     <string name="header_menu_settings">Configuración</string>
     <string name="header_menu_logout">Cerrar sesión</string>
     <string name="header_profile_content_description">Perfil y configuración</string>
@@ -389,4 +390,25 @@
     <string name="color_brown">Café</string>
     <string name="color_blue_grey">Gris azulado</string>
 
+
+    <!-- Estadísticas -->
+    <string name="stats_title">Estadísticas</string>
+    <string name="stats_mode_month">Mes</string>
+    <string name="stats_mode_year">Año</string>
+    <string name="stats_previous">Periodo anterior</string>
+    <string name="stats_next">Periodo siguiente</string>
+    <string name="stats_summary_title">Resumen</string>
+    <string name="stats_income">Ingresos</string>
+    <string name="stats_expense">Gastos</string>
+    <string name="stats_net">Balance del periodo</string>
+    <string name="stats_compare_more_format">Gastaste %1$d %% más que en %2$s.</string>
+    <string name="stats_compare_less_format">Gastaste %1$d %% menos que en %2$s.</string>
+    <string name="stats_compare_same_format">Gastaste lo mismo que en %1$s.</string>
+    <string name="stats_by_category_title">Gastos por categoría</string>
+    <string name="stats_no_expenses">No hay gastos en este periodo.</string>
+    <string name="stats_percent_format">%1$d %%</string>
+    <string name="stats_flows_title">Ingresos y gastos por mes</string>
+    <string name="stats_balance_title">Evolución del saldo</string>
+    <string name="stats_balance_note">Saldo total de tus cuentas al cierre de cada mes. Las transferencias no cuentan como ingreso ni gasto.</string>
+    <string name="stats_missing_rate">Algunos montos no se incluyeron porque falta el tipo de cambio. Conéctate a internet para actualizarlo.</string>
 </resources>

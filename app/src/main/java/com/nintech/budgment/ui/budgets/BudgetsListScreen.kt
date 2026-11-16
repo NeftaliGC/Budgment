@@ -46,6 +46,7 @@ fun BudgetsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
+    onStatisticsClick: () -> Unit = {},
     onAddBudgetClick: () -> Unit,
     onBudgetClick: (String) -> Unit,
     viewModel: BudgetsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
@@ -59,6 +60,7 @@ fun BudgetsListScreen(
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
+            onStatisticsClick = onStatisticsClick,
             onAddBudgetClick = onAddBudgetClick,
             onBudgetClick = onBudgetClick,
             onDeleteBudget = rememberUndoableDelete(
@@ -77,6 +79,7 @@ fun BudgetsListScreen(
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
+            onStatisticsClick = onStatisticsClick,
             onAddBudgetClick = onAddBudgetClick,
             onBudgetClick = onBudgetClick,
             onDeleteBudget = {},
@@ -92,6 +95,7 @@ fun BudgetsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
+    onStatisticsClick: () -> Unit = {},
     onAddBudgetClick: () -> Unit,
     onBudgetClick: (String) -> Unit,
     onDeleteBudget: (String) -> Unit,
@@ -104,6 +108,7 @@ fun BudgetsListScreen(
         title = stringResource(R.string.budgets_title),
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
+        onStatisticsClick = onStatisticsClick,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(

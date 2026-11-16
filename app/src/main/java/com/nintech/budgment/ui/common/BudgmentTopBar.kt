@@ -50,6 +50,7 @@ fun BudgmentTopBar(
     userName: String,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
+    onStatisticsClick: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
@@ -79,7 +80,11 @@ fun BudgmentTopBar(
         },
         actions = {
             actions()
-            ProfileMenu(onSettingsClick = onSettingsClick, onLogoutClick = onLogoutClick)
+            ProfileMenu(
+                onStatisticsClick = onStatisticsClick,
+                onSettingsClick = onSettingsClick,
+                onLogoutClick = onLogoutClick
+            )
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = ChromeBackground,
@@ -90,7 +95,7 @@ fun BudgmentTopBar(
 }
 
 @Composable
-private fun ProfileMenu(onSettingsClick: () -> Unit, onLogoutClick: () -> Unit) {
+private fun ProfileMenu(onStatisticsClick: () -> Unit, onSettingsClick: () -> Unit, onLogoutClick: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
@@ -101,6 +106,14 @@ private fun ProfileMenu(onSettingsClick: () -> Unit, onLogoutClick: () -> Unit) 
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.header_menu_statistics)) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_estadisticas), contentDescription = null, modifier = Modifier.size(24.dp)) },
+                onClick = {
+                    expanded = false
+                    onStatisticsClick()
+                }
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.header_menu_settings)) },
                 leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },

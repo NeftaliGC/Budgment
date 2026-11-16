@@ -274,7 +274,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Qué hace falta | Depende de |
 |---------|----------------|------------|
-| Estadísticas / reportes | Pantalla de gráficos (gasto por categoría, ingreso vs gasto por mes, evolución de saldo) + pestaña o acceso. Íconos `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` sin usar | — |
+| ✅ ~~Estadísticas~~ | Hecho: `ui/statistics/` (ver «Estadísticas» abajo). Pendiente: exportar reporte, filtrar por cuenta | — |
 | PIN / biometría | `BiometricPrompt` + PIN de respaldo, bloqueo al volver de segundo plano, opción en Configuración | Configuración |
 | Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
 | Notificaciones | Alertas de presupuesto (80 %/100 %) y de recurrentes; canal + permiso `POST_NOTIFICATIONS` | WorkManager |
@@ -294,7 +294,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | Quitar `fallbackToDestructiveMigration` (las migraciones ya empezaron en v3→v4) | `di/DatabaseModule.kt` (BD versión 4) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | Solo `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest` y `RecurrenceTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest` y `ComputeStatisticsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -303,7 +303,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 1. ✅ ~~Deuda trivial: typo + este documento al día.~~
 2. ✅ ~~**Transferencias**~~.
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
-4. **Estadísticas**.
+4. ✅ ~~**Estadísticas**~~.
 5. **Notificaciones** (reusa WorkManager).
 6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
 7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
@@ -330,8 +330,15 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
 - Pendiente: reutilizarlo para alertas de presupuesto (80 %/100 %)
 
+### Estadísticas
+- Acceso desde el menú de perfil (junto a Configuración); ruta `statistics`
+- `StatisticsCalculator.kt` (puro, con tests): `StatsRange` mes/año con desplazamiento, `computeStatistics` → ingresos, gastos, comparación con el periodo anterior, gasto por categoría, flujos por mes (6 meses o los 12 del año) y saldo al cierre de cada mes
+- Las transferencias (`categoryId == null`) no cuentan como ingreso ni gasto, pero sí en el saldo
+- Saldo histórico = `balanceCache` actual − movimientos posteriores; solo cuentas existentes en esa fecha; tipo de cambio de hoy
+- Todo en la moneda de visualización (`SessionManager.displayCurrency`); si falta un tipo de cambio, el monto se omite y se avisa
+- Gráficas propias con `Canvas` (`StatisticsCharts.kt`), sin librería externa; cifras también en texto y `contentDescription`
+
 ### Drawables sin uso
-- `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` — reservados para Estadísticas
 - (`logo_mark.png` ya se usa en Login y en la barra superior; los strings sin uso se eliminaron en `5d5e54f`)
 
 ### backup_rules.xml / data_extraction_rules.xml

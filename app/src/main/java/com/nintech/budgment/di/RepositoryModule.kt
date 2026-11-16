@@ -30,7 +30,7 @@ abstract class RepositoryModule {
     abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
 
     @Binds
-    abstract fun bindAuthRepository(imzpl: AuthRepositoryImpl): AuthRepository
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
     @Binds
     @Singleton

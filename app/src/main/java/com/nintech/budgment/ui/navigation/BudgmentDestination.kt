@@ -9,6 +9,7 @@ sealed class BudgmentDestination(val route: String) {
     object Home : BudgmentDestination("home")
     object Settings : BudgmentDestination("settings")
     object Statistics : BudgmentDestination("statistics")
+    object Notifications : BudgmentDestination("notifications")
     object Accounts : BudgmentDestination("accounts")
     object AccountForm : BudgmentDestination("account_form?accountId={accountId}") {
         const val ARG_ACCOUNT_ID = "accountId"

@@ -10,6 +10,8 @@ import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.CategoryRepositoryImpl
 import com.nintech.budgment.data.repository.ExchangeRateRepository
 import com.nintech.budgment.data.repository.ExchangeRateRepositoryImpl
+import com.nintech.budgment.data.repository.NotificationRepository
+import com.nintech.budgment.data.repository.NotificationRepositoryImpl
 import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.repository.TransactionRepositoryImpl
 import com.nintech.budgment.data.repository.TransferRepository
@@ -18,6 +20,8 @@ import com.nintech.budgment.data.repository.RecurringRepositoryImpl
 import com.nintech.budgment.data.repository.TransferRepositoryImpl
 import com.nintech.budgment.data.repository.UserRepository
 import com.nintech.budgment.data.repository.UserRepositoryImpl
+import com.nintech.budgment.data.session.NotificationSettings
+import com.nintech.budgment.data.session.NotificationSettingsImpl
 import com.nintech.budgment.data.session.SessionManager
 import com.nintech.budgment.data.session.SessionManagerImpl
 import dagger.Binds
@@ -61,4 +65,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindExchangeRateRepository(impl: ExchangeRateRepositoryImpl): ExchangeRateRepository
+
+    @Binds
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationSettings(impl: NotificationSettingsImpl): NotificationSettings
 }

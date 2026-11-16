@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -28,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +55,8 @@ fun BudgmentTopBar(
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    unreadNotifications: Int = 0,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
@@ -81,6 +87,8 @@ fun BudgmentTopBar(
         actions = {
             actions()
             ProfileMenu(
+                unreadNotifications = unreadNotifications,
+                onNotificationsClick = onNotificationsClick,
                 onStatisticsClick = onStatisticsClick,
                 onSettingsClick = onSettingsClick,
                 onLogoutClick = onLogoutClick
@@ -95,17 +103,38 @@ fun BudgmentTopBar(
 }
 
 @Composable
-private fun ProfileMenu(onStatisticsClick: () -> Unit, onSettingsClick: () -> Unit, onLogoutClick: () -> Unit) {
+private fun ProfileMenu(
+    unreadNotifications: Int,
+    onNotificationsClick: () -> Unit,
+    onStatisticsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
+        val description = if (unreadNotifications > 0) {
+            pluralStringResource(R.plurals.header_profile_unread_description, unreadNotifications, unreadNotifications)
+        } else {
+            stringResource(R.string.header_profile_content_description)
+        }
         IconButton(onClick = { expanded = true }) {
-            Icon(
-                imageVector = Icons.Filled.AccountCircle,
-                contentDescription = stringResource(R.string.header_profile_content_description)
-            )
+            BadgedBox(badge = { if (unreadNotifications > 0) Badge() }) {
+                Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = description)
+            }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.header_menu_notifications)) },
+                leadingIcon = { Icon(Icons.Filled.Notifications, contentDescription = null) },
+                trailingIcon = if (unreadNotifications > 0) {
+                    { Badge { Text(if (unreadNotifications > 99) "99+" else unreadNotifications.toString()) } }
+                } else null,
+                onClick = {
+                    expanded = false
+                    onNotificationsClick()
+                }
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.header_menu_statistics)) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_estadisticas), contentDescription = null, modifier = Modifier.size(24.dp)) },

@@ -24,6 +24,7 @@ fun BudgmentScaffold(
     title: String? = null,
     onSettingsClick: () -> Unit = {},
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     topBarActions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
@@ -38,6 +39,7 @@ fun BudgmentScaffold(
     } else {
         stringResource(R.string.user_placeholder)
     }
+    val unread = headerViewModel?.unreadNotifications?.collectAsState()?.value ?: 0
 
     Scaffold(
         topBar = {
@@ -46,6 +48,8 @@ fun BudgmentScaffold(
                 userName = userName,
                 onSettingsClick = onSettingsClick,
                 onStatisticsClick = onStatisticsClick,
+                onNotificationsClick = onNotificationsClick,
+                unreadNotifications = unread,
                 onLogoutClick = { headerViewModel?.logout() },
                 actions = topBarActions
             )

@@ -22,10 +22,16 @@
 
     <!-- Header -->
     <string name="header_greeting">Hola, %1$s</string>
+    <string name="header_menu_notifications">Notificaciones</string>
     <string name="header_menu_statistics">Estadísticas</string>
     <string name="header_menu_settings">Configuración</string>
     <string name="header_menu_logout">Cerrar sesión</string>
     <string name="header_profile_content_description">Perfil y configuración</string>
+    <plurals name="header_profile_unread_description">
+        <item quantity="one">Perfil y configuración, %1$d notificación sin leer</item>
+        <item quantity="many">Perfil y configuración, %1$d notificaciones sin leer</item>
+        <item quantity="other">Perfil y configuración, %1$d notificaciones sin leer</item>
+    </plurals>
 
     <!-- Moneda -->
     <string name="currency_menu_content_description">Moneda de los totales: %1$s. Cambiar</string>
@@ -411,4 +417,27 @@
     <string name="stats_balance_title">Evolución del saldo</string>
     <string name="stats_balance_note">Saldo total de tus cuentas al cierre de cada mes. Las transferencias no cuentan como ingreso ni gasto.</string>
     <string name="stats_missing_rate">Algunos montos no se incluyeron porque falta el tipo de cambio. Conéctate a internet para actualizarlo.</string>
+
+    <!-- Bandeja de notificaciones -->
+    <string name="inbox_title">Notificaciones</string>
+    <string name="inbox_new">Nueva</string>
+    <string name="inbox_deleted">Notificación eliminada</string>
+    <string name="inbox_empty_title">Sin notificaciones</string>
+    <string name="inbox_empty_body">Aquí verás los movimientos recurrentes por registrar y los avisos de tus presupuestos.</string>
+    <string name="inbox_recurring_title">%1$s por registrar</string>
+    <string name="inbox_recurring_body_expense">Gasto de %1$s · %2$s · tocaba el %3$s</string>
+    <string name="inbox_recurring_body_income">Ingreso de %1$s · %2$s · tocaba el %3$s</string>
+    <string name="inbox_recurring_resolved">Ya no está pendiente</string>
+    <string name="inbox_open_budgets">Ver presupuestos</string>
+    <string name="inbox_system_off">Las notificaciones del teléfono están desactivadas. Los avisos siguen llegando a esta bandeja.</string>
+    <string name="inbox_system_enable">Activar</string>
+    <string name="inbox_settings_title">Ajustes de notificaciones</string>
+    <string name="inbox_settings_subtitle">Elige qué avisos llegan como notificación del teléfono.</string>
+    <string name="inbox_settings_recurring">Movimientos recurrentes</string>
+    <string name="inbox_settings_recurring_description">Cuando toca registrar uno</string>
+    <string name="inbox_settings_budgets">Presupuestos</string>
+    <string name="inbox_settings_budgets_description">Al llegar al 80 % y al 100 % del límite</string>
+    <string name="inbox_settings_hour">Hora del recordatorio</string>
+    <string name="inbox_settings_hour_description">Una vez al día, Budgment revisa lo pendiente a esta hora.</string>
+    <string name="inbox_settings_note">La bandeja guarda todos los avisos aunque estén desactivados aquí. Se borran solos a los 90 días.</string>
 </resources>

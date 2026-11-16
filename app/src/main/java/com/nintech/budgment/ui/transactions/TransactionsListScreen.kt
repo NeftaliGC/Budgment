@@ -40,6 +40,7 @@ fun TransactionsListScreen(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit,
     onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
@@ -58,6 +59,7 @@ fun TransactionsListScreen(
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
             onStatisticsClick = onStatisticsClick,
+            onNotificationsClick = onNotificationsClick,
             onAddTransactionClick = onAddTransactionClick,
             onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
@@ -85,6 +87,7 @@ fun TransactionsListScreen(
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
             onStatisticsClick = onStatisticsClick,
+            onNotificationsClick = onNotificationsClick,
             onAddTransactionClick = onAddTransactionClick,
             onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
@@ -105,6 +108,7 @@ fun TransactionsListScreen(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit,
     onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
@@ -121,6 +125,7 @@ fun TransactionsListScreen(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         onStatisticsClick = onStatisticsClick,
+        onNotificationsClick = onNotificationsClick,
         topBarActions = {
             IconButton(onClick = onRecurringClick) {
                 Icon(Icons.Filled.EventRepeat, contentDescription = stringResource(R.string.recurring_title))

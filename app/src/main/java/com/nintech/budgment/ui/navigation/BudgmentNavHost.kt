@@ -22,6 +22,7 @@ import com.nintech.budgment.ui.transactions.TransactionsListScreen
 import com.nintech.budgment.ui.transfers.TransferFormScreen
 import com.nintech.budgment.ui.recurring.RecurringListScreen
 import com.nintech.budgment.ui.settings.SettingsScreen
+import com.nintech.budgment.ui.notifications.NotificationsScreen
 import com.nintech.budgment.ui.statistics.StatisticsScreen
 
 @Composable
@@ -71,6 +72,7 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onStatisticsClick = { navController.navigate(BudgmentDestination.Statistics.route) },
+                onNotificationsClick = { navController.navigate(BudgmentDestination.Notifications.route) },
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
                 onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
@@ -80,6 +82,13 @@ fun BudgmentNavHost(
             )
         }
 
+        composable(BudgmentDestination.Notifications.route) {
+            NotificationsScreen(
+                onBackClick = { navController.popBackStack() },
+                onRegisterRecurring = { id -> navController.navigate(BudgmentDestination.TransactionForm.createOccurrenceRoute(id)) },
+                onOpenBudgets = { onNavigateToTab(BudgmentDestination.Budgets.route) }
+            )
+        }
         composable(BudgmentDestination.Statistics.route) {
             StatisticsScreen(onBackClick = { navController.popBackStack() })
         }
@@ -116,6 +125,7 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onStatisticsClick = { navController.navigate(BudgmentDestination.Statistics.route) },
+                onNotificationsClick = { navController.navigate(BudgmentDestination.Notifications.route) },
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
                 onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) },
                 onAddTransferClick = { navController.navigate(BudgmentDestination.TransferForm.createRoute()) }
@@ -143,6 +153,7 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onStatisticsClick = { navController.navigate(BudgmentDestination.Statistics.route) },
+                onNotificationsClick = { navController.navigate(BudgmentDestination.Notifications.route) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
                 onCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
@@ -167,6 +178,7 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onStatisticsClick = { navController.navigate(BudgmentDestination.Statistics.route) },
+                onNotificationsClick = { navController.navigate(BudgmentDestination.Notifications.route) },
                 onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onBudgetClick = { id -> navController.navigate(BudgmentDestination.BudgetForm.createRoute(id)) }
             )

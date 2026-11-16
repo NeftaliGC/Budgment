@@ -7,7 +7,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nintech.budgment.data.repository.CategoryRepository
+import com.nintech.budgment.data.repository.NotificationRepository
 import com.nintech.budgment.data.repository.RecurringRepository
+import com.nintech.budgment.data.session.NotificationSettings
 import com.nintech.budgment.data.session.SessionManager
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -18,8 +20,9 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
- * Revisa una vez al día si hay movimientos recurrentes vencidos y, si los hay, lo anuncia con
- * una notificación. Nunca registra nada: eso lo decide el usuario desde la app.
+ * Revisa una vez al día, a la hora elegida en Notificaciones, si hay movimientos recurrentes
+ * vencidos: los agrega a la bandeja y, si el usuario lo permite, los anuncia con una
+ * notificación. Nunca registra nada: eso lo decide el usuario desde la app.
  */
 class RecurringReminderWorker(
     context: Context,
@@ -32,6 +35,8 @@ class RecurringReminderWorker(
         fun sessionManager(): SessionManager
         fun recurringRepository(): RecurringRepository
         fun categoryRepository(): CategoryRepository
+        fun notificationRepository(): NotificationRepository
+        fun notificationSettings(): NotificationSettings
     }
 
     override suspend fun doWork(): Result {
@@ -39,8 +44,10 @@ class RecurringReminderWorker(
         // Solo hay usuario en segundo plano si eligió «Recordarme»; sin sesión no se avisa.
         val userId = deps.sessionManager().currentUserId.first() ?: return Result.success()
 
+        deps.notificationRepository().syncRecurring(userId)
+
         val pending = deps.recurringRepository().getPending(userId)
-        if (pending.isEmpty()) {
+        if (pending.isEmpty() || !deps.notificationSettings().preferences.first().recurringEnabled) {
             RecurringNotifications.cancelPending(applicationContext)
             return Result.success()
         }
@@ -53,21 +60,22 @@ class RecurringReminderWorker(
 
     companion object {
         private const val WORK_NAME = "recurring_reminder"
-        private const val REMINDER_HOUR = 9
-
-        /** Programa la revisión diaria hacia las 9:00. Si ya estaba programada, la conserva. */
-        fun schedule(context: Context) {
+        /**
+         * Programa la revisión diaria a las [hour]:00. Con [replace] = false conserva la que ya
+         * estuviera programada; con true la reemplaza (al cambiar la hora).
+         */
+        fun schedule(context: Context, hour: Int, replace: Boolean = false) {
             val request = PeriodicWorkRequestBuilder<RecurringReminderWorker>(1, TimeUnit.DAYS)
-                .setInitialDelay(delayUntilNextReminder(), TimeUnit.MILLISECONDS)
+                .setInitialDelay(delayUntilNextReminder(hour), TimeUnit.MILLISECONDS)
                 .build()
-            WorkManager.getInstance(context)
-                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+            val policy = if (replace) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK_NAME, policy, request)
         }
 
-        private fun delayUntilNextReminder(now: Long = System.currentTimeMillis()): Long {
+        private fun delayUntilNextReminder(hour: Int, now: Long = System.currentTimeMillis()): Long {
             val next = Calendar.getInstance().apply {
                 timeInMillis = now
-                set(Calendar.HOUR_OF_DAY, REMINDER_HOUR); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
                 if (timeInMillis <= now) add(Calendar.DAY_OF_MONTH, 1)
             }
             return next.timeInMillis - now

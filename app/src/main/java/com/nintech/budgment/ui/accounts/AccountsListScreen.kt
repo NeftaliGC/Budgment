@@ -40,6 +40,7 @@ fun AccountsListScreen(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAddTransferClick: () -> Unit = {},
@@ -54,6 +55,7 @@ fun AccountsListScreen(
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
             onStatisticsClick = onStatisticsClick,
+            onNotificationsClick = onNotificationsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onAddTransferClick = onAddTransferClick,
@@ -67,6 +69,7 @@ fun AccountsListScreen(
             onNavigateToTab = onNavigateToTab,
             onSettingsClick = onSettingsClick,
             onStatisticsClick = onStatisticsClick,
+            onNotificationsClick = onNotificationsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onAddTransferClick = onAddTransferClick,
@@ -83,6 +86,7 @@ fun AccountsListScreen(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit = {},
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onDeleteAccount: (String) -> Unit,
@@ -108,6 +112,7 @@ fun AccountsListScreen(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         onStatisticsClick = onStatisticsClick,
+        onNotificationsClick = onNotificationsClick,
         topBarActions = {
             // Mover dinero entre cuentas requiere al menos dos.
             if (uiState.accounts.size >= 2) {

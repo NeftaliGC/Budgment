@@ -70,6 +70,7 @@ fun HomeScreen(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAddBudgetClick: () -> Unit,
     onAddTransactionClick: () -> Unit,
@@ -86,6 +87,7 @@ fun HomeScreen(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         onStatisticsClick = onStatisticsClick,
+        onNotificationsClick = onNotificationsClick,
         onAddAccountClick = onAddAccountClick,
         onAddBudgetClick = onAddBudgetClick,
         onAddTransactionClick = onAddTransactionClick,
@@ -111,6 +113,7 @@ fun HomeScreenContent(
     onNavigateToTab: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onStatisticsClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAddBudgetClick: () -> Unit,
     onAddTransactionClick: () -> Unit,
@@ -135,6 +138,7 @@ fun HomeScreenContent(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         onStatisticsClick = onStatisticsClick,
+        onNotificationsClick = onNotificationsClick,
         floatingActionButton = {
             // Registrar un movimiento es la acción principal de la app; sin cuentas no aplica.
             if (uiState.hasAccounts) {

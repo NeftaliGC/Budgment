@@ -277,7 +277,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Estadísticas~~ | Hecho: `ui/statistics/` (ver «Estadísticas» abajo). Pendiente: exportar reporte, filtrar por cuenta | — |
 | PIN / biometría | `BiometricPrompt` + PIN de respaldo, bloqueo al volver de segundo plano, opción en Configuración | Configuración |
 | Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
-| Notificaciones | Alertas de presupuesto (80 %/100 %) y de recurrentes; canal + permiso `POST_NOTIFICATIONS` | WorkManager |
+| Notificaciones | 🟡 Bandeja, ajustes y avisos de recurrentes hechos (ver «Notificaciones» abajo). Falta: alertas de presupuesto (80 %/100 %) | WorkManager |
 
 ### C. Funciones parciales
 
@@ -292,9 +292,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Tarea | Ubicación | Prioridad |
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
-| Quitar `fallbackToDestructiveMigration` (las migraciones ya empezaron en v3→v4) | `di/DatabaseModule.kt` (BD versión 4) | Bloquea publicación y respaldo |
+| Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 5) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest` y `ComputeStatisticsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest` y `GroupByDayTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -304,7 +304,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 2. ✅ ~~**Transferencias**~~.
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. ✅ ~~**Estadísticas**~~.
-5. **Notificaciones** (reusa WorkManager).
+5. 🟡 **Notificaciones**: bandeja y ajustes hechos; siguen las alertas de presupuesto.
 6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
 7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
 8. **Adjuntos**.
@@ -329,6 +329,14 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
 - Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
 - Pendiente: reutilizarlo para alertas de presupuesto (80 %/100 %)
+
+### Notificaciones
+- Acceso desde el menú de perfil (junto a Estadísticas y Configuración); ruta `notifications`. Punto en el ícono de perfil y contador en el menú si hay avisos sin leer
+- Bandeja persistente: `NotificationEntity` (tabla `notifications`, BD v5, `MIGRATION_4_5`), `NotificationDao`, `NotificationRepository`. Texto fijado al crear; `dedupKey` único por usuario evita duplicados (recurrentes: `recurring:<id>:<ocurrencia>`); se borran solos a los 90 días
+- `syncRecurring` llena la bandeja con los recurrentes vencidos no pospuestos; lo llaman el worker diario y `HeaderViewModel` (al cambiar recurrentes y cada día)
+- Al abrir la bandeja todo se marca leído, pero lo nuevo conserva su punto mientras se ve. Recurrente aún pendiente → botón Registrar; ya registrado/omitido/pausado → «Ya no está pendiente». Deslizar para borrar con deshacer
+- Ajustes (hoja con ⚙): qué tipos llegan como notificación del teléfono (`NotificationSettings` en DataStore, no se borra al cerrar sesión) y hora del recordatorio (6:00–22:00; reprograma el worker con `CANCEL_AND_REENQUEUE`). Aviso si el sistema tiene las notificaciones desactivadas, con botón que pide permiso o abre los ajustes del sistema
+- La bandeja registra todo aunque el tipo esté desactivado: los interruptores solo controlan la notificación del teléfono
 
 ### Estadísticas
 - Acceso desde el menú de perfil (junto a Configuración); ruta `statistics`

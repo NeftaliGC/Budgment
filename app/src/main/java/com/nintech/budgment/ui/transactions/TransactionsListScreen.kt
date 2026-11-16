@@ -78,6 +78,14 @@ fun TransactionsListScreen(
                 onDelete = viewModel::deleteTransfer,
                 onRestore = viewModel::restoreTransfer
             ),
+            filterActions = TransactionFilterActions(
+                onQueryChange = viewModel::onQueryChange,
+                onKindsChange = viewModel::onKindsChange,
+                onAccountsChange = viewModel::onAccountsChange,
+                onCategoriesChange = viewModel::onCategoriesChange,
+                onDateChange = viewModel::onDateChange,
+                onClear = viewModel::clearFilters
+            ),
             snackbarHostState = snackbarHostState
         )
     } else {
@@ -117,6 +125,7 @@ fun TransactionsListScreen(
     onTransferClick: (String) -> Unit = {},
     onDeleteTransfer: (String) -> Unit = {},
     onRecurringClick: () -> Unit = {},
+    filterActions: TransactionFilterActions = TransactionFilterActions(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
@@ -152,7 +161,7 @@ fun TransactionsListScreen(
             }
         }
     ) { innerPadding ->
-        if (!uiState.isLoading && uiState.transactions.isEmpty()) {
+        if (!uiState.isLoading && uiState.totalCount == 0) {
             EmptyState(
                 title = stringResource(R.string.transactions_empty_title),
                 message = stringResource(R.string.transactions_empty_subtitle),
@@ -160,10 +169,29 @@ fun TransactionsListScreen(
                 onAction = onAddTransactionClick,
                 modifier = Modifier.padding(innerPadding)
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(16.dp)
+        } else Column(Modifier.fillMaxSize().padding(innerPadding)) {
+            if (!uiState.isLoading) {
+                TransactionFilterBar(
+                    uiState = uiState,
+                    onQueryChange = filterActions.onQueryChange,
+                    onKindsChange = filterActions.onKindsChange,
+                    onAccountsChange = filterActions.onAccountsChange,
+                    onCategoriesChange = filterActions.onCategoriesChange,
+                    onDateChange = filterActions.onDateChange,
+                    onClear = filterActions.onClear,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            if (!uiState.isLoading && uiState.transactions.isEmpty()) {
+                EmptyState(
+                    title = stringResource(R.string.transactions_filter_no_results_title),
+                    message = stringResource(R.string.transactions_filter_no_results_message),
+                    actionLabel = stringResource(R.string.transactions_filter_clear),
+                    onAction = filterActions.onClear
+                )
+            } else LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp)
             ) {
                 // Ya vienen del más reciente al más antiguo; groupBy conserva ese orden.
                 uiState.transactions
@@ -206,6 +234,16 @@ fun TransactionsListScreen(
         }
     }
 }
+
+/** Callbacks de búsqueda y filtros; por defecto no hacen nada (vistas previas). */
+data class TransactionFilterActions(
+    val onQueryChange: (String) -> Unit = {},
+    val onKindsChange: (Set<TransactionKind>) -> Unit = {},
+    val onAccountsChange: (Set<String>) -> Unit = {},
+    val onCategoriesChange: (Set<String>) -> Unit = {},
+    val onDateChange: (DateFilter?) -> Unit = {},
+    val onClear: () -> Unit = {}
+)
 
 /** Encabezado de día; queda fijo arriba mientras se recorren sus movimientos. */
 @Composable
@@ -263,6 +301,7 @@ private fun TransactionsListScreenPreview() {
                         categoryType = CategoryType.INCOME
                     )
                 ),
+                totalCount = 2,
                 isLoading = false
             ),
             currentRoute = "transactions",

@@ -289,7 +289,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 |---------|--------|-------|
 | Subcategorías | 🟡 `parentCategoryId` en modelo | UI no lo usa: selector de padre en `CategoryFormScreen`, agrupar en lista, sumar hijas en presupuestos |
 | Configuración | 🟡 Solo moneda por defecto | Cambio de contraseña, borrar usuario, tema, seguridad (PIN), respaldo, exportar CSV |
-| Movimientos | 🟡 Lista agrupada por día | Búsqueda y filtros (cuenta, categoría, rango de fechas, etiqueta) |
+| Movimientos | 🟡 Lista por día con búsqueda y filtros | Filtro por etiqueta (cuando existan) |
 
 ### D. Deuda técnica
 
@@ -298,7 +298,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5→v6 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 6) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest` y `BuildGoalItemsTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest` y `TransactionFilterTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -309,7 +309,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. ✅ ~~**Estadísticas**~~.
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
-6. ✅ ~~**Metas**~~, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
+6. ✅ ~~**Metas**~~, **etiquetas**, **subcategorías en UI**, ✅ ~~filtros de movimientos~~.
 7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
 8. **Adjuntos**.
 9. Tests, pulido, README, publicación.
@@ -333,6 +333,15 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
 - Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
 - También revisa las alertas de presupuesto (`BudgetAlertChecker`)
+
+### Búsqueda y filtros de Movimientos
+- Barra fija sobre la lista (`TransactionFilterBar.kt`): campo de búsqueda + chips Tipo, Cuenta, Categoría y Fecha (cada uno abre una hoja; se aplica al momento) + «Limpiar filtros»
+- `applyFilter` (puro, `TransactionFilter.kt`): dentro de un grupo suma (cualquiera de las cuentas elegidas), entre grupos se combina. Una transferencia aparece en su cuenta de origen y de destino (`TransferDetails.toAccountId`); filtrar por categoría la oculta
+- Búsqueda sin acentos ni mayúsculas, por palabras, en nota, categoría, cuentas y monto («45.50», «25,000», «8000»)
+- Fecha: este mes, mes pasado, últimos 30 días, este año o rango propio (`DateRangePicker`, último día incluido)
+- Resumen bajo los chips: cuántos y, si todo está en una moneda, ingresos y gastos (`summarize`). Sin resultados → estado vacío con «Limpiar filtros»
+- Opciones: cuentas y categorías activas, más las eliminadas que tengan movimientos (marcadas «(eliminada)»)
+- El filtro vive en `TransactionsViewModel`: se conserva al cambiar de pestaña, no al cerrar la app
 
 ### Metas de ahorro
 - Sección desplegable en Inicio, antes de «Últimos movimientos» (`ui/home/GoalsSection.kt`); el estado plegado/desplegado se guarda en `UiPreferences` (DataStore). Botón + para crear; cada tarjeta abre el detalle

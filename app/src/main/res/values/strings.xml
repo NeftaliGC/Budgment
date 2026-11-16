@@ -197,6 +197,26 @@
     <string name="transaction_form_error_invalid_amount">Escribe un monto mayor a cero</string>
     <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos.</string>
 
+    <!-- Transferencias -->
+    <string name="transfer_label">Transferencia</string>
+    <string name="transfer_row_title_format">%1$s → %2$s</string>
+    <string name="transfer_add_content_description">Nueva transferencia</string>
+    <string name="transfer_delete_content_description">Eliminar transferencia</string>
+    <string name="transfer_deleted_message">Transferencia eliminada</string>
+    <string name="transfer_form_title_new">Nueva transferencia</string>
+    <string name="transfer_form_title_edit">Editar transferencia</string>
+    <string name="transfer_form_from_label">Desde</string>
+    <string name="transfer_form_to_label">Hacia</string>
+    <string name="transfer_form_swap_content_description">Intercambiar origen y destino</string>
+    <string name="transfer_form_amount_label">Monto que sale</string>
+    <string name="transfer_form_amount_in_label">Monto que llega</string>
+    <string name="transfer_form_amount_in_hint">Calculado con el tipo de cambio actual; ajústalo si tu banco usó otro.</string>
+    <string name="transfer_form_amount_in_no_rate">No hay tipo de cambio disponible: escribe lo que llegó.</string>
+    <string name="transfer_form_error_same_account">Elige una cuenta distinta a la de origen</string>
+    <string name="transfer_form_balance_after_format">Saldo después: %1$s</string>
+    <string name="transfer_form_not_enough_accounts">Necesitas al menos dos cuentas para hacer una transferencia.</string>
+    <string name="transfer_form_save_button">Transferir</string>
+
     <!-- Budgets -->
     <string name="budgets_title">Presupuestos</string>
     <string name="budgets_empty_title">Aún no tienes presupuestos</string>

@@ -24,7 +24,8 @@ data class TransactionEntity(
     @PrimaryKey val id: String,
     val userId: String,
     val accountId: String,
-    val categoryId: String,
+    /** null = una de las dos patas de una transferencia: no es gasto ni ingreso. */
+    val categoryId: String?,
     val recurringId: String? = null,
     val amount: Long,               // centavos, con signo
     val currency: String? = null,   // null = usa la currency de la cuenta

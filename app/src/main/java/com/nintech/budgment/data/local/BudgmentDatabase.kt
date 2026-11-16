@@ -46,7 +46,7 @@ import com.nintech.budgment.data.local.entity.UserEntity
         AttachmentEntity::class,
         ExchangeRateEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

@@ -19,6 +19,7 @@ import com.nintech.budgment.ui.login.LoginScreen
 import com.nintech.budgment.ui.register.RegisterScreen
 import com.nintech.budgment.ui.transactions.TransactionFormScreen
 import com.nintech.budgment.ui.transactions.TransactionsListScreen
+import com.nintech.budgment.ui.transfers.TransferFormScreen
 import com.nintech.budgment.ui.settings.SettingsScreen
 
 @Composable
@@ -70,7 +71,8 @@ fun BudgmentNavHost(
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
                 onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
-                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
+                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
+                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) }
             )
         }
 
@@ -107,7 +109,8 @@ fun BudgmentNavHost(
                 onNavigateToTab = onNavigateToTab,
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
-                onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) }
+                onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) },
+                onAddTransferClick = { navController.navigate(BudgmentDestination.TransferForm.createRoute()) }
             )
         }
 
@@ -133,7 +136,9 @@ fun BudgmentNavHost(
                 onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
                 onCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
-                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
+                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
+                onAddTransferClick = { navController.navigate(BudgmentDestination.TransferForm.createRoute()) },
+                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) }
             )
         }
 
@@ -182,6 +187,22 @@ fun BudgmentNavHost(
                 onSaved = { navController.popBackStack() },
                 onCreateAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
                 onCreateCategoryClick = { navController.navigate(BudgmentDestination.CategoryForm.createRoute()) }
+            )
+        }
+
+        composable(
+            route = BudgmentDestination.TransferForm.route,
+            arguments = listOf(
+                navArgument(BudgmentDestination.TransferForm.ARG_TRANSFER_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
+            TransferFormScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                onCreateAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) }
             )
         }
     }

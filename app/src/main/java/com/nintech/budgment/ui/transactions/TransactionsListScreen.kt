@@ -17,7 +17,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -39,6 +41,8 @@ fun TransactionsListScreen(
     onAddTransactionClick: () -> Unit,
     onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
+    onAddTransferClick: () -> Unit = {},
+    onTransferClick: (String) -> Unit = {},
     viewModel: TransactionsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     if (viewModel != null) {
@@ -59,6 +63,14 @@ fun TransactionsListScreen(
                 onDelete = viewModel::deleteTransaction,
                 onRestore = viewModel::restoreTransaction
             ),
+            onAddTransferClick = onAddTransferClick,
+            onTransferClick = onTransferClick,
+            onDeleteTransfer = rememberUndoableDelete(
+                snackbarHostState = snackbarHostState,
+                message = stringResource(R.string.transfer_deleted_message),
+                onDelete = viewModel::deleteTransfer,
+                onRestore = viewModel::restoreTransfer
+            ),
             snackbarHostState = snackbarHostState
         )
     } else {
@@ -70,7 +82,10 @@ fun TransactionsListScreen(
             onAddTransactionClick = onAddTransactionClick,
             onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
-            onDeleteTransaction = {}
+            onDeleteTransaction = {},
+            onAddTransferClick = onAddTransferClick,
+            onTransferClick = onTransferClick,
+            onDeleteTransfer = {}
         )
     }
 }
@@ -86,6 +101,9 @@ fun TransactionsListScreen(
     onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
     onDeleteTransaction: (String) -> Unit,
+    onAddTransferClick: () -> Unit = {},
+    onTransferClick: (String) -> Unit = {},
+    onDeleteTransfer: (String) -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
@@ -94,6 +112,12 @@ fun TransactionsListScreen(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         topBarActions = {
+            IconButton(onClick = onAddTransferClick) {
+                Icon(
+                    ImageVector.vectorResource(R.drawable.ic_transfer),
+                    contentDescription = stringResource(R.string.transfer_add_content_description)
+                )
+            }
             // Las categorías sirven para clasificar movimientos: se administran desde aquí.
             IconButton(onClick = onCategoriesClick) {
                 Icon(Icons.Filled.Category, contentDescription = stringResource(R.string.categories_title))
@@ -131,18 +155,28 @@ fun TransactionsListScreen(
                     DayHeader(day)
                 }
                 items(dayTransactions, key = { it.transaction.id }) { item ->
+                    val transfer = item.transfer
                     TransactionRow(
                         item = item,
-                        onClick = { onTransactionClick(item.transaction.id) },
+                        onClick = {
+                            if (transfer != null) onTransferClick(transfer.transferId)
+                            else onTransactionClick(item.transaction.id)
+                        },
                         showDate = false,
                         trailing = {
-                            if (item.accountDeleted) {
+                            if (item.isReadOnly) {
                                 // Conserva la alineación del monto con las filas que sí tienen menú.
                                 Spacer(Modifier.width(48.dp))
                             } else {
                                 RowActionsMenu(
-                                    deleteLabel = stringResource(R.string.transactions_delete_content_description),
-                                    onDeleteClick = { onDeleteTransaction(item.transaction.id) }
+                                    deleteLabel = stringResource(
+                                        if (transfer != null) R.string.transfer_delete_content_description
+                                        else R.string.transactions_delete_content_description
+                                    ),
+                                    onDeleteClick = {
+                                        if (transfer != null) onDeleteTransfer(transfer.transferId)
+                                        else onDeleteTransaction(item.transaction.id)
+                                    }
                                 )
                             }
                         }

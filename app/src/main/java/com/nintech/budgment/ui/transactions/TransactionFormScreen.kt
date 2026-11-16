@@ -390,7 +390,7 @@ private fun AccountField(state: TransactionFormState, onAccountSelected: (String
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit) {
+internal fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit) {
     var showPicker by rememberSaveable { mutableStateOf(false) }
 
     // Un campo de solo lectura no recibe onClick: se abre el calendario al soltar el toque.

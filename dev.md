@@ -44,20 +44,20 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 | `TransactionEntity` | `TransactionDao` | `TransactionRepository` | `TransactionsViewModel`, `TransactionFormViewModel` | TransactionsListScreen, TransactionFormScreen | ✅ Completo |
 | `BudgetEntity` | `BudgetDao` | `BudgetRepository` | `BudgetsViewModel`, `BudgetFormViewModel` | BudgetsListScreen, BudgetFormScreen | ✅ Completo |
 | `ExchangeRateEntity` | `ExchangeRateDao` | `ExchangeRateRepository` | — | (integrado en HomeViewModel, AccountsViewModel, BudgetsViewModel) | ✅ Completo |
+| `TransferEntity` | `TransferDao` | `TransferRepository` | `TransferFormViewModel` (+ `TransactionsViewModel`, `HomeViewModel`) | TransferFormScreen (+ filas en Movimientos e Inicio) | ✅ Completo |
 
 ### Entidades secundarias (DAO existe, sin Repo/ViewModel/Screen)
 
 | Entity | DAO | Repo | ViewModel | Screen | Estado |
 |--------|-----|------|-----------|--------|--------|
 | `RecurringTransactionEntity` | `RecurringTransactionDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
-| `TransferEntity` | `TransferDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `GoalEntity` | `GoalDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `AttachmentEntity` | `AttachmentDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `BudgetCategoryEntity` | `BudgetCategoryDao` | ✅ (dentro de `BudgetRepositoryImpl`) | ✅ | ✅ | ✅ Completo |
 | `TransactionTagEntity` | `TransactionTagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 
-### Repositorios existentes (7)
+### Repositorios existentes (8)
 
 | Repositorio | Archivo | Estado |
 |-------------|---------|--------|
@@ -68,6 +68,7 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 | `BudgetRepository` | `data/repository/BudgetRepository.kt` | ✅ Completo |
 | `UserRepository` | `data/repository/UserRepository.kt` | ✅ Completo |
 | `ExchangeRateRepository` | `data/repository/ExchangeRateRepository.kt` | ✅ Completo |
+| `TransferRepository` | `data/repository/TransferRepository.kt` | ✅ Completo |
 
 **Nota:** `BudgetCategoryDao` está integrado dentro de `BudgetRepositoryImpl` (no tiene repositorio separado). Los DAOs de `TransactionTagDao` tampoco tienen repositorio separado (están pensados para ser gestionados junto con Tag en una futura implementación).
 
@@ -110,14 +111,19 @@ startDate, endDate, createdAt, updatedAt, deletedAt
 id, userId, accountId, categoryId, amount: Long, // signado: negativo=expense, positivo=income
 currency, description, date, createdAt, updatedAt, deletedAt
 ```
+- `categoryId` es **nullable** (BD v3): `null` = pata de una transferencia. Así no cuenta en presupuestos ni en conteos de categorías
 
 ### TransferEntity
 ```kotlin
 id, userId, fromAccountId, toAccountId,
 fromTransactionId, toTransactionId, createdAt
 ```
-- Dos transacciones asociadas (una por cuenta)
+- Dos transacciones asociadas (una por cuenta): salida negativa en origen, entrada positiva en destino, ambas sin categoría
 - Unique constraint en fromTransactionId y toTransactionId
+- `TransferRepository` crea/edita/borra/restaura ambas patas + `balanceCache` dentro de `database.withTransaction`
+- Monedas distintas: el formulario sugiere el monto que llega con `ExchangeRateRepository.convert` y el usuario puede ajustarlo
+- En listas (`buildTransactionDetails`) cada transferencia es **una sola fila** (la salida) con `TransferDetails`; color neutro, sin signo, ícono `ic_transfer`
+- Acceso: acción en la barra de Cuentas (con ≥ 2 cuentas) y de Movimientos; tocar la fila abre `transfer_form?transferId=`
 
 ### RecurringTransactionEntity
 ```kotlin
@@ -149,7 +155,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 
 ### Hilt DI
 - **DatabaseModule**: Crea `BudgmentDatabase` singleton con `fallbackToDestructiveMigration(dropAllTables = true)`
-- **RepositoryModule**: Binds de los 7 repositorios
+- **RepositoryModule**: Binds de los 8 repositorios
 - **NetworkModule**: Retrofit + OkHttpClient → `ExchangeRateApi` (Frankfurter API, base URL: `https://api.frankfurter.app/`)
 - **SessionModule**: DataStore (`budgment_session`) para user_id y display_currency
 
@@ -173,7 +179,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - Tasas almacenadas en micros para evitar punto flotante
 
 ### Room Database
-- **Version:** 2
+- **Version:** 3 (v3: `transactions.categoryId` nullable para transferencias)
 - **Migration strategy:** `fallbackToDestructiveMigration(dropAllTables = true)` ⚠️
 - **13 entities** registradas en `@Database`
 - **13 DAOs** provistos via `DatabaseModule`
@@ -183,7 +189,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - `BudgmentNavHost` con `NavHost` y `rememberNavController`
 - BottomBar con 4 pestañas: Home, Accounts, Transactions, Budgets
 - Estado conservado entre pestañas (`saveState = true`, `restoreState = true`)
-- Rutas: login, register, home, settings (desde el menú de perfil), accounts, account_form, categories, category_form, transactions, transaction_form, budgets, budget_form
+- Rutas: login, register, home, settings (desde el menú de perfil), accounts, account_form, categories, category_form, transactions, transaction_form, transfer_form, budgets, budget_form
 - `BudgmentDestination` como sealed class con `createRoute()` helpers
 
 ### UI Pattern
@@ -247,7 +253,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
 |---------|--------------|------|----|--------|------------|-------|
-| Transferencias | ✅ `TransferEntity`, `TransferDao` | ❌ | ❌ | ❌ | — | Crea 2 transacciones (salida/entrada) en una `@Transaction`; ajustar `balanceCache` de ambas cuentas; conversión si las monedas difieren. Excluir de presupuestos. `ic_transfer.xml` ya existe |
 | Recurrentes | ✅ `RecurringTransactionEntity`, `RecurringTransactionDao` (`getDueRecurrences`) | ❌ | ❌ | ❌ | WorkManager | Worker periódico que materializa ocurrencias vencidas y avanza `nextOccurrence` |
 | Metas de ahorro | ✅ `GoalEntity`, `GoalDao` | ❌ | ❌ | ❌ | (Transferencias, opcional) | Aportes manuales o vinculados a una cuenta de ahorro |
 | Etiquetas | ✅ `TagEntity`, `TagDao`, `TransactionTagDao` | ❌ | ❌ | ❌ | — | Selector en `TransactionFormScreen` + filtro en Movimientos |
@@ -276,16 +281,16 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Tarea | Ubicación | Prioridad |
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
-| Quitar `fallbackToDestructiveMigration` y escribir migraciones | `di/DatabaseModule.kt:44` (BD versión 2) | Bloquea publicación y respaldo |
+| Quitar `fallbackToDestructiveMigration` y escribir migraciones | `di/DatabaseModule.kt:44` (BD versión 3) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | Solo `AmountParserTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | Solo `AmountParserTest` y `BuildTransactionDetailsTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
 ### Orden sugerido
 
 1. ✅ ~~Deuda trivial: typo + este documento al día.~~
-2. **Transferencias** (modelo listo, alto valor).
+2. ✅ ~~**Transferencias**~~.
 3. **WorkManager** como base → **recurrentes** + **renovación de periodos de presupuesto**.
 4. **Estadísticas**.
 5. **Notificaciones** (reusa WorkManager).
@@ -315,7 +320,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 ### Drawables sin uso
 - `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` — reservados para Estadísticas
-- `ic_transfer.xml` — reservado para Transferencias
 - (`logo_mark.png` ya se usa en Login y en la barra superior; los strings sin uso se eliminaron en `5d5e54f`)
 
 ### backup_rules.xml / data_extraction_rules.xml
@@ -369,7 +373,7 @@ android.application, kotlin.compose, hilt, ksp
 - `testImplementation libs.junit`
 - `androidTestImplementation libs.androidx.junit`
 - `androidTestImplementation libs.androidx.espresso.core`
-- Solo `AmountParserTest` (unitario). Sin tests de repos, ViewModels ni DAOs.
+- `AmountParserTest` y `BuildTransactionDetailsTest` (unitarios). Sin tests de repos, ViewModels ni DAOs.
 
 ### KSP
 - `ksp` plugin aplicado

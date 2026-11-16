@@ -7,6 +7,7 @@ import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.ExchangeRateRepository
 import com.nintech.budgment.data.repository.TransactionRepository
+import com.nintech.budgment.data.repository.TransferRepository
 import com.nintech.budgment.data.session.SessionManager
 import com.nintech.budgment.ui.budgets.BudgetOverviewSource
 import com.nintech.budgment.ui.budgets.BudgetWithProgress
@@ -60,6 +61,7 @@ class HomeViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
+    private val transferRepository: TransferRepository,
     private val exchangeRateRepository: ExchangeRateRepository,
     private val budgetOverviewSource: BudgetOverviewSource,
     private val sessionManager: SessionManager
@@ -73,9 +75,10 @@ class HomeViewModel @Inject constructor(
                 val recentTransactions = combine(
                     transactionRepository.observeTransactions(userId),
                     accountRepository.observeAccountsIncludingDeleted(userId),
-                    categoryRepository.observeCategoriesIncludingDeleted(userId)
-                ) { transactions, accounts, categories ->
-                    buildTransactionDetails(transactions, accounts, categories).take(RECENT_TRANSACTIONS)
+                    categoryRepository.observeCategoriesIncludingDeleted(userId),
+                    transferRepository.observeTransfers(userId)
+                ) { transactions, accounts, categories, transfers ->
+                    buildTransactionDetails(transactions, accounts, categories, transfers).take(RECENT_TRANSACTIONS)
                 }
 
                 combine(

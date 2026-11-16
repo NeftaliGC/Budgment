@@ -13,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,7 @@ fun AccountsListScreen(
     onSettingsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onAddTransferClick: () -> Unit = {},
     viewModel: AccountsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     if (viewModel != null) {
@@ -51,6 +54,7 @@ fun AccountsListScreen(
             onSettingsClick = onSettingsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
+            onAddTransferClick = onAddTransferClick,
             onDeleteAccount = viewModel::deleteAccount,
             onCurrencyChange = viewModel::onDisplayCurrencyChange
         )
@@ -62,6 +66,7 @@ fun AccountsListScreen(
             onSettingsClick = onSettingsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
+            onAddTransferClick = onAddTransferClick,
             onDeleteAccount = {},
             onCurrencyChange = {}
         )
@@ -77,7 +82,8 @@ fun AccountsListScreen(
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onDeleteAccount: (String) -> Unit,
-    onCurrencyChange: (String) -> Unit
+    onCurrencyChange: (String) -> Unit,
+    onAddTransferClick: () -> Unit = {}
 ) {
     // Cuenta para la que se pidió eliminar; el diálogo decide si se puede.
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -97,6 +103,17 @@ fun AccountsListScreen(
         title = stringResource(R.string.accounts_title),
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
+        topBarActions = {
+            // Mover dinero entre cuentas requiere al menos dos.
+            if (uiState.accounts.size >= 2) {
+                IconButton(onClick = onAddTransferClick) {
+                    Icon(
+                        ImageVector.vectorResource(R.drawable.ic_transfer),
+                        contentDescription = stringResource(R.string.transfer_add_content_description)
+                    )
+                }
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddAccountClick,

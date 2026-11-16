@@ -36,7 +36,7 @@ class CategoriesViewModel @Inject constructor(
             ) { categories, transactions ->
                 CategoriesUiState(
                     categories = categories,
-                    transactionCounts = transactions.groupingBy { it.categoryId }.eachCount(),
+                    transactionCounts = transactions.mapNotNull { it.categoryId }.groupingBy { it }.eachCount(),
                     isLoading = false
                 )
             }

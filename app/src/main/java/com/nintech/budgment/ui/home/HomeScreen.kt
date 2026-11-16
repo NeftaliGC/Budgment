@@ -67,6 +67,7 @@ fun HomeScreen(
     onAddBudgetClick: () -> Unit,
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
+    onTransferClick: (String) -> Unit = {},
     viewModel: HomeViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     val uiState = if (viewModel != null) viewModel.uiState.collectAsState().value else HomeUiState()
@@ -80,6 +81,7 @@ fun HomeScreen(
         onAddBudgetClick = onAddBudgetClick,
         onAddTransactionClick = onAddTransactionClick,
         onTransactionClick = onTransactionClick,
+        onTransferClick = onTransferClick,
         onCurrencyChange = { viewModel?.onDisplayCurrencyChange(it) }
     )
 }
@@ -99,6 +101,7 @@ fun HomeScreenContent(
     onAddBudgetClick: () -> Unit,
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
+    onTransferClick: (String) -> Unit = {},
     onCurrencyChange: (String) -> Unit
 ) {
     BudgmentScaffold(
@@ -174,7 +177,14 @@ fun HomeScreenContent(
                             if (index > 0) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                             }
-                            TransactionRow(item = item, onClick = { onTransactionClick(item.transaction.id) })
+                            TransactionRow(
+                                item = item,
+                                onClick = {
+                                    val transfer = item.transfer
+                                    if (transfer != null) onTransferClick(transfer.transferId)
+                                    else onTransactionClick(item.transaction.id)
+                                }
+                            )
                         }
                     }
 

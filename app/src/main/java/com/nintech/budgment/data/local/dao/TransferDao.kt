@@ -15,6 +15,13 @@ interface TransferDao {
     @Query("SELECT * FROM transfers WHERE id = :id")
     suspend fun getById(id: String): TransferEntity?
 
+    /** La transferencia a la que pertenece un movimiento, sea su salida o su entrada. */
+    @Query("SELECT * FROM transfers WHERE fromTransactionId = :transactionId OR toTransactionId = :transactionId")
+    suspend fun getByTransactionId(transactionId: String): TransferEntity?
+
+    @Query("UPDATE transfers SET fromAccountId = :fromAccountId, toAccountId = :toAccountId WHERE id = :id")
+    suspend fun updateAccounts(id: String, fromAccountId: String, toAccountId: String)
+
     @Query("SELECT * FROM transfers WHERE userId = :userId ORDER BY createdAt DESC")
     fun observeByUser(userId: String): Flow<List<TransferEntity>>
 }

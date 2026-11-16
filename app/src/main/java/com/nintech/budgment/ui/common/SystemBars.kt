@@ -1,7 +1,6 @@
 package com.nintech.budgment.ui.common
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
@@ -9,6 +8,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.nintech.budgment.ui.theme.LocalDarkTheme
 
 /**
  * Pestañas principales: el chrome (barra superior e inferior) es verde oscuro en ambos temas,
@@ -24,7 +24,7 @@ fun ChromeSystemBars() {
  */
 @Composable
 fun HeroSystemBars() {
-    SystemBarsAppearance(lightStatusBarIcons = true, lightNavigationBarIcons = isSystemInDarkTheme())
+    SystemBarsAppearance(lightStatusBarIcons = true, lightNavigationBarIcons = LocalDarkTheme.current)
 }
 
 /**
@@ -32,7 +32,7 @@ fun HeroSystemBars() {
  */
 @Composable
 fun SurfaceSystemBars() {
-    val dark = isSystemInDarkTheme()
+    val dark = LocalDarkTheme.current
     SystemBarsAppearance(lightStatusBarIcons = dark, lightNavigationBarIcons = dark)
 }
 

@@ -1,5 +1,6 @@
 package com.nintech.budgment.data.repository
 
+import com.nintech.budgment.data.attachments.AttachmentRepository
 import com.nintech.budgment.data.local.dao.UserDao
 import com.nintech.budgment.data.local.entity.UserEntity
 import com.nintech.budgment.data.local.security.PasswordHasher
@@ -21,10 +22,20 @@ interface AuthRepository {
     suspend fun login(username: String, password: String): AuthResult
     /** Comprueba la contraseña del usuario [userId] sin cambiar la sesión. */
     suspend fun verifyPassword(userId: String, password: String): Boolean
+
+    /** Cambia la contraseña si [current] es la actual. @return false si no lo es. */
+    suspend fun changePassword(userId: String, current: String, new: String): Boolean
+
+    /**
+     * Borra al usuario con todos sus datos y fotos si [password] es su contraseña; no se puede
+     * deshacer. @return false si la contraseña no es correcta.
+     */
+    suspend fun deleteUser(userId: String, password: String): Boolean
 }
 
 class AuthRepositoryImpl @Inject constructor(
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val attachmentRepository: AttachmentRepository
 ) : AuthRepository {
 
     override suspend fun register(
@@ -65,5 +76,22 @@ class AuthRepositoryImpl @Inject constructor(
         if (password.isBlank()) return false
         val user = userDao.getById(userId) ?: return false
         return withContext(Dispatchers.Default) { PasswordHasher.verify(password, user.passwordHash) }
+    }
+
+    override suspend fun changePassword(userId: String, current: String, new: String): Boolean {
+        require(new.isNotBlank())
+        if (!verifyPassword(userId, current)) return false
+        val user = userDao.getById(userId) ?: return false
+        val hash = withContext(Dispatchers.Default) { PasswordHasher.hash(new) }
+        userDao.update(user.copy(passwordHash = hash, updatedAt = System.currentTimeMillis()))
+        return true
+    }
+
+    override suspend fun deleteUser(userId: String, password: String): Boolean {
+        if (!verifyPassword(userId, password)) return false
+        // Las fotos primero: después ya no se sabría de quién eran.
+        attachmentRepository.deleteAllOfUser(userId)
+        userDao.deleteWithData(userId)
+        return true
     }
 }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.data.model.ThemeMode
 import com.nintech.budgment.data.session.AppLockConfig
 import com.nintech.budgment.ui.lock.PinSetupMode
 import com.nintech.budgment.ui.common.SurfaceSystemBars
@@ -52,6 +53,7 @@ fun SettingsScreen(
     if (viewModel != null) {
         val state by viewModel.state.collectAsState()
         val lockConfig by viewModel.lockConfig.collectAsState()
+        val themeMode by viewModel.themeMode.collectAsState()
         SettingsScreenContent(
             state = state,
             onDefaultCurrencyChange = viewModel::onDefaultCurrencyChange,
@@ -66,8 +68,11 @@ fun SettingsScreen(
                     )
                 }
             },
+            appearance = { AppearanceSection(themeMode, viewModel::setThemeMode) },
             photos = { PhotosSection() },
-            backup = { BackupSection() }
+            backup = { BackupSection() },
+            export = { ExportSection() },
+            account = { AccountSection() }
         )
     } else {
         SettingsScreenContent(
@@ -78,7 +83,10 @@ fun SettingsScreen(
                 SecuritySection(AppLockConfig(), onPinSetupClick, onBiometricChange = {}, onTimeoutChange = {})
             },
             photos = { PhotosSectionContent(PhotosSettingsState(), onRetentionSelected = {}) },
-            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
+            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) },
+            appearance = { AppearanceSection(ThemeMode.SYSTEM, onThemeModeChange = {}) },
+            export = { ExportSectionContent(busy = false, onExportClick = {}) },
+            account = { AccountSectionContent(onChangePasswordClick = {}, onDeleteUserClick = {}) }
         )
     }
 }
@@ -91,6 +99,9 @@ fun SettingsScreenContent(
     onBackClick: () -> Unit,
     security: @Composable () -> Unit = {},
     photos: @Composable () -> Unit = {},
+    appearance: @Composable () -> Unit = {},
+    export: @Composable () -> Unit = {},
+    account: @Composable () -> Unit = {},
     backup: @Composable () -> Unit = {}
 ) {
     SurfaceSystemBars()
@@ -181,6 +192,9 @@ fun SettingsScreenContent(
             )
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            appearance()
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
             security()
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))
@@ -188,6 +202,12 @@ fun SettingsScreenContent(
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))
             backup()
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            export()
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            account()
         }
     }
 }
@@ -205,7 +225,10 @@ private fun SettingsScreenPreview() {
                 SecuritySection(AppLockConfig(enabled = true, pinLength = 4), {}, {}, {})
             },
             photos = { PhotosSectionContent(PhotosSettingsState(), onRetentionSelected = {}) },
-            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) }
+            backup = { BackupSectionContent(busy = false, onCreateClick = {}, onRestoreClick = {}) },
+            appearance = { AppearanceSection(ThemeMode.SYSTEM, onThemeModeChange = {}) },
+            export = { ExportSectionContent(busy = false, onExportClick = {}) },
+            account = { AccountSectionContent(onChangePasswordClick = {}, onDeleteUserClick = {}) }
         )
     }
 }

@@ -6,7 +6,14 @@ import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.fragment.app.FragmentActivity
+import com.nintech.budgment.data.model.ThemeMode
+import com.nintech.budgment.data.session.UiPreferences
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -25,6 +32,7 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
 
     @Inject lateinit var appLock: AppLockManager
+    @Inject lateinit var uiPreferences: UiPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,8 +40,16 @@ class MainActivity : FragmentActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         hideFromRecentsWhenLocked()
+        // Se lee antes del primer cuadro para que la app no parpadee con el tema del teléfono.
+        val initialTheme = runBlocking { uiPreferences.themeMode.first() }
         setContent {
-            BudgmentTheme {
+            val themeMode by uiPreferences.themeMode.collectAsState(initial = initialTheme)
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            BudgmentTheme(darkTheme = darkTheme) {
                 BudgmentRoot()
             }
         }

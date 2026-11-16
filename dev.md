@@ -292,7 +292,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Estado | Falta |
 |---------|--------|-------|
-| Configuración | 🟡 Moneda por defecto, seguridad (PIN, huella o rostro) y respaldo a archivo | Cambio de contraseña, borrar usuario, tema, exportar CSV |
+| ✅ ~~Configuración~~ | Moneda por defecto, apariencia, seguridad, fotos de recibos, respaldo, exportar CSV y cuenta (ver «Configuración» abajo) | Editar nombre, usuario o correo |
 | Movimientos | 🟡 Lista por día con búsqueda y filtros | Filtro por etiqueta (cuando existan) |
 
 ### D. Deuda técnica
@@ -304,7 +304,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | ✅ ~~Versionar `app/schemas/`~~ | Versionados desde `38db1c3` (el 1.json no existe; el verificador lo reconstruye del 2) | Hecho |
 | Restaurar una copia previa a la migración o a una restauración | `noBackupFilesDir/db-backups`; sin UI | Pendiente |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest`, `AppLockPolicyTest`, `BackupCryptoTest` y `AttachmentPolicyTest`; instrumentado: `BackupRoundTripTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest`, `AppLockPolicyTest`, `BackupCryptoTest`, `AttachmentPolicyTest` y `TransactionsCsvTest`; instrumentado: `BackupRoundTripTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | ✅ ~~`backup_rules.xml` / `data_extraction_rules.xml`~~ | `res/xml/` | Hecho: respaldo automático de Android configurado |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -359,6 +359,13 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - `Pbkdf2` (`data/local/security/`): usa el del sistema y, en Android 7 (API 24–25, donde `PBKDF2WithHmacSHA256` no existe), uno propio con el mismo resultado. `PasswordHasher` también lo usa: antes el inicio de sesión fallaba en esas versiones
 - **Pendiente:** respaldo automático programado, pantalla para recuperar las copias de `db-backups`
 - **Probar:** `./gradlew connectedDebugAndroidTest` corre `BackupRoundTripTest` con bases de nombre propio. ⚠️ Al terminar, Gradle puede desinstalar la app del dispositivo: usar un emulador o un teléfono sin datos reales
+
+### Configuración
+- Secciones, en orden: moneda por defecto, apariencia, seguridad, fotos de recibos, respaldo, exportar movimientos y cuenta. Cada una es un composable con su ViewModel (`ui/settings/`); `SettingsScreenContent` las recibe como huecos
+- **Apariencia** (`ThemeMode` en `UiPreferences`, del dispositivo): igual que el teléfono, claro u oscuro. `MainActivity` lo lee antes del primer cuadro (`runBlocking`, una lectura corta de DataStore) para que no parpadee, y lo pasa a `BudgmentTheme`. `LocalDarkTheme` dice si la app se muestra en oscuro; `SystemBars.kt` lo usa en vez de `isSystemInDarkTheme()`. La pantalla de arranque del sistema sigue el tema del teléfono
+- **Exportar movimientos** (`TransactionsCsv.kt`, puro, con tests; `ExportViewModel`): CSV del usuario actual con los mismos datos que la lista de Movimientos (incluye el historial de cuentas y categorías eliminadas). Columnas: fecha (`yyyy-MM-dd`), tipo, categoría, cuenta, cuenta destino, monto con signo y punto decimal, moneda y nota; una transferencia es una fila. Lleva BOM para Excel, y un texto que empiece como fórmula (`=`, `+`, `-`, `@`) se antecede de un apóstrofo. No está cifrado: la pantalla lo avisa
+- **Cambiar contraseña** (`AuthRepository.changePassword`): pide la actual. No hay longitud mínima, igual que en el registro. El PIN no cambia
+- **Eliminar mi cuenta** (`AuthRepository.deleteUser`): pide la contraseña y no se puede deshacer. Borra las fotos del usuario y luego `UserDao.deleteWithData`: transferencias, movimientos y recurrentes primero (sus claves foráneas son `RESTRICT` hacia cuentas y categorías) y después el usuario, que arrastra lo demás en cascada. Los otros usuarios no se tocan. Al terminar se cierra la sesión. El PIN y las preferencias del dispositivo se quedan
 
 ### Fotos de recibos (adjuntos)
 - **Dónde:** en el formulario de movimiento (nuevo, editar y confirmar una ocurrencia; no en la plantilla de un recurrente ni en transferencias), debajo de la nota: miniaturas, «Tomar foto» y visor a pantalla completa con zoom (`ui/attachments/ReceiptPhotos.kt`). En la lista de Movimientos, el menú ⋮ de una fila con fotos ofrece «Ver fotos del recibo» (visor de solo lectura, `ReceiptPhotoViewer`); la fila en sí no lleva ningún indicador. Quitar una foto desde el formulario pide confirmación

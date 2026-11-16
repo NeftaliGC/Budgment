@@ -98,6 +98,12 @@ private val LocalBudgmentExtraColors = staticCompositionLocalOf {
     BudgmentExtraColors(success = Success, onSuccess = Color.White)
 }
 
+/**
+ * Si la app se está mostrando en oscuro. Puede no coincidir con el teléfono: el usuario puede
+ * fijar el tema en Configuración.
+ */
+val LocalDarkTheme = staticCompositionLocalOf { false }
+
 object BudgmentTheme {
     val extraColors: BudgmentExtraColors
         @Composable
@@ -112,7 +118,7 @@ fun BudgmentTheme(
     val colorScheme = if (darkTheme) DarkColors else LightColors
     val extraColors = if (darkTheme) DarkExtraColors else LightExtraColors
 
-    CompositionLocalProvider(LocalBudgmentExtraColors provides extraColors) {
+    CompositionLocalProvider(LocalBudgmentExtraColors provides extraColors, LocalDarkTheme provides darkTheme) {
         MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
     }
 }

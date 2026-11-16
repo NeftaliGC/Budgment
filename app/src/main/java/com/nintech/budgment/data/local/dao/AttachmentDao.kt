@@ -18,6 +18,10 @@ interface AttachmentDao {
     @Query("SELECT * FROM attachments WHERE transactionId = :transactionId ORDER BY createdAt")
     suspend fun getByTransaction(transactionId: String): List<AttachmentEntity>
 
+    /** Fotos de todos los movimientos de un usuario, eliminados o no. */
+    @Query("SELECT a.* FROM attachments a JOIN transactions t ON t.id = a.transactionId WHERE t.userId = :userId")
+    suspend fun getByUser(userId: String): List<AttachmentEntity>
+
     @Query("SELECT * FROM attachments")
     suspend fun getAll(): List<AttachmentEntity>
 

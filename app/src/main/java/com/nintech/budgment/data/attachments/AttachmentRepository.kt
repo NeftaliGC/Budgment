@@ -62,6 +62,11 @@ class AttachmentRepository @Inject constructor(
         attachments.forEach { store.delete(it.filePath) }
     }
 
+    /** Borra todas las fotos de un usuario; se usa al eliminar su cuenta. */
+    suspend fun deleteAllOfUser(userId: String) = withContext(Dispatchers.IO) {
+        delete(dao.getByUser(userId))
+    }
+
     /** Fotos que se borrarían ahora mismo si el plazo fuera de [months] meses. */
     suspend fun countExpiredWith(months: Int, now: Long = System.currentTimeMillis()): Int {
         val cutoff = AttachmentPolicy.retentionCutoff(now, months) ?: return 0

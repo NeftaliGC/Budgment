@@ -3,6 +3,10 @@ package com.nintech.budgment.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.data.model.ThemeMode
+import com.nintech.budgment.data.session.UiPreferences
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import com.nintech.budgment.data.repository.UserRepository
 import com.nintech.budgment.data.session.AppLockConfig
 import com.nintech.budgment.data.session.AppLockSettings
@@ -28,8 +32,16 @@ class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
     appLock: AppLockManager,
-    private val lockSettings: AppLockSettings
+    private val lockSettings: AppLockSettings,
+    private val uiPreferences: UiPreferences
 ) : ViewModel() {
+
+    val themeMode: StateFlow<ThemeMode> = uiPreferences.themeMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { uiPreferences.setThemeMode(mode) }
+    }
 
     /** null mientras se lee. */
     val lockConfig: StateFlow<AppLockConfig?> = appLock.config

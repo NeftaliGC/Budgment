@@ -1,5 +1,6 @@
 package com.nintech.budgment.ui.navigation
 
+import com.nintech.budgment.ui.lock.PinSetupMode
 import com.nintech.budgment.ui.transactions.TransactionFormKind
 import com.nintech.budgment.ui.transactions.TransactionFormViewModel
 
@@ -10,6 +11,9 @@ sealed class BudgmentDestination(val route: String) {
     object Settings : BudgmentDestination("settings")
     object Statistics : BudgmentDestination("statistics")
     object Notifications : BudgmentDestination("notifications")
+    object PinSetup : BudgmentDestination("pin_setup/{mode}") {
+        fun createRoute(mode: PinSetupMode) = "pin_setup/${mode.name.lowercase()}"
+    }
     object Accounts : BudgmentDestination("accounts")
     object AccountForm : BudgmentDestination("account_form?accountId={accountId}") {
         const val ARG_ACCOUNT_ID = "accountId"

@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,26 +38,43 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.data.session.AppLockConfig
+import com.nintech.budgment.ui.lock.PinSetupMode
 import com.nintech.budgment.ui.common.SurfaceSystemBars
 import com.nintech.budgment.ui.theme.BudgmentTheme
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
+    onPinSetupClick: (PinSetupMode) -> Unit,
     viewModel: SettingsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     if (viewModel != null) {
         val state by viewModel.state.collectAsState()
+        val lockConfig by viewModel.lockConfig.collectAsState()
         SettingsScreenContent(
             state = state,
             onDefaultCurrencyChange = viewModel::onDefaultCurrencyChange,
-            onBackClick = onBackClick
+            onBackClick = onBackClick,
+            security = {
+                lockConfig?.let { config ->
+                    SecuritySection(
+                        config = config,
+                        onPinSetupClick = onPinSetupClick,
+                        onBiometricChange = viewModel::setBiometricEnabled,
+                        onTimeoutChange = viewModel::setLockTimeout
+                    )
+                }
+            }
         )
     } else {
         SettingsScreenContent(
             state = SettingsUiState(isLoading = false),
             onDefaultCurrencyChange = {},
-            onBackClick = onBackClick
+            onBackClick = onBackClick,
+            security = {
+                SecuritySection(AppLockConfig(), onPinSetupClick, onBiometricChange = {}, onTimeoutChange = {})
+            }
         )
     }
 }
@@ -66,7 +84,8 @@ fun SettingsScreen(
 fun SettingsScreenContent(
     state: SettingsUiState,
     onDefaultCurrencyChange: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    security: @Composable () -> Unit = {}
 ) {
     SurfaceSystemBars()
 
@@ -154,6 +173,9 @@ fun SettingsScreenContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+            security()
         }
     }
 }
@@ -166,7 +188,10 @@ private fun SettingsScreenPreview() {
         SettingsScreenContent(
             state = SettingsUiState(defaultCurrency = "MXN", isLoading = false),
             onDefaultCurrencyChange = {},
-            onBackClick = {}
+            onBackClick = {},
+            security = {
+                SecuritySection(AppLockConfig(enabled = true, pinLength = 4), {}, {}, {})
+            }
         )
     }
 }

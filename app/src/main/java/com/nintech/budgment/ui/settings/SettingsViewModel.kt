@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.data.repository.UserRepository
+import com.nintech.budgment.data.session.AppLockConfig
+import com.nintech.budgment.data.session.AppLockSettings
 import com.nintech.budgment.data.session.SessionManager
+import com.nintech.budgment.security.AppLockManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +26,21 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    appLock: AppLockManager,
+    private val lockSettings: AppLockSettings
 ) : ViewModel() {
+
+    /** null mientras se lee. */
+    val lockConfig: StateFlow<AppLockConfig?> = appLock.config
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        viewModelScope.launch { lockSettings.setBiometricEnabled(enabled) }
+    }
+
+    fun setLockTimeout(seconds: Int) {
+        viewModelScope.launch { lockSettings.setTimeoutSeconds(seconds) }
+    }
 
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()

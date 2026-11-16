@@ -3,12 +3,17 @@ package com.nintech.budgment.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.nintech.budgment.security.LockState
+import com.nintech.budgment.ui.lock.LockScreen
 import com.nintech.budgment.ui.navigation.BudgmentDestination
 import com.nintech.budgment.ui.navigation.BudgmentNavHost
 
@@ -21,10 +26,35 @@ fun BudgmentRoot(sessionViewModel: SessionViewModel? = if (LocalInspectionMode.c
                     CircularProgressIndicator()
                 }
             }
-            is SessionUiState.LoggedIn -> BudgmentNavHost(startDestination = BudgmentDestination.Home.route)
+            is SessionUiState.LoggedIn -> {
+                val lockState by sessionViewModel.lockState.collectAsState()
+                LockGate(lockState) {
+                    BudgmentNavHost(startDestination = BudgmentDestination.Home.route)
+                }
+            }
             SessionUiState.LoggedOut -> BudgmentNavHost(startDestination = BudgmentDestination.Login.route)
         }
     } else {
         BudgmentNavHost(startDestination = BudgmentDestination.Home.route)
+    }
+}
+
+/**
+ * La navegación sigue compuesta debajo del bloqueo, así al desbloquear se vuelve a la misma
+ * pantalla con lo que se estaba escribiendo. Mientras está bloqueada queda oculta para los
+ * lectores de pantalla y la tapa una superficie opaca que no deja pasar toques.
+ */
+@Composable
+private fun LockGate(lockState: LockState, content: @Composable () -> Unit) {
+    val hidden = lockState != LockState.UNLOCKED
+    Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().then(if (hidden) Modifier.clearAndSetSemantics {} else Modifier)) {
+            content()
+        }
+        when (lockState) {
+            LockState.LOADING -> Surface(Modifier.fillMaxSize()) {}
+            LockState.LOCKED -> LockScreen()
+            LockState.UNLOCKED -> Unit
+        }
     }
 }

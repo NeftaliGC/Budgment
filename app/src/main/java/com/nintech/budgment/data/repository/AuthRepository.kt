@@ -3,6 +3,8 @@ package com.nintech.budgment.data.repository
 import com.nintech.budgment.data.local.dao.UserDao
 import com.nintech.budgment.data.local.entity.UserEntity
 import com.nintech.budgment.data.local.security.PasswordHasher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -17,6 +19,8 @@ sealed class AuthResult {
 interface AuthRepository {
     suspend fun register(name: String, username: String, email: String?, password: String, confirmPassword: String): AuthResult
     suspend fun login(username: String, password: String): AuthResult
+    /** Comprueba la contraseña del usuario [userId] sin cambiar la sesión. */
+    suspend fun verifyPassword(userId: String, password: String): Boolean
 }
 
 class AuthRepositoryImpl @Inject constructor(
@@ -55,5 +59,11 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             AuthResult.Error(AuthError.INVALID_CREDENTIALS)
         }
+    }
+
+    override suspend fun verifyPassword(userId: String, password: String): Boolean {
+        if (password.isBlank()) return false
+        val user = userDao.getById(userId) ?: return false
+        return withContext(Dispatchers.Default) { PasswordHasher.verify(password, user.passwordHash) }
     }
 }

@@ -22,6 +22,8 @@ import com.nintech.budgment.data.repository.RecurringRepositoryImpl
 import com.nintech.budgment.data.repository.TransferRepositoryImpl
 import com.nintech.budgment.data.repository.UserRepository
 import com.nintech.budgment.data.repository.UserRepositoryImpl
+import com.nintech.budgment.data.session.AppLockSettings
+import com.nintech.budgment.data.session.AppLockSettingsImpl
 import com.nintech.budgment.data.session.NotificationSettings
 import com.nintech.budgment.data.session.NotificationSettingsImpl
 import com.nintech.budgment.data.session.SessionManager
@@ -76,6 +78,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNotificationSettings(impl: NotificationSettingsImpl): NotificationSettings
+
+    @Binds
+    @Singleton
+    abstract fun bindAppLockSettings(impl: AppLockSettingsImpl): AppLockSettings
 
     @Binds
     abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository

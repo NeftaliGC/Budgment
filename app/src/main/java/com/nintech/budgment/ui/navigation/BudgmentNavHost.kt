@@ -22,6 +22,8 @@ import com.nintech.budgment.ui.transactions.TransactionsListScreen
 import com.nintech.budgment.ui.transfers.TransferFormScreen
 import com.nintech.budgment.ui.recurring.RecurringListScreen
 import com.nintech.budgment.ui.settings.SettingsScreen
+import com.nintech.budgment.ui.lock.PinSetupScreen
+import com.nintech.budgment.ui.lock.PinSetupViewModel
 import com.nintech.budgment.ui.goals.GoalDetailScreen
 import com.nintech.budgment.ui.goals.GoalDetailViewModel
 import com.nintech.budgment.ui.goals.GoalFormScreen
@@ -120,7 +122,19 @@ fun BudgmentNavHost(
             StatisticsScreen(onBackClick = { navController.popBackStack() })
         }
         composable(BudgmentDestination.Settings.route) {
-            SettingsScreen(onBackClick = { navController.popBackStack() })
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                onPinSetupClick = { mode -> navController.navigate(BudgmentDestination.PinSetup.createRoute(mode)) }
+            )
+        }
+        composable(
+            route = BudgmentDestination.PinSetup.route,
+            arguments = listOf(navArgument(PinSetupViewModel.ARG_MODE) { type = NavType.StringType })
+        ) {
+            PinSetupScreen(
+                onBackClick = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
+            )
         }
 
         composable(BudgmentDestination.Categories.route) {

@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.datastore.preferences)
+    implementation(libs.biometric)
 
     // Red (tasas de cambio)
     implementation(libs.retrofit)

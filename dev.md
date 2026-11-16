@@ -281,7 +281,8 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Feature | Qué hace falta | Depende de |
 |---------|----------------|------------|
 | ✅ ~~Estadísticas~~ | Hecho: `ui/statistics/` (ver «Estadísticas» abajo). Pendiente: exportar reporte, filtrar por cuenta | — |
-| PIN / biometría | `BiometricPrompt` + PIN de respaldo, bloqueo al volver de segundo plano, opción en Configuración | Configuración |
+| ✅ ~~PIN / biometría~~ | Hecho: ver «Bloqueo de la app» abajo | — |
+| Cifrar la base de datos | SQLCipher (o similar) con la clave en Android Keystore; migrar la BD existente sin cifrar a una cifrada sin perder datos; revisar el respaldo automático y el de Drive | Bloqueo de la app ✅ |
 | Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
 | ✅ ~~Notificaciones~~ | Hecho: bandeja, ajustes, recurrentes y alertas de presupuesto (ver «Notificaciones» abajo) | — |
 
@@ -289,7 +290,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Estado | Falta |
 |---------|--------|-------|
-| Configuración | 🟡 Solo moneda por defecto | Cambio de contraseña, borrar usuario, tema, seguridad (PIN), respaldo, exportar CSV |
+| Configuración | 🟡 Moneda por defecto y seguridad (PIN, huella o rostro) | Cambio de contraseña, borrar usuario, tema, respaldo, exportar CSV |
 | Movimientos | 🟡 Lista por día con búsqueda y filtros | Filtro por etiqueta (cuando existan) |
 
 ### D. Deuda técnica
@@ -298,10 +299,10 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
 | ✅ ~~Quitar `fallbackToDestructiveMigration`~~ | Cadena completa v1→v6 + copia previa + `tools/verify_migrations.py` | Hecho |
-| Versionar `app/schemas/` | Hoy en `.gitignore`: sin los JSON no se pueden verificar migraciones en otro equipo | Recomendado |
+| ✅ ~~Versionar `app/schemas/`~~ | Versionados desde `38db1c3` (el 1.json no existe; el verificador lo reconstruye del 2) | Hecho |
 | Restaurar una copia previa a la migración | `noBackupFilesDir/db-backups`; sin UI | Con el respaldo en Drive |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest` y `TransactionFilterTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest`, `TransactionFilterTest` y `AppLockPolicyTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | ✅ ~~`backup_rules.xml` / `data_extraction_rules.xml`~~ | `res/xml/` | Hecho: respaldo automático de Android configurado |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -313,8 +314,8 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 4. ✅ ~~**Estadísticas**~~.
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
 6. ✅ ~~**Metas**~~, ✅ ~~filtros de movimientos~~. ⏸️ Etiquetas y subcategorías descartadas por ahora (ver «Descartado por ahora»).
-7. ✅ ~~**Migraciones reales**~~ → **respaldo en Drive** → **PIN/biometría**.
-8. **Adjuntos**.
+7. ✅ ~~**Migraciones reales**~~ → ✅ ~~**PIN/biometría**~~ → **respaldo en Drive**.
+8. **Adjuntos**. Más adelante: **cifrar la base de datos**.
 9. Tests, pulido, README, publicación.
 
 ---
@@ -383,6 +384,18 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 ### Drawables sin uso
 - (`logo_mark.png` ya se usa en Login y en la barra superior; los strings sin uso se eliminaron en `5d5e54f`)
+
+### Bloqueo de la app (PIN, huella o rostro)
+- Opcional, en Configuración → Seguridad. Es del dispositivo: no se borra al cerrar sesión
+- **PIN** de 4 a 6 dígitos, guardado como hash PBKDF2 con sal (`PasswordHasher`) en el DataStore de sesión (`AppLockSettings`). Cambiarlo o quitarlo pide el PIN actual
+- **Intentos:** 5 libres; después 30 s de espera que se duplica con cada fallo hasta 15 min (`AppLockPolicy`). El contador sobrevive a cerrar la app
+- **Huella o rostro** (`androidx.biometric` 1.1.0, clase débil incluida): solo Android 9+, porque antes la librería usa un diálogo AppCompat y el tema no lo es. Se confirma con el sensor al activarlo; se abre sola al volver a la app y hay botón para reintentar
+- **Cuándo se bloquea** (`AppLockManager`): al abrir la app en frío y al volver de segundo plano tras el tiempo elegido (al salir, 30 s, 1 min, 5 min), medido con `elapsedRealtime`. Girar la pantalla no cuenta. Tras iniciar sesión con contraseña no se pide el PIN
+- **Pantalla:** `LockScreen` se dibuja encima de la navegación (`BudgmentRoot` → `LockGate`), que sigue compuesta debajo para no perder lo que se estaba haciendo; queda oculta a los lectores de pantalla. Atrás manda la app al fondo
+- **¿Olvidaste tu PIN?:** con la contraseña de la cuenta se desbloquea y se quita el PIN
+- **Apps recientes:** con el bloqueo activo la miniatura no se muestra (`setRecentsScreenshotEnabled`, Android 13+). No se usa `FLAG_SECURE` para no bloquear capturas
+- `MainActivity` es `FragmentActivity` (lo exige `BiometricPrompt`)
+- **Límite:** protege la interfaz, no cifra la BD. Quien saque el archivo del teléfono (root, ADB con depuración) puede leerlo. Cifrado real: pendiente para después (ver «Cifrar la base de datos» en la tabla B)
 
 ### Respaldo automático de Android (`backup_rules.xml` / `data_extraction_rules.xml`)
 - Se respaldan `database/budgment.db` (con -wal/-shm) y `file/datastore/` (sesión recordada y preferencias). Todo lo demás queda fuera; `noBackupFilesDir` (WorkManager, copias previas a migrar) y el caché nunca se respaldan

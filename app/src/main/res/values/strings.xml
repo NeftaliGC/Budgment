@@ -45,6 +45,64 @@
     <string name="settings_currency_budgets_note">Si la cambias, tus presupuestos conservan sus cifras, ahora en la nueva moneda. Revisa sus límites.</string>
     <string name="settings_currency_rate_note">Las conversiones usan la tasa de referencia diaria del Banco Central Europeo.</string>
 
+    <!-- Seguridad -->
+    <string name="settings_security_title">Seguridad</string>
+    <string name="settings_lock">Bloquear con PIN</string>
+    <string name="settings_lock_description_off">Pide un PIN al abrir Budgment.</string>
+    <string name="settings_lock_description_on">Budgment pide tu PIN al abrirse.</string>
+    <string name="settings_change_pin">Cambiar PIN</string>
+    <string name="settings_biometric">Huella o rostro</string>
+    <string name="settings_biometric_description">Desbloquea sin escribir el PIN.</string>
+    <string name="settings_biometric_not_enrolled">Registra tu huella o tu rostro en los ajustes del teléfono para usarlo aquí.</string>
+    <string name="settings_lock_timeout">Volver a pedir el PIN</string>
+    <string name="settings_lock_timeout_immediately">Siempre que salgas de la app</string>
+    <plurals name="settings_lock_timeout_seconds">
+        <item quantity="one">Tras %1$d segundo fuera</item>
+        <item quantity="other">Tras %1$d segundos fuera</item>
+    </plurals>
+    <string name="settings_lock_timeout_minutes">Tras %1$d min fuera</string>
+    <string name="settings_lock_note">Si olvidas el PIN, puedes desbloquear con la contraseña de tu cuenta.</string>
+
+    <!-- Bloqueo -->
+    <string name="lock_title">Ingresa tu PIN</string>
+    <string name="lock_wrong_pin">PIN incorrecto</string>
+    <plurals name="lock_wrong_pin_attempts">
+        <item quantity="one">PIN incorrecto. Te queda %1$d intento antes de tener que esperar.</item>
+        <item quantity="other">PIN incorrecto. Te quedan %1$d intentos antes de tener que esperar.</item>
+    </plurals>
+    <string name="lock_locked_out">Demasiados intentos. Vuelve a intentarlo en %1$s.</string>
+    <string name="lock_forgot_pin">¿Olvidaste tu PIN?</string>
+    <string name="lock_recovery_title">Desbloquear con tu contraseña</string>
+    <string name="lock_recovery_text">Escribe la contraseña de tu cuenta. Se quitará el PIN y podrás crear otro en Configuración.</string>
+    <string name="lock_recovery_password">Contraseña</string>
+    <string name="lock_recovery_wrong">Contraseña incorrecta</string>
+    <string name="lock_recovery_confirm">Desbloquear</string>
+    <string name="lock_recovered_message">Se quitó el PIN. Crea uno nuevo en Configuración.</string>
+    <string name="biometric_prompt_title">Desbloquear Budgment</string>
+    <string name="biometric_prompt_use_pin">Usar PIN</string>
+    <string name="biometric_confirm_title">Confirma tu huella o rostro</string>
+    <plurals name="pin_digits_entered">
+        <item quantity="one">%1$d dígito ingresado</item>
+        <item quantity="other">%1$d dígitos ingresados</item>
+    </plurals>
+    <string name="pin_key_delete">Borrar</string>
+    <string name="pin_key_biometric">Usar huella o rostro</string>
+
+    <!-- Crear, cambiar o quitar el PIN -->
+    <string name="pin_setup_title_create">Crear PIN</string>
+    <string name="pin_setup_title_change">Cambiar PIN</string>
+    <string name="pin_setup_title_disable">Quitar el bloqueo</string>
+    <string name="pin_setup_enter_current">Ingresa tu PIN actual</string>
+    <string name="pin_setup_enter_new">Elige un PIN de 4 a 6 dígitos</string>
+    <string name="pin_setup_enter_new_hint">Evita fechas y secuencias fáciles como 1234.</string>
+    <string name="pin_setup_confirm">Repite el PIN</string>
+    <string name="pin_setup_mismatch">Los PIN no coinciden. Elige uno otra vez.</string>
+    <string name="pin_setup_locked_out">Demasiados intentos. Inténtalo más tarde.</string>
+    <string name="pin_setup_continue">Continuar</string>
+    <string name="pin_setup_done_create">Bloqueo activado</string>
+    <string name="pin_setup_done_change">PIN cambiado</string>
+    <string name="pin_setup_done_disable">Bloqueo desactivado</string>
+
     <!-- Bottom navigation -->
     <string name="bottom_nav_home">Inicio</string>
     <string name="bottom_nav_accounts">Cuentas</string>

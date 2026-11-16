@@ -18,22 +18,23 @@ data class BudgetPeriod(
 
     /** Días que faltan para que se renueve, contando hoy. Nunca menos de 1. */
     fun daysLeft(now: Long = System.currentTimeMillis()): Int {
-        val today = startOfDay(now)
-        return ((endExclusive - today).toDouble() / DAY_MS).roundToLong().toInt().coerceAtLeast(1)
+        val today = CalendarMath.startOfDay(now)
+        return ((endExclusive - today).toDouble() / CalendarMath.DAY_MS).roundToLong().toInt().coerceAtLeast(1)
     }
+
+    /** La frecuencia de la lista que corresponde a este periodo, si es una de ellas. */
+    val frequency: RecurrenceFrequency? get() = RecurrenceFrequency.of(unit, interval)
 
     /** Mismo tipo de periodo (unidad e intervalo) que [other], sin importar las fechas. */
     fun sameKindAs(other: BudgetPeriod): Boolean = unit == other.unit && interval == other.interval
 
     companion object {
-        private const val DAY_MS = 24 * 60 * 60 * 1000.0
-
         /**
          * Inicio del periodo de calendario que contiene [millis]: el día, el lunes de esa semana,
          * el día 1 del mes o el 1 de enero. Sirve de ancla al crear un presupuesto.
          */
         fun alignedStart(millis: Long, unit: PeriodUnit): Long = Calendar.getInstance().apply {
-            timeInMillis = startOfDay(millis)
+            timeInMillis = CalendarMath.startOfDay(millis)
             when (unit) {
                 PeriodUnit.DAY -> Unit
                 PeriodUnit.WEEK -> {
@@ -55,47 +56,15 @@ data class BudgetPeriod(
             val base = alignedStart(anchor, unit)
             if (now < base) return nth(base, unit, step, 0)
 
-            // Estimación directa del número de periodos transcurridos; luego se corrige el borde.
-            val baseCal = Calendar.getInstance().apply { timeInMillis = base }
-            val nowCal = Calendar.getInstance().apply { timeInMillis = now }
-            val elapsedUnits = when (unit) {
-                PeriodUnit.DAY -> daysBetween(base, now)
-                PeriodUnit.WEEK -> daysBetween(base, now) / 7
-                PeriodUnit.MONTH ->
-                    (nowCal.get(Calendar.YEAR) - baseCal.get(Calendar.YEAR)) * 12L +
-                        (nowCal.get(Calendar.MONTH) - baseCal.get(Calendar.MONTH))
-                PeriodUnit.YEAR -> (nowCal.get(Calendar.YEAR) - baseCal.get(Calendar.YEAR)).toLong()
-            }
-            var k = (elapsedUnits / step).toInt().coerceAtLeast(0)
-            var period = nth(base, unit, step, k)
-            while (now < period.start && k > 0) period = nth(base, unit, step, --k)
-            while (now >= period.endExclusive) period = nth(base, unit, step, ++k)
-            return period
+            // Índice del periodo que contiene now: el último cuyo inicio es ≤ now.
+            val firstAfter = CalendarMath.firstIndexAtOrAfter(base, unit, step, now + 1)
+            return nth(base, unit, step, (firstAfter - 1).coerceAtLeast(0))
         }
 
         private fun nth(base: Long, unit: PeriodUnit, step: Int, k: Int): BudgetPeriod {
-            val start = addUnits(base, unit, step * k)
-            return BudgetPeriod(start, addUnits(start, unit, step), unit, step)
+            val start = CalendarMath.addUnits(base, unit, step * k)
+            return BudgetPeriod(start, CalendarMath.addUnits(start, unit, step), unit, step)
         }
-
-        private fun addUnits(millis: Long, unit: PeriodUnit, amount: Int): Long = Calendar.getInstance().apply {
-            timeInMillis = millis
-            when (unit) {
-                PeriodUnit.DAY -> add(Calendar.DAY_OF_MONTH, amount)
-                PeriodUnit.WEEK -> add(Calendar.DAY_OF_MONTH, amount * 7)
-                PeriodUnit.MONTH -> add(Calendar.MONTH, amount)
-                PeriodUnit.YEAR -> add(Calendar.YEAR, amount)
-            }
-        }.timeInMillis
-
-        /** Días de calendario entre dos instantes; redondea para absorber los cambios de horario. */
-        private fun daysBetween(from: Long, to: Long): Long =
-            ((startOfDay(to) - startOfDay(from)) / DAY_MS).roundToLong()
-
-        private fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
-            timeInMillis = millis
-            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
     }
 }
 

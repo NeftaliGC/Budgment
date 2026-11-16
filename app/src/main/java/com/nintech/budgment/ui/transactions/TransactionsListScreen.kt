@@ -32,6 +32,7 @@ import com.nintech.budgment.ui.theme.BudgmentTheme
 import com.nintech.budgment.ui.common.RowActionsMenu
 import com.nintech.budgment.ui.common.rememberUndoableDelete
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.EventRepeat
 
 @Composable
 fun TransactionsListScreen(
@@ -43,6 +44,7 @@ fun TransactionsListScreen(
     onTransactionClick: (String) -> Unit,
     onAddTransferClick: () -> Unit = {},
     onTransferClick: (String) -> Unit = {},
+    onRecurringClick: () -> Unit = {},
     viewModel: TransactionsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     if (viewModel != null) {
@@ -65,6 +67,7 @@ fun TransactionsListScreen(
             ),
             onAddTransferClick = onAddTransferClick,
             onTransferClick = onTransferClick,
+            onRecurringClick = onRecurringClick,
             onDeleteTransfer = rememberUndoableDelete(
                 snackbarHostState = snackbarHostState,
                 message = stringResource(R.string.transfer_deleted_message),
@@ -85,6 +88,7 @@ fun TransactionsListScreen(
             onDeleteTransaction = {},
             onAddTransferClick = onAddTransferClick,
             onTransferClick = onTransferClick,
+            onRecurringClick = onRecurringClick,
             onDeleteTransfer = {}
         )
     }
@@ -104,6 +108,7 @@ fun TransactionsListScreen(
     onAddTransferClick: () -> Unit = {},
     onTransferClick: (String) -> Unit = {},
     onDeleteTransfer: (String) -> Unit = {},
+    onRecurringClick: () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
@@ -112,6 +117,9 @@ fun TransactionsListScreen(
         onNavigateToTab = onNavigateToTab,
         onSettingsClick = onSettingsClick,
         topBarActions = {
+            IconButton(onClick = onRecurringClick) {
+                Icon(Icons.Filled.EventRepeat, contentDescription = stringResource(R.string.recurring_title))
+            }
             IconButton(onClick = onAddTransferClick) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.ic_transfer),

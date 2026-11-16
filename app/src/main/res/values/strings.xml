@@ -11,6 +11,8 @@
     <string name="common_understood">Entendido</string>
     <string name="common_accept">Aceptar</string>
     <string name="common_today">Hoy</string>
+    <string name="common_show">Mostrar</string>
+    <string name="common_hide">Ocultar</string>
     <string name="common_yesterday">Ayer</string>
 
     <!-- Errores de formulario compartidos -->
@@ -56,6 +58,7 @@
     <string name="home_budget_card_title_day">Presupuesto de hoy</string>
     <string name="home_budget_card_title_week">Presupuesto de esta semana</string>
     <string name="home_budget_card_title_year">Presupuesto de este año</string>
+    <string name="home_budget_card_title_period">Presupuesto de este periodo</string>
     <string name="home_budget_card_title_categories">Presupuesto de tus categorías</string>
     <string name="home_budget_spent_format">Has gastado %1$s de %2$s</string>
     <plurals name="home_budget_per_day">
@@ -200,6 +203,69 @@
     <string name="transaction_form_error_invalid_amount">Escribe un monto mayor a cero</string>
     <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos.</string>
 
+    <!-- Recurrentes -->
+    <string name="recurring_title">Recurrentes</string>
+    <string name="recurring_add_content_description">Nuevo recurrente</string>
+    <string name="recurring_empty_title">Aún no tienes recurrentes</string>
+    <string name="recurring_empty_subtitle">Agrega lo que se repite, como la renta, tu sueldo o una suscripción. Te avisaremos cuando toque y tú decides si registrarlo.</string>
+    <string name="recurring_list_explainer">Nada se registra solo: cuando toca, te avisamos y tú lo confirmas.</string>
+    <string name="recurring_form_title_new">Nuevo recurrente</string>
+    <string name="recurring_form_title_edit">Editar recurrente</string>
+    <string name="recurring_form_start_label">Desde</string>
+    <string name="recurring_occurrence_title">Registrar recurrente</string>
+    <string name="recurring_frequency_label">Repetir</string>
+    <string name="recurring_frequency_none">No se repite</string>
+    <string name="recurring_frequency_daily">Cada día</string>
+    <string name="recurring_frequency_weekly">Cada semana</string>
+    <string name="recurring_frequency_biweekly">Cada 2 semanas</string>
+    <string name="recurring_frequency_monthly">Cada mes</string>
+    <string name="recurring_frequency_bimonthly">Cada 2 meses</string>
+    <string name="recurring_frequency_quarterly">Cada 3 meses</string>
+    <string name="recurring_frequency_semiannual">Cada 6 meses</string>
+    <string name="recurring_frequency_yearly">Cada año</string>
+    <string name="recurring_frequency_hint">Te avisaremos cada vez que toque; no se registra hasta que lo confirmes.</string>
+    <plurals name="recurring_pending_title">
+        <item quantity="one">%1$d movimiento por registrar</item>
+        <item quantity="many">%1$d movimientos por registrar</item>
+        <item quantity="other">%1$d movimientos por registrar</item>
+    </plurals>
+    <string name="recurring_pending_subtitle">Ya tocan. Regístralos o déjalos para más tarde.</string>
+    <plurals name="recurring_snoozed_title">
+        <item quantity="one">%1$d pospuesto para más tarde</item>
+        <item quantity="many">%1$d pospuestos para más tarde</item>
+        <item quantity="other">%1$d pospuestos para más tarde</item>
+    </plurals>
+    <string name="recurring_snoozed_subtitle">Te los volvemos a recordar mañana. Puedes registrarlos cuando quieras.</string>
+    <string name="recurring_status_snoozed">Pospuesto hasta mañana</string>
+    <string name="recurring_due_today">Toca hoy</string>
+    <string name="recurring_due_since_format">Pendiente desde el %1$s</string>
+    <plurals name="recurring_more_due">
+        <item quantity="one">y %1$d más atrasado</item>
+        <item quantity="many">y %1$d más atrasados</item>
+        <item quantity="other">y %1$d más atrasados</item>
+    </plurals>
+    <string name="recurring_register">Registrar</string>
+    <string name="recurring_snooze">Más tarde</string>
+    <string name="recurring_skip">Omitir esta vez</string>
+    <string name="recurring_review">Revisar antes de registrar</string>
+    <string name="recurring_pause">Pausar</string>
+    <string name="recurring_resume">Reanudar</string>
+    <string name="recurring_delete">Eliminar</string>
+    <string name="recurring_deleted_message">Recurrente eliminado</string>
+    <string name="recurring_status_next_format">Próximo: %1$s</string>
+    <string name="recurring_status_pending">Por registrar</string>
+    <string name="recurring_status_paused">En pausa</string>
+    <string name="recurring_status_finished">Terminado</string>
+    <string name="recurring_status_needs_attention">Su cuenta o categoría se eliminó: edítalo</string>
+    <string name="notification_channel_recurring">Movimientos recurrentes</string>
+    <string name="notification_channel_recurring_description">Avisos cuando toca registrar un movimiento que se repite</string>
+    <plurals name="notification_recurring_title">
+        <item quantity="one">%1$d movimiento por registrar</item>
+        <item quantity="many">%1$d movimientos por registrar</item>
+        <item quantity="other">%1$d movimientos por registrar</item>
+    </plurals>
+    <string name="notification_recurring_body">%1$s. Abre Budgment para registrarlos o dejarlos para más tarde.</string>
+
     <!-- Transferencias -->
     <string name="transfer_label">Transferencia</string>
     <string name="transfer_row_title_format">%1$s → %2$s</string>
@@ -233,6 +299,7 @@
     <string name="budgets_summary_title_day">Resumen de hoy</string>
     <string name="budgets_summary_title_week">Resumen de la semana</string>
     <string name="budgets_summary_title_year">Resumen del año</string>
+    <string name="budgets_summary_title_period">Resumen del periodo</string>
     <string name="budgets_renews_format">%1$s · se renueva el %2$s</string>
     <string name="budgets_summary_other_periods">Los presupuestos con otra periodicidad no entran en este resumen.</string>
     <string name="budgets_summary_allocated">Límite</string>
@@ -260,9 +327,16 @@
     <string name="budget_form_scope_label">Alcance</string>
     <string name="budget_form_categories_label">Categorías incluidas</string>
     <string name="budget_form_period_label">Se renueva cada</string>
-    <string name="budget_form_period_hint_week">Cada lunes empieza de cero.</string>
-    <string name="budget_form_period_hint_month">El día 1 de cada mes empieza de cero.</string>
-    <string name="budget_form_period_hint_year">Cada 1 de enero empieza de cero.</string>
+    <string name="budget_form_period_renews_format">Vuelve a empezar de cero el %1$s.</string>
+    <string name="budget_frequency_daily">Diario</string>
+    <string name="budget_frequency_weekly">Semanal</string>
+    <string name="budget_frequency_biweekly">Cada 2 semanas</string>
+    <string name="budget_frequency_monthly">Mensual</string>
+    <string name="budget_frequency_bimonthly">Bimestral</string>
+    <string name="budget_frequency_quarterly">Trimestral</string>
+    <string name="budget_frequency_semiannual">Semestral</string>
+    <string name="budget_frequency_yearly">Anual</string>
+    <string name="budget_frequency_custom">Periódico</string>
     <string name="budget_form_save_button">Guardar</string>
     <string name="budget_form_error_amount">Escribe un límite mayor a cero</string>
     <string name="budget_form_error_categories_required">Elige al menos una categoría</string>
@@ -273,10 +347,6 @@
     <!-- Budget scope -->
     <string name="budget_scope_global">Global</string>
     <string name="budget_scope_category">Por categoría</string>
-    <string name="period_unit_day">Diario</string>
-    <string name="period_unit_week">Semanal</string>
-    <string name="period_unit_month">Mensual</string>
-    <string name="period_unit_year">Anual</string>
 
     <!-- Nombres de iconos (lector de pantalla) -->
     <string name="icon_wallet">Billetera</string>

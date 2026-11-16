@@ -27,6 +27,7 @@ import com.nintech.budgment.data.local.entity.BudgetEntity
 import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.BudgetScope
 import com.nintech.budgment.data.model.CategoryType
+import com.nintech.budgment.data.model.BudgetPeriod
 import com.nintech.budgment.data.model.PeriodUnit
 import com.nintech.budgment.ui.categories.CategoryIcon
 import com.nintech.budgment.ui.categories.parseHexColor
@@ -140,7 +141,7 @@ fun BudgetsListScreen(
                         categoryLimitsExceedGlobal = uiState.categoryLimitsExceedGlobal,
                         primaryCurrency = uiState.primaryCurrency,
                         missingRateCount = uiState.missingRateCount,
-                        periodUnit = uiState.summaryPeriod?.unit ?: PeriodUnit.MONTH,
+                        period = uiState.summaryPeriod,
                         hasOtherPeriods = uiState.hasOtherPeriods,
                         onCurrencyChange = onCurrencyChange
                     )
@@ -204,7 +205,7 @@ private fun BudgetSummaryHeader(
     categoryLimitsExceedGlobal: Boolean,
     primaryCurrency: String,
     missingRateCount: Int,
-    periodUnit: PeriodUnit,
+    period: BudgetPeriod?,
     hasOtherPeriods: Boolean,
     onCurrencyChange: (String) -> Unit
 ) {
@@ -231,7 +232,7 @@ private fun BudgetSummaryHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    periodUnit.summaryTitle(),
+                    period?.summaryTitle() ?: stringResource(R.string.budgets_summary_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -374,7 +375,7 @@ private fun BudgetCard(
                 Text(
                     stringResource(
                         R.string.budgets_renews_format,
-                        item.period.unit.label(),
+                        item.period.label(),
                         formatShortDate(item.period.endExclusive)
                     ),
                     style = MaterialTheme.typography.bodySmall,

@@ -44,20 +44,20 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 | `TransactionEntity` | `TransactionDao` | `TransactionRepository` | `TransactionsViewModel`, `TransactionFormViewModel` | TransactionsListScreen, TransactionFormScreen | ✅ Completo |
 | `BudgetEntity` | `BudgetDao` | `BudgetRepository` | `BudgetsViewModel`, `BudgetFormViewModel` | BudgetsListScreen, BudgetFormScreen | ✅ Completo |
 | `ExchangeRateEntity` | `ExchangeRateDao` | `ExchangeRateRepository` | — | (integrado en HomeViewModel, AccountsViewModel, BudgetsViewModel) | ✅ Completo |
+| `RecurringTransactionEntity` | `RecurringTransactionDao` | `RecurringRepository` | `TransactionFormViewModel` (modos), `RecurringListViewModel`, `HomeViewModel` | RecurringListScreen, TransactionFormScreen, tarjeta en Inicio | ✅ Completo |
 | `TransferEntity` | `TransferDao` | `TransferRepository` | `TransferFormViewModel` (+ `TransactionsViewModel`, `HomeViewModel`) | TransferFormScreen (+ filas en Movimientos e Inicio) | ✅ Completo |
 
 ### Entidades secundarias (DAO existe, sin Repo/ViewModel/Screen)
 
 | Entity | DAO | Repo | ViewModel | Screen | Estado |
 |--------|-----|------|-----------|--------|--------|
-| `RecurringTransactionEntity` | `RecurringTransactionDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `GoalEntity` | `GoalDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `AttachmentEntity` | `AttachmentDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `BudgetCategoryEntity` | `BudgetCategoryDao` | ✅ (dentro de `BudgetRepositoryImpl`) | ✅ | ✅ | ✅ Completo |
 | `TransactionTagEntity` | `TransactionTagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 
-### Repositorios existentes (8)
+### Repositorios existentes (9)
 
 | Repositorio | Archivo | Estado |
 |-------------|---------|--------|
@@ -69,6 +69,7 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 | `UserRepository` | `data/repository/UserRepository.kt` | ✅ Completo |
 | `ExchangeRateRepository` | `data/repository/ExchangeRateRepository.kt` | ✅ Completo |
 | `TransferRepository` | `data/repository/TransferRepository.kt` | ✅ Completo |
+| `RecurringRepository` | `data/repository/RecurringRepository.kt` | ✅ Completo |
 
 **Nota:** `BudgetCategoryDao` está integrado dentro de `BudgetRepositoryImpl` (no tiene repositorio separado). Los DAOs de `TransactionTagDao` tampoco tienen repositorio separado (están pensados para ser gestionados junto con Tag en una futura implementación).
 
@@ -104,7 +105,7 @@ scope: BudgetScope, periodInterval, periodUnit: PeriodUnit,
 startDate, endDate, createdAt, updatedAt, deletedAt
 ```
 - `BudgetScope`: GLOBAL, CATEGORY
-- `PeriodUnit`: DAY, WEEK, MONTH, YEAR (el formulario ofrece semanal, mensual y anual; intervalo 1)
+- `PeriodUnit`: DAY, WEEK, MONTH, YEAR + `periodInterval`. El formulario ofrece las 8 frecuencias de `RecurrenceFrequency` (diario a anual) en una lista desplegable e indica cuándo vuelve a empezar de cero
 - **Periodos renovables**: `startDate` es el ancla (inicio del primer periodo, alineado al calendario: lunes, día 1 o 1 de enero). `BudgetPeriod.current()` / `BudgetEntity.currentPeriod()` calculan el periodo vigente al leer, sin trabajo en segundo plano. `endDate` ya no se usa (se guarda `null`)
 - `BudgetOverviewSource` se recalcula a medianoche (`dayTicks()`), así el presupuesto se renueva con la app abierta
 - El resumen usa una sola periodicidad: la del global, o sin global la más usada entre los de categoría (empate → mensual); los demás se marcan con `hasOtherPeriods`
@@ -130,10 +131,18 @@ fromTransactionId, toTransactionId, createdAt
 
 ### RecurringTransactionEntity
 ```kotlin
-id, userId, template fields, nextOccurrence, active,
-deletedAt, updatedAt
+id, userId, accountId, categoryId, baseAmount (con signo), description, currency,
+periodInterval, periodUnit, anchorDate, nextOccurrence, endDate, active,
+notifyBeforeDays, snoozedUntil, createdAt, updatedAt, deletedAt
 ```
-- `getDueRecurrences(upToDate)` en DAO para WorkManager
+- **Nunca se registran solos.** Cuando vence `nextOccurrence` queda pendiente: Inicio muestra la tarjeta «Por registrar» con Registrar / Más tarde (`snoozedUntil` = mañana) / Omitir esta vez / Revisar (formulario prellenado, modo `OCCURRENCE`)
+- Serie = `anchorDate + k·intervalo` a medianoche local (`Recurrence`), calculada siempre desde el ancla (un cargo del 31 vuelve al 31 tras febrero)
+- Al crear con fecha pasada no se generan atrasados (`firstUpcoming`); al reanudar tampoco se piden los que vencieron en pausa
+- `registerOccurrence` / `skipOccurrence` son atómicos y comprueban la ocurrencia esperada (un doble toque no registra dos veces)
+- Frecuencias (`RecurrenceFrequency`, compartidas con presupuestos): diaria, semanal, cada 2 semanas, mensual, bimestral, trimestral, semestral y anual. En recurrentes se muestran como «Cada 3 meses»; en presupuestos como «Trimestral»
+- Se crean desde el formulario de movimiento («Repetir») o desde Recurrentes (ícono en Movimientos); el mismo `TransactionFormViewModel` atiende `NEW`, `EDIT`, `OCCURRENCE`, `RECURRING_NEW`, `RECURRING_EDIT`
+- `RecurringReminderWorker` (WorkManager, diario ~9:00, dependencias por `@EntryPoint`) solo **anuncia** con una notificación; requiere sesión recordada. Permiso `POST_NOTIFICATIONS` se pide al elegir una frecuencia
+- `getDueRecurrences` del DAO queda sin uso (el aviso usa `getPending`)
 
 ### GoalEntity
 ```kotlin
@@ -182,7 +191,8 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - Tasas almacenadas en micros para evitar punto flotante
 
 ### Room Database
-- **Version:** 3 (v3: `transactions.categoryId` nullable para transferencias)
+- **Version:** 4 (v3: `transactions.categoryId` nullable para transferencias; v4: `description` y `snoozedUntil` en recurrentes + índices de FK)
+- **Migraciones:** desde v3 cada cambio lleva su `Migration` en `data/local/Migrations.kt` (`MIGRATION_3_4` verificada en dispositivo con datos reales). El fallback destructivo sigue solo para versiones < 3
 - **Migration strategy:** `fallbackToDestructiveMigration(dropAllTables = true)` ⚠️
 - **13 entities** registradas en `@Database`
 - **13 DAOs** provistos via `DatabaseModule`
@@ -192,7 +202,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - `BudgmentNavHost` con `NavHost` y `rememberNavController`
 - BottomBar con 4 pestañas: Home, Accounts, Transactions, Budgets
 - Estado conservado entre pestañas (`saveState = true`, `restoreState = true`)
-- Rutas: login, register, home, settings (desde el menú de perfil), accounts, account_form, categories, category_form, transactions, transaction_form, transfer_form, budgets, budget_form
+- Rutas: login, register, home, settings (desde el menú de perfil), accounts, account_form, categories, category_form, transactions, transaction_form (con `recurringId` y `mode`), transfer_form, recurring, budgets, budget_form
 - `BudgmentDestination` como sealed class con `createRoute()` helpers
 
 ### UI Pattern
@@ -256,7 +266,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
 |---------|--------------|------|----|--------|------------|-------|
-| Recurrentes | ✅ `RecurringTransactionEntity`, `RecurringTransactionDao` (`getDueRecurrences`) | ❌ | ❌ | ❌ | WorkManager | Worker periódico que materializa ocurrencias vencidas y avanza `nextOccurrence` |
 | Metas de ahorro | ✅ `GoalEntity`, `GoalDao` | ❌ | ❌ | ❌ | (Transferencias, opcional) | Aportes manuales o vinculados a una cuenta de ahorro |
 | Etiquetas | ✅ `TagEntity`, `TagDao`, `TransactionTagDao` | ❌ | ❌ | ❌ | — | Selector en `TransactionFormScreen` + filtro en Movimientos |
 | Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | Etiquetas no | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
@@ -283,9 +292,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Tarea | Ubicación | Prioridad |
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
-| Quitar `fallbackToDestructiveMigration` y escribir migraciones | `di/DatabaseModule.kt:44` (BD versión 3) | Bloquea publicación y respaldo |
+| Quitar `fallbackToDestructiveMigration` (las migraciones ya empezaron en v3→v4) | `di/DatabaseModule.kt` (BD versión 4) | Bloquea publicación y respaldo |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
-| Tests | Solo `AmountParserTest`, `BuildTransactionDetailsTest` y `BudgetPeriodTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| Tests | Solo `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest` y `RecurrenceTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
 | Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
 
@@ -293,7 +302,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 1. ✅ ~~Deuda trivial: typo + este documento al día.~~
 2. ✅ ~~**Transferencias**~~.
-3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). **WorkManager** como base → **recurrentes**.
+3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. **Estadísticas**.
 5. **Notificaciones** (reusa WorkManager).
 6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
@@ -317,8 +326,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - **Eliminar antes de publicar.** Borra y recrea la BD ante cualquier cambio de esquema.
 
 ### WorkManager
-- Dependencia declarada en `build.gradle.kts` (`libs.work.runtime.ktx`)
-- **Sin usar en ningún archivo.** Planeado para transacciones recurrentes y notificaciones.
+- `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
+- Sin `HiltWorkerFactory`: el worker obtiene dependencias con `EntryPointAccessors`
+- Pendiente: reutilizarlo para alertas de presupuesto (80 %/100 %)
 
 ### Drawables sin uso
 - `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` — reservados para Estadísticas
@@ -375,7 +385,7 @@ android.application, kotlin.compose, hilt, ksp
 - `testImplementation libs.junit`
 - `androidTestImplementation libs.androidx.junit`
 - `androidTestImplementation libs.androidx.espresso.core`
-- `AmountParserTest`, `BuildTransactionDetailsTest` y `BudgetPeriodTest` (unitarios). Sin tests de repos, ViewModels ni DAOs.
+- `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest` y `RecurrenceTest` (unitarios). Sin tests de repos, ViewModels ni DAOs.
 
 ### KSP
 - `ksp` plugin aplicado

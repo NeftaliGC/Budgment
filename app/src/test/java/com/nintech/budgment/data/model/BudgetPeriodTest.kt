@@ -102,4 +102,24 @@ class BudgetPeriodTest {
         assertEquals(1, period.daysLeft(now = at(2026, 11, 30, hour = 22)))
         assertEquals(30, period.daysLeft(now = at(2026, 11, 1, hour = 9)))
     }
+
+    @Test
+    fun `diario dura un dia y se renueva a medianoche`() {
+        val anchor = BudgetPeriod.alignedStart(at(2026, 11, 1), PeriodUnit.DAY)
+        val period = BudgetPeriod.current(anchor, PeriodUnit.DAY, 1, now = at(2026, 11, 15, hour = 18))
+
+        assertEquals(at(2026, 11, 15, hour = 0), period.start)
+        assertEquals(at(2026, 11, 16, hour = 0), period.endExclusive)
+        assertEquals(1, period.daysLeft(now = at(2026, 11, 15, hour = 18)))
+    }
+
+    @Test
+    fun `trimestral cuenta tres meses desde el mes de creacion`() {
+        val anchor = BudgetPeriod.alignedStart(at(2026, 2, 10), PeriodUnit.MONTH)
+        val period = BudgetPeriod.current(anchor, PeriodUnit.MONTH, 3, now = at(2026, 11, 15))
+
+        assertEquals(at(2026, 11, 1, hour = 0), period.start)
+        assertEquals(at(2027, 2, 1, hour = 0), period.endExclusive)
+        assertEquals(RecurrenceFrequency.QUARTERLY, period.frequency)
+    }
 }

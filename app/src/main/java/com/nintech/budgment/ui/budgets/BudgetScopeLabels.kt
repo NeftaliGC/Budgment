@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.BudgetScope
+import com.nintech.budgment.data.model.BudgetPeriod
 import com.nintech.budgment.data.model.PeriodUnit
+import com.nintech.budgment.data.model.RecurrenceFrequency
 
 @Composable
 fun BudgetScope.label(): String = when (this) {
@@ -12,37 +14,45 @@ fun BudgetScope.label(): String = when (this) {
     BudgetScope.CATEGORY -> stringResource(R.string.budget_scope_category)
 }
 
-/** Periodicidades que se ofrecen en el formulario; DAY existe en el modelo pero no tiene uso práctico. */
-val selectablePeriodUnits = listOf(PeriodUnit.WEEK, PeriodUnit.MONTH, PeriodUnit.YEAR)
-
+/** Nombre de la periodicidad de un presupuesto: «Diario», «Mensual», «Trimestral»… */
 @Composable
-fun PeriodUnit.label(): String = stringResource(
+fun RecurrenceFrequency.budgetLabel(): String = stringResource(
     when (this) {
-        PeriodUnit.DAY -> R.string.period_unit_day
-        PeriodUnit.WEEK -> R.string.period_unit_week
-        PeriodUnit.MONTH -> R.string.period_unit_month
-        PeriodUnit.YEAR -> R.string.period_unit_year
+        RecurrenceFrequency.DAILY -> R.string.budget_frequency_daily
+        RecurrenceFrequency.WEEKLY -> R.string.budget_frequency_weekly
+        RecurrenceFrequency.BIWEEKLY -> R.string.budget_frequency_biweekly
+        RecurrenceFrequency.MONTHLY -> R.string.budget_frequency_monthly
+        RecurrenceFrequency.BIMONTHLY -> R.string.budget_frequency_bimonthly
+        RecurrenceFrequency.QUARTERLY -> R.string.budget_frequency_quarterly
+        RecurrenceFrequency.SEMIANNUAL -> R.string.budget_frequency_semiannual
+        RecurrenceFrequency.YEARLY -> R.string.budget_frequency_yearly
     }
 )
 
-/** «Resumen de la semana / del mes / del año». */
+/** Nombre de la periodicidad; si no es una de la lista, se dice solo «Periódico». */
 @Composable
-fun PeriodUnit.summaryTitle(): String = stringResource(
-    when (this) {
-        PeriodUnit.DAY -> R.string.budgets_summary_title_day
-        PeriodUnit.WEEK -> R.string.budgets_summary_title_week
-        PeriodUnit.MONTH -> R.string.budgets_summary_title
-        PeriodUnit.YEAR -> R.string.budgets_summary_title_year
+fun BudgetPeriod.label(): String = frequency?.budgetLabel() ?: stringResource(R.string.budget_frequency_custom)
+
+/** «Resumen de hoy / de la semana / del mes / del año»; con intervalos de varias unidades, «del periodo». */
+@Composable
+fun BudgetPeriod.summaryTitle(): String = stringResource(
+    when {
+        interval != 1 -> R.string.budgets_summary_title_period
+        unit == PeriodUnit.DAY -> R.string.budgets_summary_title_day
+        unit == PeriodUnit.WEEK -> R.string.budgets_summary_title_week
+        unit == PeriodUnit.YEAR -> R.string.budgets_summary_title_year
+        else -> R.string.budgets_summary_title
     }
 )
 
-/** «Presupuesto de hoy / esta semana / este mes / este año». */
+/** «Presupuesto de hoy / esta semana / este mes / este año»; con intervalos de varias unidades, «de este periodo». */
 @Composable
-fun PeriodUnit.homeCardTitle(): String = stringResource(
-    when (this) {
-        PeriodUnit.DAY -> R.string.home_budget_card_title_day
-        PeriodUnit.WEEK -> R.string.home_budget_card_title_week
-        PeriodUnit.MONTH -> R.string.home_budget_card_title
-        PeriodUnit.YEAR -> R.string.home_budget_card_title_year
+fun BudgetPeriod.homeCardTitle(): String = stringResource(
+    when {
+        interval != 1 -> R.string.home_budget_card_title_period
+        unit == PeriodUnit.DAY -> R.string.home_budget_card_title_day
+        unit == PeriodUnit.WEEK -> R.string.home_budget_card_title_week
+        unit == PeriodUnit.YEAR -> R.string.home_budget_card_title_year
+        else -> R.string.home_budget_card_title
     }
 )

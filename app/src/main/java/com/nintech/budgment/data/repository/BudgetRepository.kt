@@ -5,7 +5,7 @@ import com.nintech.budgment.data.local.dao.BudgetDao
 import com.nintech.budgment.data.local.entity.BudgetCategoryEntity
 import com.nintech.budgment.data.local.entity.BudgetEntity
 import com.nintech.budgment.data.model.BudgetScope
-import com.nintech.budgment.data.model.PeriodUnit
+import com.nintech.budgment.data.model.RecurrenceFrequency
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.util.UUID
@@ -16,9 +16,9 @@ interface BudgetRepository {
     suspend fun getBudget(id: String): BudgetEntity?
     suspend fun getCategoryIds(budgetId: String): List<String>
     suspend fun getCategoryIdsForBudgets(budgetIds: List<String>): Map<String, List<String>>
-    /** [anchor] es el inicio del primer periodo; desde ahí se renueva cada [periodUnit]. */
-    suspend fun createBudget(userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long)
-    suspend fun updateBudget(budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long)
+    /** [anchor] es el inicio del primer periodo; desde ahí se renueva según [frequency]. */
+    suspend fun createBudget(userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, frequency: RecurrenceFrequency, anchor: Long)
+    suspend fun updateBudget(budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, frequency: RecurrenceFrequency, anchor: Long)
     suspend fun deleteBudget(id: String)
     suspend fun restoreBudget(id: String)
 }
@@ -39,7 +39,7 @@ class BudgetRepositoryImpl @Inject constructor(
         budgetCategoryDao.getForBudgets(budgetIds).groupBy({ it.budgetId }, { it.categoryId })
 
     override suspend fun createBudget(
-        userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long
+        userId: String, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, frequency: RecurrenceFrequency, anchor: Long
     ) {
         val budget = BudgetEntity(
             id = UUID.randomUUID().toString(),
@@ -47,8 +47,8 @@ class BudgetRepositoryImpl @Inject constructor(
             name = name,
             amountLimit = amountLimit,
             scope = scope,
-            periodInterval = 1,
-            periodUnit = periodUnit,
+            periodInterval = frequency.interval,
+            periodUnit = frequency.unit,
             startDate = anchor,
             // Sin fin: se renueva cada periodo.
             endDate = null
@@ -60,12 +60,12 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateBudget(
-        budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, periodUnit: PeriodUnit, anchor: Long
+        budget: BudgetEntity, name: String, amountLimit: Long, scope: BudgetScope, categoryIds: List<String>, frequency: RecurrenceFrequency, anchor: Long
     ) {
         budgetDao.update(
             budget.copy(
                 name = name, amountLimit = amountLimit, scope = scope,
-                periodUnit = periodUnit, startDate = anchor, endDate = null,
+                periodUnit = frequency.unit, periodInterval = frequency.interval, startDate = anchor, endDate = null,
                 updatedAt = System.currentTimeMillis()
             )
         )

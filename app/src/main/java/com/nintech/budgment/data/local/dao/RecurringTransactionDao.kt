@@ -28,6 +28,20 @@ interface RecurringTransactionDao {
     @Query("UPDATE recurring_transactions SET nextOccurrence = :nextOccurrence, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateNextOccurrence(id: String, nextOccurrence: Long, updatedAt: Long = System.currentTimeMillis())
 
+    /** Recurrentes en curso de un usuario con ocurrencias vencidas y no pospuestas en [now]. */
+    @Query(
+        "SELECT * FROM recurring_transactions WHERE userId = :userId AND active = 1 AND deletedAt IS NULL " +
+            "AND nextOccurrence <= :now AND (endDate IS NULL OR nextOccurrence <= endDate) " +
+            "AND (snoozedUntil IS NULL OR snoozedUntil <= :now) ORDER BY nextOccurrence"
+    )
+    suspend fun getPending(userId: String, now: Long): List<RecurringTransactionEntity>
+
+    @Query("UPDATE recurring_transactions SET snoozedUntil = :until, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun snooze(id: String, until: Long?, updatedAt: Long = System.currentTimeMillis())
+
     @Query("UPDATE recurring_transactions SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE recurring_transactions SET deletedAt = NULL WHERE id = :id")
+    suspend fun restore(id: String)
 }

@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.model.BudgetScope
-import com.nintech.budgment.data.model.PeriodUnit
+import com.nintech.budgment.data.model.RecurrenceFrequency
+import com.nintech.budgment.ui.common.formatShortDate
 import com.nintech.budgment.ui.common.SurfaceSystemBars
 
 @Composable
@@ -41,7 +42,7 @@ fun BudgetFormScreen(
             onNameChange = viewModel::onNameChange,
             onAmountChange = viewModel::onAmountChange,
             onScopeChange = viewModel::onScopeChange,
-            onPeriodUnitChange = viewModel::onPeriodUnitChange,
+            onFrequencyChange = viewModel::onFrequencyChange,
             onCategoryToggle = viewModel::onCategoryToggle,
             onSaveClick = viewModel::save,
             onEditExistingGlobal = onEditBudget,
@@ -53,7 +54,7 @@ fun BudgetFormScreen(
             onNameChange = {},
             onAmountChange = {},
             onScopeChange = {},
-            onPeriodUnitChange = {},
+            onFrequencyChange = {},
             onCategoryToggle = {},
             onSaveClick = {},
             onEditExistingGlobal = {},
@@ -69,7 +70,7 @@ fun BudgetFormScreenContent(
     onNameChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onScopeChange: (BudgetScope) -> Unit,
-    onPeriodUnitChange: (PeriodUnit) -> Unit,
+    onFrequencyChange: (RecurrenceFrequency) -> Unit,
     onCategoryToggle: (String) -> Unit,
     onSaveClick: () -> Unit,
     onEditExistingGlobal: (String) -> Unit,
@@ -77,6 +78,7 @@ fun BudgetFormScreenContent(
     modifier: Modifier = Modifier
 ) {
     var scopeMenuExpanded by remember { mutableStateOf(false) }
+    var frequencyMenuExpanded by remember { mutableStateOf(false) }
 
     SurfaceSystemBars()
 
@@ -135,35 +137,37 @@ fun BudgetFormScreenContent(
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                stringResource(R.string.budget_form_period_label),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                selectablePeriodUnits.forEachIndexed { index, unit ->
-                    SegmentedButton(
-                        selected = state.periodUnit == unit,
-                        onClick = { onPeriodUnitChange(unit) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = selectablePeriodUnits.size)
-                    ) {
-                        Text(unit.label())
+            // Hay ocho periodicidades: en botones no caben, se eligen de una lista.
+            ExposedDropdownMenuBox(expanded = frequencyMenuExpanded, onExpandedChange = { frequencyMenuExpanded = it }) {
+                OutlinedTextField(
+                    value = state.frequency.budgetLabel(),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.budget_form_period_label)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = frequencyMenuExpanded) },
+                    // Dice cuándo vuelve a empezar de cero: más claro que explicar la regla.
+                    supportingText = {
+                        Text(
+                            stringResource(
+                                R.string.budget_form_period_renews_format,
+                                formatShortDate(state.periodPreview().endExclusive)
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(expanded = frequencyMenuExpanded, onDismissRequest = { frequencyMenuExpanded = false }) {
+                    RecurrenceFrequency.entries.forEach { frequency ->
+                        DropdownMenuItem(
+                            text = { Text(frequency.budgetLabel()) },
+                            onClick = {
+                                onFrequencyChange(frequency)
+                                frequencyMenuExpanded = false
+                            }
+                        )
                     }
                 }
             }
-            Text(
-                stringResource(
-                    when (state.periodUnit) {
-                        PeriodUnit.WEEK -> R.string.budget_form_period_hint_week
-                        PeriodUnit.YEAR -> R.string.budget_form_period_hint_year
-                        else -> R.string.budget_form_period_hint_month
-                    }
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
 
             Spacer(Modifier.height(16.dp))
 

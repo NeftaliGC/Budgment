@@ -13,6 +13,8 @@ import com.nintech.budgment.data.repository.ExchangeRateRepositoryImpl
 import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.repository.TransactionRepositoryImpl
 import com.nintech.budgment.data.repository.TransferRepository
+import com.nintech.budgment.data.repository.RecurringRepository
+import com.nintech.budgment.data.repository.RecurringRepositoryImpl
 import com.nintech.budgment.data.repository.TransferRepositoryImpl
 import com.nintech.budgment.data.repository.UserRepository
 import com.nintech.budgment.data.repository.UserRepositoryImpl
@@ -49,6 +51,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTransferRepository(impl: TransferRepositoryImpl): TransferRepository
+
+    @Binds
+    abstract fun bindRecurringRepository(impl: RecurringRepositoryImpl): RecurringRepository
 
     @Binds
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository

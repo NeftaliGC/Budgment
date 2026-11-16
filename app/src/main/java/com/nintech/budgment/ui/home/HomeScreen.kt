@@ -27,6 +27,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.nintech.budgment.notifications.RecurringNotifications
+import com.nintech.budgment.ui.recurring.PendingRecurringCard
+import com.nintech.budgment.ui.recurring.RecurringItem
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -69,6 +74,7 @@ fun HomeScreen(
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
     onTransferClick: (String) -> Unit = {},
+    onReviewRecurring: (String) -> Unit = {},
     viewModel: HomeViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     val uiState = if (viewModel != null) viewModel.uiState.collectAsState().value else HomeUiState()
@@ -83,7 +89,11 @@ fun HomeScreen(
         onAddTransactionClick = onAddTransactionClick,
         onTransactionClick = onTransactionClick,
         onTransferClick = onTransferClick,
-        onCurrencyChange = { viewModel?.onDisplayCurrencyChange(it) }
+        onCurrencyChange = { viewModel?.onDisplayCurrencyChange(it) },
+        onRegisterRecurring = { viewModel?.registerRecurring(it) },
+        onReviewRecurring = { onReviewRecurring(it.recurring.id) },
+        onSnoozeRecurring = { viewModel?.snoozeRecurring(it) },
+        onSkipRecurring = { viewModel?.skipRecurring(it) }
     )
 }
 
@@ -103,8 +113,20 @@ fun HomeScreenContent(
     onAddTransactionClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
     onTransferClick: (String) -> Unit = {},
-    onCurrencyChange: (String) -> Unit
+    onCurrencyChange: (String) -> Unit,
+    onRegisterRecurring: (RecurringItem) -> Unit = {},
+    onReviewRecurring: (RecurringItem) -> Unit = {},
+    onSnoozeRecurring: (RecurringItem) -> Unit = {},
+    onSkipRecurring: (RecurringItem) -> Unit = {}
 ) {
+    // Si el usuario ya ve los pendientes en la app, la notificación que los anunciaba sobra.
+    val context = LocalContext.current
+    val hasPending = uiState.pendingRecurring.isNotEmpty()
+    val hasDue = hasPending || uiState.snoozedRecurring.isNotEmpty()
+    LaunchedEffect(hasPending) {
+        if (hasPending) RecurringNotifications.cancelPending(context)
+    }
+
     BudgmentScaffold(
         currentRoute = currentRoute,
         onNavigateToTab = onNavigateToTab,
@@ -135,6 +157,19 @@ fun HomeScreenContent(
                 !uiState.hasAccounts -> GetStartedCard(onAddAccountClick = onAddAccountClick)
 
                 else -> {
+                    // Lo que espera una decisión va primero.
+                    if (hasDue) {
+                        PendingRecurringCard(
+                            items = uiState.pendingRecurring,
+                            snoozed = uiState.snoozedRecurring,
+                            onRegister = onRegisterRecurring,
+                            onReview = onReviewRecurring,
+                            onSnooze = onSnoozeRecurring,
+                            onSkip = onSkipRecurring
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+
                     MonthSummary(
                         uiState = uiState,
                         onCurrencyChange = onCurrencyChange,
@@ -309,7 +344,7 @@ private fun BudgetMonthCard(uiState: HomeUiState, onClick: () -> Unit) {
             ) {
                 Text(
                     text = if (uiState.budgetFromGlobal) {
-                        uiState.budgetPeriodUnit.homeCardTitle()
+                        uiState.budgetPeriod?.homeCardTitle() ?: stringResource(R.string.home_budget_card_title)
                     } else {
                         stringResource(R.string.home_budget_card_title_categories)
                     },

@@ -16,6 +16,8 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index("userId"),
+        Index("fromAccountId"),
+        Index("toAccountId"),
         Index(value = ["fromTransactionId"], unique = true),
         Index(value = ["toTransactionId"], unique = true)
     ]

@@ -2,7 +2,14 @@ package com.nintech.budgment.ui.transactions
 
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
+import android.Manifest
 import android.content.res.Configuration
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.nintech.budgment.data.model.RecurrenceFrequency
+import com.nintech.budgment.notifications.needsNotificationPermission
+import com.nintech.budgment.ui.recurring.label
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
@@ -96,6 +103,18 @@ fun TransactionFormScreen(
             if (state.isSaved) onSaved()
         }
 
+        // Los recurrentes se anuncian con una notificación: se pide el permiso al elegir una
+        // frecuencia, que es cuando se entiende para qué sirve. Una sola vez por pantalla.
+        val context = LocalContext.current
+        val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+        var askedPermission by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(state.frequency) {
+            if (state.frequency != null && !askedPermission && needsNotificationPermission(context)) {
+                askedPermission = true
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         TransactionFormScreen(
             state = state,
             onTypeChange = viewModel::onTypeChange,
@@ -104,6 +123,7 @@ fun TransactionFormScreen(
             onAccountSelected = viewModel::onAccountSelected,
             onDateChange = viewModel::onDateChange,
             onDescriptionChange = viewModel::onDescriptionChange,
+            onFrequencyChange = viewModel::onFrequencyChange,
             onSaveClick = viewModel::save,
             onBackClick = onBackClick,
             onCreateAccountClick = onCreateAccountClick,
@@ -140,7 +160,8 @@ fun TransactionFormScreen(
     onBackClick: () -> Unit,
     onCreateAccountClick: () -> Unit,
     onCreateCategoryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onFrequencyChange: (RecurrenceFrequency?) -> Unit = {}
 ) {
     SurfaceSystemBars()
 
@@ -148,7 +169,19 @@ fun TransactionFormScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (state.isEditing) R.string.transaction_form_title_edit else R.string.transaction_form_title_new)) },
+                title = {
+                    Text(
+                        stringResource(
+                            when (state.kind) {
+                                TransactionFormKind.NEW -> R.string.transaction_form_title_new
+                                TransactionFormKind.EDIT -> R.string.transaction_form_title_edit
+                                TransactionFormKind.OCCURRENCE -> R.string.recurring_occurrence_title
+                                TransactionFormKind.RECURRING_NEW -> R.string.recurring_form_title_new
+                                TransactionFormKind.RECURRING_EDIT -> R.string.recurring_form_title_edit
+                            }
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -197,7 +230,23 @@ fun TransactionFormScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                DateField(dateMillis = state.dateMillis, onDateChange = onDateChange)
+                DateField(
+                    dateMillis = state.dateMillis,
+                    onDateChange = onDateChange,
+                    label = stringResource(
+                        if (state.kind.isRecurringTemplate) R.string.recurring_form_start_label
+                        else R.string.transaction_form_date_label
+                    )
+                )
+
+                if (state.showsFrequency) {
+                    Spacer(Modifier.height(16.dp))
+                    FrequencySelector(
+                        frequency = state.frequency,
+                        allowNone = !state.kind.isRecurringTemplate,
+                        onFrequencyChange = onFrequencyChange
+                    )
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -216,7 +265,12 @@ fun TransactionFormScreen(
                     onClick = onSaveClick,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
                 ) {
-                    Text(stringResource(R.string.transaction_form_save_button))
+                    Text(
+                        stringResource(
+                            if (state.kind == TransactionFormKind.OCCURRENCE) R.string.recurring_register
+                            else R.string.transaction_form_save_button
+                        )
+                    )
                 }
             }
         }
@@ -388,9 +442,57 @@ private fun AccountField(state: TransactionFormState, onAccountSelected: (String
     }
 }
 
+/**
+ * «Repetir»: al crear un movimiento es opcional («No se repite»); en un recurrente es obligatorio.
+ * Recuerda que nada se registra solo: cada vez que toque se anuncia y el usuario decide.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit) {
+private fun FrequencySelector(
+    frequency: RecurrenceFrequency?,
+    allowNone: Boolean,
+    onFrequencyChange: (RecurrenceFrequency?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options: List<RecurrenceFrequency?> = (if (allowNone) listOf(null) else emptyList<RecurrenceFrequency?>()) +
+        RecurrenceFrequency.entries
+    val noneLabel = stringResource(R.string.recurring_frequency_none)
+
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = frequency?.label() ?: noneLabel,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.recurring_frequency_label)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            supportingText = if (frequency != null) {
+                { Text(stringResource(R.string.recurring_frequency_hint)) }
+            } else {
+                null
+            },
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option?.label() ?: noneLabel) },
+                    onClick = {
+                        onFrequencyChange(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DateField(
+    dateMillis: Long,
+    onDateChange: (Long) -> Unit,
+    label: String = stringResource(R.string.transaction_form_date_label)
+) {
     var showPicker by rememberSaveable { mutableStateOf(false) }
 
     // Un campo de solo lectura no recibe onClick: se abre el calendario al soltar el toque.
@@ -405,7 +507,7 @@ internal fun DateField(dateMillis: Long, onDateChange: (Long) -> Unit) {
         value = if (isToday(dateMillis)) stringResource(R.string.common_today) else formatDate(dateMillis),
         onValueChange = {},
         readOnly = true,
-        label = { Text(stringResource(R.string.transaction_form_date_label)) },
+        label = { Text(label) },
         trailingIcon = {
             IconButton(onClick = { showPicker = true }) {
                 Icon(
@@ -496,7 +598,7 @@ private fun TransactionFormScreenPreview() {
                 description = "Compras de la semana",
                 accounts = sampleAccounts,
                 categories = sampleCategories,
-                isEditing = true,
+                kind = TransactionFormKind.EDIT,
                 isLoading = false
             ),
             onTypeChange = {},
@@ -524,7 +626,7 @@ private fun TransactionFormScreenErrorsPreview() {
                 categories = sampleCategories,
                 amountError = AmountError.REQUIRED,
                 categoryError = true,
-                isEditing = true,
+                kind = TransactionFormKind.EDIT,
                 isLoading = false
             ),
             onTypeChange = {},

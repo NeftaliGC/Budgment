@@ -20,6 +20,7 @@ import com.nintech.budgment.ui.register.RegisterScreen
 import com.nintech.budgment.ui.transactions.TransactionFormScreen
 import com.nintech.budgment.ui.transactions.TransactionsListScreen
 import com.nintech.budgment.ui.transfers.TransferFormScreen
+import com.nintech.budgment.ui.recurring.RecurringListScreen
 import com.nintech.budgment.ui.settings.SettingsScreen
 
 @Composable
@@ -72,7 +73,8 @@ fun BudgmentNavHost(
                 onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
-                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) }
+                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) },
+                onReviewRecurring = { id -> navController.navigate(BudgmentDestination.TransactionForm.createOccurrenceRoute(id)) }
             )
         }
 
@@ -138,7 +140,17 @@ fun BudgmentNavHost(
                 onCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) },
                 onAddTransferClick = { navController.navigate(BudgmentDestination.TransferForm.createRoute()) },
-                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) }
+                onTransferClick = { id -> navController.navigate(BudgmentDestination.TransferForm.createRoute(id)) },
+                onRecurringClick = { navController.navigate(BudgmentDestination.Recurring.route) }
+            )
+        }
+
+        composable(BudgmentDestination.Recurring.route) {
+            RecurringListScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddClick = { navController.navigate(BudgmentDestination.TransactionForm.createRecurringRoute()) },
+                onRecurringClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRecurringRoute(id)) },
+                onRegisterClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createOccurrenceRoute(id)) }
             )
         }
 
@@ -177,6 +189,14 @@ fun BudgmentNavHost(
             route = BudgmentDestination.TransactionForm.route,
             arguments = listOf(
                 navArgument(BudgmentDestination.TransactionForm.ARG_TRANSACTION_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                },
+                navArgument(BudgmentDestination.TransactionForm.ARG_RECURRING_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                },
+                navArgument(BudgmentDestination.TransactionForm.ARG_MODE) {
                     type = NavType.StringType
                     nullable = true
                 }

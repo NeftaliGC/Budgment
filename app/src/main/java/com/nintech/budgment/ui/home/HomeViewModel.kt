@@ -2,13 +2,18 @@ package com.nintech.budgment.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nintech.budgment.data.model.PeriodUnit
+import com.nintech.budgment.data.model.BudgetPeriod
 import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.ExchangeRateRepository
 import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.repository.TransferRepository
+import com.nintech.budgment.data.repository.RecurringRepository
+import com.nintech.budgment.ui.common.dayTicks
+import com.nintech.budgment.ui.recurring.RecurringItem
+import com.nintech.budgment.ui.recurring.buildRecurringItems
+import java.util.Calendar
 import com.nintech.budgment.data.session.SessionManager
 import com.nintech.budgment.ui.budgets.BudgetOverviewSource
 import com.nintech.budgment.ui.budgets.BudgetWithProgress
@@ -38,11 +43,15 @@ data class HomeUiState(
     val budgetSpent: Long = 0,
     val budgetFromGlobal: Boolean = false,
     val topBudgets: List<BudgetWithProgress> = emptyList(),
-    /** Periodicidad del resumen (semana, mes o año): da el título de la tarjeta. */
-    val budgetPeriodUnit: PeriodUnit = PeriodUnit.MONTH,
+    /** Periodo del resumen: da el título de la tarjeta. */
+    val budgetPeriod: BudgetPeriod? = null,
     /** Días que faltan para que el presupuesto del resumen se renueve, contando hoy. */
     val budgetDaysLeft: Int = 1,
     val recentTransactions: List<TransactionWithDetails> = emptyList(),
+    /** Recurrentes vencidos que esperan que el usuario los registre, posponga u omita. */
+    val pendingRecurring: List<RecurringItem> = emptyList(),
+    /** Vencidos que el usuario pospuso: no se anuncian, pero se pueden registrar desde la tarjeta. */
+    val snoozedRecurring: List<RecurringItem> = emptyList(),
     val isLoading: Boolean = true
 ) {
     val hasBudgets: Boolean get() = budgetAllocated > 0
@@ -61,6 +70,7 @@ class HomeViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
     private val transferRepository: TransferRepository,
+    private val recurringRepository: RecurringRepository,
     private val exchangeRateRepository: ExchangeRateRepository,
     private val budgetOverviewSource: BudgetOverviewSource,
     private val sessionManager: SessionManager
@@ -80,13 +90,24 @@ class HomeViewModel @Inject constructor(
                     buildTransactionDetails(transactions, accounts, categories, transfers).take(RECENT_TRANSACTIONS)
                 }
 
+                val pendingRecurring = combine(
+                    recurringRepository.observeRecurring(userId),
+                    accountRepository.observeAccountsIncludingDeleted(userId),
+                    categoryRepository.observeCategoriesIncludingDeleted(userId),
+                    // Al cambiar de día puede vencer otro o terminar un «más tarde».
+                    dayTicks()
+                ) { recurrings, accounts, categories, now ->
+                    buildRecurringItems(recurrings, accounts, categories, now).filter { it.isDue }
+                }
+
                 combine(
                     accountRepository.observeAccounts(userId),
                     // Misma fuente que la pestaña Presupuestos: las cifras coinciden y ya vienen
                     // convertidas a la moneda de visualización.
                     budgetOverviewSource.observe(userId),
-                    recentTransactions
-                ) { accounts, budgets, transactions ->
+                    recentTransactions,
+                    pendingRecurring
+                ) { accounts, budgets, transactions, pending ->
                     val displayCurrency = budgets.primaryCurrency
                     var missing = 0
                     var total = 0L
@@ -113,9 +134,11 @@ class HomeViewModel @Inject constructor(
                             .filter { it.budget.id != budgets.summaryBudgetId }
                             .sortedByDescending { it.progress }
                             .take(TOP_BUDGETS),
-                        budgetPeriodUnit = budgets.summaryPeriod?.unit ?: PeriodUnit.MONTH,
+                        budgetPeriod = budgets.summaryPeriod,
                         budgetDaysLeft = budgets.summaryPeriod?.daysLeft() ?: 1,
                         recentTransactions = transactions,
+                        pendingRecurring = pending.filter { it.isPending },
+                        snoozedRecurring = pending.filter { it.isSnoozed },
                         isLoading = false
                     )
                 }
@@ -125,6 +148,31 @@ class HomeViewModel @Inject constructor(
 
     fun onDisplayCurrencyChange(code: String) {
         viewModelScope.launch { sessionManager.setDisplayCurrency(code) }
+    }
+
+    /** Registra la ocurrencia tal cual. Si ya se resolvió (doble toque), no hace nada. */
+    fun registerRecurring(item: RecurringItem) {
+        viewModelScope.launch {
+            recurringRepository.registerOccurrenceAsIs(item.recurring.id, item.recurring.nextOccurrence)
+        }
+    }
+
+    /** «Más tarde»: se vuelve a anunciar mañana. */
+    fun snoozeRecurring(item: RecurringItem) {
+        viewModelScope.launch {
+            val tomorrow = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            recurringRepository.snooze(item.recurring.id, tomorrow)
+        }
+    }
+
+    /** «Omitir esta vez»: pasa a la siguiente ocurrencia sin registrar nada. */
+    fun skipRecurring(item: RecurringItem) {
+        viewModelScope.launch {
+            recurringRepository.skipOccurrence(item.recurring.id, item.recurring.nextOccurrence)
+        }
     }
 
     private companion object {

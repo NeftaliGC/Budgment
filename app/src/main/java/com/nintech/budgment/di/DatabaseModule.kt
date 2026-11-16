@@ -2,6 +2,7 @@ package com.nintech.budgment.di
 
 import android.content.Context
 import androidx.room.Room
+import com.nintech.budgment.data.local.ALL_MIGRATIONS
 import com.nintech.budgment.data.local.BudgmentDatabase
 import com.nintech.budgment.data.local.dao.AccountDao
 import com.nintech.budgment.data.local.dao.AttachmentDao
@@ -38,9 +39,10 @@ object DatabaseModule {
             BudgmentDatabase::class.java,
             DATABASE_NAME
         )
-            // Solo mientras desarrollamos: si cambias el esquema y subes la
-            // versión sin escribir una migración, borra y recrea la BD en
-            // vez de crashear. QUITAR antes de publicar la app.
+            // Desde v3 cada cambio de esquema lleva su migración (data/local/Migrations.kt).
+            .addMigrations(*ALL_MIGRATIONS)
+            // Solo mientras desarrollamos: versiones anteriores a v3 no tienen migración y
+            // se recrean desde cero. QUITAR antes de publicar la app.
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 

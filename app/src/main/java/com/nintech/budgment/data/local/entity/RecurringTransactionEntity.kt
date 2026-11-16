@@ -16,6 +16,7 @@ import com.nintech.budgment.data.model.PeriodUnit
     indices = [
         Index("userId"),
         Index("accountId"),
+        Index("categoryId"),
         Index("nextOccurrence")
     ]
 )
@@ -24,15 +25,22 @@ data class RecurringTransactionEntity(
     val userId: String,
     val accountId: String,
     val categoryId: String,
+    /** Centavos con signo, como en los movimientos: negativo = gasto, positivo = ingreso. */
     val baseAmount: Long,
+    /** Nombre que se muestra al anunciarlo (p. ej. «Renta»); si falta, se usa la categoría. */
+    val description: String? = null,
     val currency: String? = null,
     val periodInterval: Int = 1,
     val periodUnit: PeriodUnit,
+    /** Primera fecha de la serie (medianoche local); fija el día en que se repite. */
     val anchorDate: Long,
+    /** Próxima ocurrencia por confirmar. Avanza solo cuando el usuario la registra u omite. */
     val nextOccurrence: Long,
     val endDate: Long? = null,
     val active: Boolean = true,
     val notifyBeforeDays: Int? = null,
+    /** «Más tarde»: no se anuncia hasta esta fecha. */
+    val snoozedUntil: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long? = null,
     val deletedAt: Long? = null

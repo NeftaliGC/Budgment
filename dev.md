@@ -6,7 +6,7 @@
 
 ## 📌 Estado del repositorio
 
-### Commits en `main` (10 — SHAs reescritos por filter-branch)
+### Commits en `main` (12 — SHAs anteriores a `b8956d0` reescritos por filter-branch)
 
 | Commit | Descripción |
 |--------|-------------|
@@ -20,12 +20,15 @@
 | `2af6b7f` | presupuestos, rediseno home y categorias, system bars y tasas de cambio |
 | `b8956d0` | exclude app/schemas/ from tracking |
 | `b013327` | work in progress: UI improvements, AccountIcons, dev.md, README update |
+| `9cfc705` | actualizar dev.md: schemas eliminados del historial |
+| `f0b73a0` | feat(ui): accesibilidad, borrado seguro (deshacer/confirmación), formularios, `AmountParser` + tests |
+| `5d5e54f` | feat(ui): rediseño de Inicio, pantalla de Configuración, `BudgetOverviewSource`, un solo presupuesto global |
 
 > ⚠️ **`app/schemas/` eliminado permanentemente del historial** mediante `git filter-branch` + `reflog expire` + `gc --prune=now`. Los archivos `1.json` y `2.json` ya no existen en ningún commit ni en disco. Refs originales de filter-branch limpiadas.
 
 ### Cambios no commiteados
 
-**Ninguno.** Working directory limpio. Todo el trabajo actual está commiteado en `b013327`.
+Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código está commiteado hasta `5d5e54f` (2026-11-15).
 
 ---
 
@@ -146,7 +149,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 
 ### Hilt DI
 - **DatabaseModule**: Crea `BudgmentDatabase` singleton con `fallbackToDestructiveMigration(dropAllTables = true)`
-- **RepositoryModule**: Binds de los 7 repositorios. **Nota: hay un typo `imzpl` en `bindAuthRepository`** (línea 33)
+- **RepositoryModule**: Binds de los 7 repositorios
 - **NetworkModule**: Retrofit + OkHttpClient → `ExchangeRateApi` (Frankfurter API, base URL: `https://api.frankfurter.app/`)
 - **SessionModule**: DataStore (`budgment_session`) para user_id y display_currency
 
@@ -180,7 +183,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - `BudgmentNavHost` con `NavHost` y `rememberNavController`
 - BottomBar con 4 pestañas: Home, Accounts, Transactions, Budgets
 - Estado conservado entre pestañas (`saveState = true`, `restoreState = true`)
-- Rutas: login, register, home, accounts, account_form, categories, category_form, transactions, transaction_form, budgets, budget_form
+- Rutas: login, register, home, settings (desde el menú de perfil), accounts, account_form, categories, category_form, transactions, transaction_form, budgets, budget_form
 - `BudgmentDestination` como sealed class con `createRoute()` helpers
 
 ### UI Pattern
@@ -236,33 +239,60 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 
 ---
 
-## ❌ Lo que falta por implementar
+## 🗺️ Mapa de lo que falta (actualizado 2026-11-15, tras `5d5e54f`)
 
-### Por entidad
+Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
-| Feature | Entity/DAO existe | Repo falta | ViewModel falta | Screen falta |
-|---------|-------------------|------------|-----------------|--------------|
-| Transferencias | ✅ TransferEntity, TransferDao | ✗ | ✗ | ✗ |
-| Recurrentes | ✅ RecurringTransactionEntity, RecurringTransactionDao | ✗ | ✗ | ✗ |
-| Metas de ahorro | ✅ GoalEntity, GoalDao | ✗ | ✗ | ✗ |
-| Tags | ✅ TagEntity, TagDao, TransactionTagDao | ✗ | ✗ | ✗ |
-| Adjuntos | ✅ AttachmentEntity, AttachmentDao | ✗ | ✗ | ✗ |
-| Estadísticas | ❌ Ninguna | ✗ | ✗ | ✗ (icons existen) |
-| PIN/Biometría | ❌ Ninguna | ✗ | ✗ | ✗ |
+### A. Funciones con Entity/DAO, sin Repo/ViewModel/Screen
 
-### Lista priorizada de tareas pendientes
+| Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
+|---------|--------------|------|----|--------|------------|-------|
+| Transferencias | ✅ `TransferEntity`, `TransferDao` | ❌ | ❌ | ❌ | — | Crea 2 transacciones (salida/entrada) en una `@Transaction`; ajustar `balanceCache` de ambas cuentas; conversión si las monedas difieren. Excluir de presupuestos. `ic_transfer.xml` ya existe |
+| Recurrentes | ✅ `RecurringTransactionEntity`, `RecurringTransactionDao` (`getDueRecurrences`) | ❌ | ❌ | ❌ | WorkManager | Worker periódico que materializa ocurrencias vencidas y avanza `nextOccurrence` |
+| Metas de ahorro | ✅ `GoalEntity`, `GoalDao` | ❌ | ❌ | ❌ | (Transferencias, opcional) | Aportes manuales o vinculados a una cuenta de ahorro |
+| Etiquetas | ✅ `TagEntity`, `TagDao`, `TransactionTagDao` | ❌ | ❌ | ❌ | — | Selector en `TransactionFormScreen` + filtro en Movimientos |
+| Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | Etiquetas no | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
 
-1. **Capa de dominio** (`domain/`) — Crear casos de uso, actualizar arquitectura a Clean Architecture
-2. **Transferencias** — Crear `TransferRepository`, `TransferViewModel`, pantalla de transferencias
-3. **Recurrentes** — Crear `RecurringTransactionRepository`, `RecurringTransactionViewModel`, pantalla + integración con WorkManager
-4. **Metas** — Crear `GoalRepository`, `GoalViewModel`, pantalla
-5. **Tags** — Crear `TagRepository`, `TagViewModel`, pantalla de gestión
-6. **Adjuntos** — Crear `AttachmentRepository`, pantalla de adjuntos
-7. **Estadísticas/Reportes** — Crear pantalla de gráficos (icons ya existen en `res/drawable/`)
-8. **PIN/Biometría** — Pantalla de bloqueo con BiometricPrompt o PIN dialog
-9. **Google Drive backup** — Integrar Drive REST API, WorkManager para backup automático
-10. **Configuración** — Pantalla de settings
-11. **Notificaciones** — WorkManager + notifications para alertas de presupuesto y recurrencias
+### B. Funciones sin ningún código
+
+| Feature | Qué hace falta | Depende de |
+|---------|----------------|------------|
+| Estadísticas / reportes | Pantalla de gráficos (gasto por categoría, ingreso vs gasto por mes, evolución de saldo) + pestaña o acceso. Íconos `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` sin usar | — |
+| PIN / biometría | `BiometricPrompt` + PIN de respaldo, bloqueo al volver de segundo plano, opción en Configuración | Configuración |
+| Respaldo en Google Drive | Exportar/importar BD (+ adjuntos), Drive REST API, Worker de respaldo automático | WorkManager, migraciones reales |
+| Notificaciones | Alertas de presupuesto (80 %/100 %) y de recurrentes; canal + permiso `POST_NOTIFICATIONS` | WorkManager |
+
+### C. Funciones parciales
+
+| Feature | Estado | Falta |
+|---------|--------|-------|
+| Subcategorías | 🟡 `parentCategoryId` en modelo | UI no lo usa: selector de padre en `CategoryFormScreen`, agrupar en lista, sumar hijas en presupuestos |
+| Periodos de presupuesto | 🟡 `BudgetRepository` fija `PeriodUnit.MONTH`, intervalo 1; el formulario usa `currentMonthRange()` | El presupuesto queda anclado al mes de creación y no se renueva. Calcular el periodo vigente a partir de `startDate` + `periodUnit`/`periodInterval`; permitir elegir periodo en el formulario |
+| Configuración | 🟡 Solo moneda por defecto | Cambio de contraseña, borrar usuario, tema, seguridad (PIN), respaldo, exportar CSV |
+| Movimientos | 🟡 Lista agrupada por día | Búsqueda y filtros (cuenta, categoría, rango de fechas, etiqueta) |
+
+### D. Deuda técnica
+
+| Tarea | Ubicación | Prioridad |
+|-------|-----------|-----------|
+| ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
+| Quitar `fallbackToDestructiveMigration` y escribir migraciones | `di/DatabaseModule.kt:44` (BD versión 2) | Bloquea publicación y respaldo |
+| Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
+| Tests | Solo `AmountParserTest` | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
+| `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
+| Actualizar README (fase actual, características) | `README.md` | Al cerrar cada fase |
+
+### Orden sugerido
+
+1. ✅ ~~Deuda trivial: typo + este documento al día.~~
+2. **Transferencias** (modelo listo, alto valor).
+3. **WorkManager** como base → **recurrentes** + **renovación de periodos de presupuesto**.
+4. **Estadísticas**.
+5. **Notificaciones** (reusa WorkManager).
+6. **Metas**, **etiquetas**, **subcategorías en UI**, filtros de movimientos.
+7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
+8. **Adjuntos**.
+9. Tests, pulido, README, publicación.
 
 ---
 
@@ -279,22 +309,14 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - En `DatabaseModule.kt` línea 44: `fallbackToDestructiveMigration(dropAllTables = true)`
 - **Eliminar antes de publicar.** Borra y recrea la BD ante cualquier cambio de esquema.
 
-### Tipo en RepositoryModule
-- `RepositoryModule.kt` línea 33: `bindAuthRepository(imzpl: AuthRepositoryImpl)` — typo `imzpl` debería ser `impl`
-- Funciona pero es un error ortográfico
-
 ### WorkManager
 - Dependencia declarada en `build.gradle.kts` (`libs.work.runtime.ktx`)
 - **Sin usar en ningún archivo.** Planeado para transacciones recurrentes y notificaciones.
 
-### Strings sin usar
-- `bottom_nav_stats` en `strings.xml` — no hay pantalla Stats ni pestaña en BottomBar
-- `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` en `res/drawable` — sin uso
-- `home_action_coming_soon` — string "Próximamente" sin uso en UI actual
-
-### Drawables con recursos no utilizados
-- `logo_mark.png` — no usado en código visible
-- `ic_transfer.xml` — sin uso (transferencias no implementadas)
+### Drawables sin uso
+- `ic_estadisticas`, `ic_up_stats`, `ic_down_stats` — reservados para Estadísticas
+- `ic_transfer.xml` — reservado para Transferencias
+- (`logo_mark.png` ya se usa en Login y en la barra superior; los strings sin uso se eliminaron en `5d5e54f`)
 
 ### backup_rules.xml / data_extraction_rules.xml
 - Existen en `res/xml/` pero no configurados para nada funcional
@@ -347,7 +369,7 @@ android.application, kotlin.compose, hilt, ksp
 - `testImplementation libs.junit`
 - `androidTestImplementation libs.androidx.junit`
 - `androidTestImplementation libs.androidx.espresso.core`
-- **Sin tests escritos.** Las dependencias están declaradas.
+- Solo `AmountParserTest` (unitario). Sin tests de repos, ViewModels ni DAOs.
 
 ### KSP
 - `ksp` plugin aplicado
@@ -373,19 +395,7 @@ android.application, kotlin.compose, hilt, ksp
 
 ## 📝 Orden de migración recomendado
 
-1. `RepositoryModule.kt` typo fix (`imzpl` → `impl`)
-2. Crear `domain/` con casos de uso básicos
-3. Crear `TransferRepository` + ViewModel + Screen
-4. Crear `RecurringTransactionRepository` + ViewModel + Screen + WorkManager integration
-5. Crear `GoalRepository` + ViewModel + Screen
-6. Crear `TagRepository` + ViewModel + Screen
-7. Crear `AttachmentRepository` + Screen
-8. Crear Stats screen + BottomBar tab
-9. Implementar PIN/Biometría
-10. Google Drive backup + WorkManager
-11. Quitar `fallbackToDestructiveMigration`
-12. Escribir tests
-13. Publicar
+Ver **🗺️ Mapa de lo que falta → Orden sugerido** más arriba.
 
 ---
 

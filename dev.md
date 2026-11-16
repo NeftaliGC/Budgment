@@ -52,10 +52,10 @@ Solo `.idea/deploymentTargetSelector.xml` (archivo del IDE). Todo el código est
 | Entity | DAO | Repo | ViewModel | Screen | Estado |
 |--------|-----|------|-----------|--------|--------|
 | `GoalEntity`, `GoalContributionEntity` | `GoalDao`, `GoalContributionDao` | ✅ `GoalRepository` | ✅ | ✅ | ✅ Completo |
-| `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
+| `TagEntity` | `TagDao` | ❌ | ❌ | ❌ | ⏸️ Descartado por ahora |
 | `AttachmentEntity` | `AttachmentDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
 | `BudgetCategoryEntity` | `BudgetCategoryDao` | ✅ (dentro de `BudgetRepositoryImpl`) | ✅ | ✅ | ✅ Completo |
-| `TransactionTagEntity` | `TransactionTagDao` | ❌ | ❌ | ❌ | 🔴 Sin implementar |
+| `TransactionTagEntity` | `TransactionTagDao` | ❌ | ❌ | ❌ | ⏸️ Descartado por ahora |
 
 ### Repositorios existentes (9)
 
@@ -95,7 +95,7 @@ createdAt, updatedAt, deletedAt
 id, userId, parentCategoryId: String?, // null = categoría raíz
 name, type: CategoryType, icon, color, createdAt, updatedAt, deletedAt
 ```
-- Soporta subcategorías via `parentCategoryId` (FK a sí misma)
+- `parentCategoryId` (FK a sí misma) existe pero no se usa: subcategorías descartadas por ahora
 - `CategoryType`: EXPENSE, INCOME
 
 ### BudgetEntity
@@ -171,7 +171,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 ## 🏗️ Arquitectura y decisiones técnicas
 
 ### Hilt DI
-- **DatabaseModule**: Crea `BudgmentDatabase` singleton con `fallbackToDestructiveMigration(dropAllTables = true)`
+- **DatabaseModule**: Crea `BudgmentDatabase` singleton con `ALL_MIGRATIONS` (v1→v6), sin fallback destructivo; antes de migrar guarda una copia (`PreMigrationBackup`)
 - **RepositoryModule**: Binds de los 8 repositorios
 - **NetworkModule**: Retrofit + OkHttpClient → `ExchangeRateApi` (Frankfurter API, base URL: `https://api.frankfurter.app/`)
 - **SessionModule**: DataStore (`budgment_session`) para user_id y display_currency
@@ -196,9 +196,12 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 - Tasas almacenadas en micros para evitar punto flotante
 
 ### Room Database
-- **Version:** 4 (v3: `transactions.categoryId` nullable para transferencias; v4: `description` y `snoozedUntil` en recurrentes + índices de FK)
-- **Migraciones:** desde v3 cada cambio lleva su `Migration` en `data/local/Migrations.kt` (`MIGRATION_3_4` verificada en dispositivo con datos reales). El fallback destructivo sigue solo para versiones < 3
-- **Migration strategy:** `fallbackToDestructiveMigration(dropAllTables = true)` ⚠️
+- **Version:** 6 (v3: `transactions.categoryId` nullable para transferencias; v4: `description` y `snoozedUntil` en recurrentes + índices de FK; v5: tabla `notifications`; v6: `goals.currency` + tabla `goal_contributions`)
+- **Migraciones:** cadena completa v1→v2→…→v6 en `data/local/Migrations.kt` (`ALL_MIGRATIONS`). 1→2 crea las tablas que agregó la v2 (la v1 solo tenía users/accounts/categories, reconstruida del historial de git); 2→3 reconstruye `transactions` para que `categoryId` admita null (crear nueva → copiar → borrar → renombrar, compatible con el SQLite de Android 7)
+- **Sin fallback destructivo:** si faltara una migración, la app falla al abrir en vez de borrar datos (Room revierte la transacción)
+- **Copia previa** (`data/local/PreMigrationBackup.kt`): si la BD en disco tiene versión menor que `DATABASE_VERSION`, se copian `.db`, `-wal` y `-shm` a `noBackupFilesDir/db-backups/budgment-v<N>-<fecha>.db` antes de abrirla con Room; se guardan las 3 más recientes. Aún no hay pantalla para restaurarlas
+- **Verificación:** `python3 tools/verify_migrations.py .` crea una BD en cada versión (1…N-1) con datos, aplica el SQL de `Migrations.kt` y compara columnas, tipos, NOT NULL, PK, FKs e índices con el último esquema, además de comprobar que no se pierdan filas. Necesita `app/schemas/` (hoy en `.gitignore`)
+- **Al cambiar el esquema:** subir `DATABASE_VERSION` (`BudgmentDatabase.kt`), compilar para exportar `N+1.json`, escribir `MIGRATION_N_N+1` con su SQL, agregarla a `ALL_MIGRATIONS` y correr `tools/verify_migrations.py`
 - **13 entities** registradas en `@Database`
 - **13 DAOs** provistos via `DatabaseModule`
 - `exportSchema = true`, schema guardado en `schemas/`
@@ -244,7 +247,7 @@ id, fromCurrency, toCurrency, rateMicros: Long, date
 ### CategoriesListScreen / CategoryFormScreen
 - Chips de categorías con icono + color
 - Formulario con name, type, icon picker, color picker
-- Soporte para subcategorías (modelo `parentCategoryId`)
+- `parentCategoryId` en el modelo, sin uso (subcategorías descartadas por ahora)
 
 ### TransactionsListScreen / TransactionFormScreen
 - Lista ordenada por fecha descendente
@@ -271,8 +274,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Entity / DAO | Repo | VM | Screen | Depende de | Notas |
 |---------|--------------|------|----|--------|------------|-------|
-| Etiquetas | ✅ `TagEntity`, `TagDao`, `TransactionTagDao` | ❌ | ❌ | ❌ | — | Selector en `TransactionFormScreen` + filtro en Movimientos |
-| Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | Etiquetas no | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
+| Adjuntos | ✅ `AttachmentEntity`, `AttachmentDao` | ❌ | ❌ | ❌ | — | Foto de recibo; almacenamiento en `filesDir`, incluir en respaldo |
 
 ### B. Funciones sin ningún código
 
@@ -287,7 +289,6 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 
 | Feature | Estado | Falta |
 |---------|--------|-------|
-| Subcategorías | 🟡 `parentCategoryId` en modelo | UI no lo usa: selector de padre en `CategoryFormScreen`, agrupar en lista, sumar hijas en presupuestos |
 | Configuración | 🟡 Solo moneda por defecto | Cambio de contraseña, borrar usuario, tema, seguridad (PIN), respaldo, exportar CSV |
 | Movimientos | 🟡 Lista por día con búsqueda y filtros | Filtro por etiqueta (cuando existan) |
 
@@ -296,7 +297,9 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 | Tarea | Ubicación | Prioridad |
 |-------|-----------|-----------|
 | ✅ ~~Typo `imzpl` → `impl`~~ | `di/RepositoryModule.kt:33` | Hecho |
-| Quitar `fallbackToDestructiveMigration` (migraciones v3→v4→v5→v6 en `Migrations.kt`) | `di/DatabaseModule.kt` (BD versión 6) | Bloquea publicación y respaldo |
+| ✅ ~~Quitar `fallbackToDestructiveMigration`~~ | Cadena completa v1→v6 + copia previa + `tools/verify_migrations.py` | Hecho |
+| Versionar `app/schemas/` | Hoy en `.gitignore`: sin los JSON no se pueden verificar migraciones en otro equipo | Recomendado |
+| Restaurar una copia previa a la migración | `noBackupFilesDir/db-backups`; sin UI | Con el respaldo en Drive |
 | Capa `domain/` (casos de uso) | No existe, aunque el README la menciona | Opcional; o quitarla del README |
 | Tests | `AmountParserTest`, `BuildTransactionDetailsTest`, `BudgetPeriodTest`, `RecurrenceTest`, `BuildRecurringItemsTest`, `ComputeStatisticsTest`, `GroupByDayTest`, `BudgetAlertsTest`, `GoalProgressTest`, `BuildGoalItemsTest` y `TransactionFilterTest`; falta test de migraciones (`MigrationTestHelper`) | Repos (balance, presupuestos), `BudgetOverviewSource`, DAOs (instrumentados) |
 | `backup_rules.xml` / `data_extraction_rules.xml` | `res/xml/` | Configurar o excluir la BD |
@@ -309,8 +312,8 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 3. ✅ ~~**Renovación de periodos de presupuesto**~~ (calculada al leer, sin WorkManager). ✅ ~~**WorkManager** como base → **recurrentes**~~ (con confirmación manual).
 4. ✅ ~~**Estadísticas**~~.
 5. ✅ ~~**Notificaciones**~~ (bandeja, ajustes, recurrentes y presupuestos).
-6. ✅ ~~**Metas**~~, **etiquetas**, **subcategorías en UI**, ✅ ~~filtros de movimientos~~.
-7. **Migraciones reales** → **respaldo en Drive** → **PIN/biometría**.
+6. ✅ ~~**Metas**~~, ✅ ~~filtros de movimientos~~. ⏸️ Etiquetas y subcategorías descartadas por ahora (ver «Descartado por ahora»).
+7. ✅ ~~**Migraciones reales**~~ → **respaldo en Drive** → **PIN/biometría**.
 8. **Adjuntos**.
 9. Tests, pulido, README, publicación.
 
@@ -326,8 +329,13 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 - Los refs originales de backup fueron limpiados con `git for-each-ref --format='delete %(refname)' refs/original/`
 
 ### `fallbackToDestructiveMigration`
-- En `DatabaseModule.kt` línea 44: `fallbackToDestructiveMigration(dropAllTables = true)`
-- **Eliminar antes de publicar.** Borra y recrea la BD ante cualquier cambio de esquema.
+- ✅ Quitado por completo: hay migración para cada versión desde la v1, verificada con `tools/verify_migrations.py`
+- Cualquier cambio de esquema necesita su `Migration`; sin ella la app falla al abrir en vez de borrar los datos, y la copia previa queda intacta
+
+### ⏸️ Descartado por ahora: etiquetas y subcategorías
+- **Etiquetas** (`TagEntity`, `TransactionTagEntity`): su caso principal (agrupar gastos de distintas categorías, p. ej. un viaje) ya lo cubren la nota + la búsqueda con rango de fechas, que además da el total
+- **Subcategorías** (`CategoryEntity.parentCategoryId`): mucha complejidad (selector en dos niveles, cómo suman en presupuestos y estadísticas, borrar un padre) para poco beneficio; basta con crear categorías más específicas
+- Las tablas y el campo se quedan sin uso: quitarlos exigiría otra migración sin ganar nada. Retomar solo si hay una necesidad concreta
 
 ### WorkManager
 - `RecurringReminderWorker` (aviso diario de recurrentes pendientes), programado en `BudgmentApp.onCreate` con `KEEP`
@@ -387,7 +395,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ❌ falta
 ### Category subcategorías
 - `CategoryEntity` tiene `parentCategoryId: String?` con FK self-referencing
 - `CategoryDao` tiene query para `observeCategories(userId)`
-- **UI no expone** la creación de subcategorías
+- **UI no expone** la creación de subcategorías (descartado por ahora; ver «Descartado por ahora»)
 
 ### Currency conversion edge cases
 - `ExchangeRateRepository.convert()` retorna `null` si no hay tasa → se muestra error en UI

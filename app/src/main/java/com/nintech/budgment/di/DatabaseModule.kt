@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.nintech.budgment.data.local.ALL_MIGRATIONS
 import com.nintech.budgment.data.local.BudgmentDatabase
+import com.nintech.budgment.data.local.DATABASE_VERSION
+import com.nintech.budgment.data.local.PreMigrationBackup
 import com.nintech.budgment.data.local.dao.AccountDao
 import com.nintech.budgment.data.local.dao.AttachmentDao
 import com.nintech.budgment.data.local.dao.BudgetCategoryDao
@@ -35,18 +37,20 @@ object DatabaseModule {
     @Singleton
     fun provideBudgmentDatabase(
         @ApplicationContext context: Context
-    ): BudgmentDatabase =
-        Room.databaseBuilder(
+    ): BudgmentDatabase {
+        // Antes de migrar se guarda una copia de la base tal como está.
+        PreMigrationBackup.backupIfUpgrading(context, DATABASE_NAME, DATABASE_VERSION)
+        return Room.databaseBuilder(
             context,
             BudgmentDatabase::class.java,
             DATABASE_NAME
         )
-            // Desde v3 cada cambio de esquema lleva su migración (data/local/Migrations.kt).
+            // Cada versión del esquema tiene su migración (data/local/Migrations.kt), desde la v1.
+            // Sin fallback destructivo: si faltara una migración la app falla al abrir en vez de
+            // borrar los datos, y la copia de seguridad previa queda intacta.
             .addMigrations(*ALL_MIGRATIONS)
-            // Solo mientras desarrollamos: versiones anteriores a v3 no tienen migración y
-            // se recrean desde cero. QUITAR antes de publicar la app.
-            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
+    }
 
     @Provides
     fun provideUserDao(database: BudgmentDatabase): UserDao =

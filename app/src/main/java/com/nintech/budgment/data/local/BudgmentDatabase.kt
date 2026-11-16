@@ -34,6 +34,9 @@ import com.nintech.budgment.data.local.entity.TransactionTagEntity
 import com.nintech.budgment.data.local.entity.TransferEntity
 import com.nintech.budgment.data.local.entity.UserEntity
 
+/** Versión del esquema. Al subirla, agregar su migración en Migrations.kt. */
+const val DATABASE_VERSION = 6
+
 @Database(
     entities = [
         UserEntity::class,
@@ -52,7 +55,7 @@ import com.nintech.budgment.data.local.entity.UserEntity
         NotificationEntity::class,
         GoalContributionEntity::class
     ],
-    version = 6,
+    version = DATABASE_VERSION,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

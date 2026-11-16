@@ -1,5 +1,7 @@
 package com.nintech.budgment.ui.transactions
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
 import android.content.res.Configuration
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -204,6 +206,7 @@ fun TransactionFormScreen(
                     onValueChange = onDescriptionChange,
                     label = { Text(stringResource(R.string.transaction_form_description_label)) },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -282,7 +285,8 @@ private fun AmountField(state: TransactionFormState, onAmountChange: (String) ->
         },
         isError = state.amountError != null,
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        // Tras el monto se elige la categoría con chips: "Listo" cierra el teclado.
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
         modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
     )
 }

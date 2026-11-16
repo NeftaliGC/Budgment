@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.nintech.budgment.ui.common.parseAmountToCents
 import com.nintech.budgment.ui.common.centsToInputText
+import com.nintech.budgment.data.repository.UserRepository
 
 data class AccountFormState(
     val name: String = "",
@@ -40,6 +41,7 @@ data class AccountFormState(
 @HiltViewModel
 class AccountFormViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
+    private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -52,6 +54,15 @@ class AccountFormViewModel @Inject constructor(
     val state: StateFlow<AccountFormState> = _state.asStateFlow()
 
     init {
+        if (accountId == null) {
+            // Una cuenta nueva propone la moneda por defecto del usuario.
+            viewModelScope.launch {
+                val userId = sessionManager.currentUserId.filterNotNull().first()
+                userRepository.getUser(userId)?.defaultCurrency?.let { currency ->
+                    _state.value = _state.value.copy(currency = currency)
+                }
+            }
+        }
         accountId?.let { id ->
             viewModelScope.launch {
                 accountRepository.getAccount(id)?.let { account ->

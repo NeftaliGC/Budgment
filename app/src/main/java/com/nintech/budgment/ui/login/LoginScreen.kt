@@ -1,5 +1,9 @@
 package com.nintech.budgment.ui.login
 
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -155,6 +159,7 @@ fun LoginContent(
                     onValueChange = onUsernameChange,
                     label = { Text(stringResource(R.string.login_username_label)) },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Next),
                     isError = state.errorMessage != null,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -166,6 +171,9 @@ fun LoginContent(
                     onValueChange = onPasswordChange,
                     label = { Text(stringResource(R.string.login_password_label)) },
                     singleLine = true,
+                    // "Listo" en el teclado inicia sesión, sin tener que buscar el botón.
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onLoginClick() }),
                     isError = state.errorMessage != null,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {

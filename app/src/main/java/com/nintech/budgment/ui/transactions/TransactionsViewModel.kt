@@ -13,12 +13,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.nintech.budgment.data.local.entity.AccountEntity
+import com.nintech.budgment.data.local.entity.CategoryEntity
+import com.nintech.budgment.data.model.SupportedCurrency
 
 data class TransactionWithDetails(
     val transaction: TransactionEntity,
     val accountName: String,
     val categoryName: String,
     val categoryType: CategoryType,
+    val categoryIcon: String? = null,
+    val categoryColor: String? = null,
+    /** Moneda del movimiento: la propia si la tiene, si no la de su cuenta. */
+    val currency: String = SupportedCurrency.MXN.code,
     /** La cuenta fue eliminada: el movimiento queda en el historial, solo de lectura. */
     val accountDeleted: Boolean = false,
     /** La categoría fue eliminada: el movimiento se conserva y se puede reasignar al editarlo. */
@@ -29,6 +36,36 @@ data class TransactionsUiState(
     val transactions: List<TransactionWithDetails> = emptyList(),
     val isLoading: Boolean = true
 )
+
+/**
+ * Une cada movimiento con los datos de su cuenta y categoría, del más reciente al más antiguo.
+ * Las listas deben incluir cuentas y categorías eliminadas para que el historial esté completo.
+ */
+fun buildTransactionDetails(
+    transactions: List<TransactionEntity>,
+    accounts: List<AccountEntity>,
+    categories: List<CategoryEntity>
+): List<TransactionWithDetails> {
+    val accountsById = accounts.associateBy { it.id }
+    val categoriesById = categories.associateBy { it.id }
+    return transactions
+        .sortedByDescending { it.date }
+        .mapNotNull { tx ->
+            val category = categoriesById[tx.categoryId] ?: return@mapNotNull null
+            val account = accountsById[tx.accountId]
+            TransactionWithDetails(
+                transaction = tx,
+                accountName = account?.name.orEmpty(),
+                categoryName = category.name,
+                categoryType = category.type,
+                categoryIcon = category.icon,
+                categoryColor = category.color,
+                currency = tx.currency ?: account?.currency ?: SupportedCurrency.MXN.code,
+                accountDeleted = account?.deletedAt != null,
+                categoryDeleted = category.deletedAt != null
+            )
+        }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -49,22 +86,7 @@ class TransactionsViewModel @Inject constructor(
                     accountRepository.observeAccountsIncludingDeleted(userId),
                     categoryRepository.observeCategoriesIncludingDeleted(userId)
                 ) { transactions, accounts, categories ->
-                    val accountsById = accounts.associateBy { it.id }
-                    val categoriesById = categories.associateBy { it.id }
-                    val details = transactions
-                        .sortedByDescending { it.date }
-                        .mapNotNull { tx ->
-                            val category = categoriesById[tx.categoryId] ?: return@mapNotNull null
-                            val account = accountsById[tx.accountId]
-                            TransactionWithDetails(
-                                transaction = tx,
-                                accountName = account?.name.orEmpty(),
-                                categoryName = category.name,
-                                categoryType = category.type,
-                                accountDeleted = account?.deletedAt != null,
-                                categoryDeleted = category.deletedAt != null
-                            )
-                        }
+                    val details = buildTransactionDetails(transactions, accounts, categories)
                     TransactionsUiState(transactions = details, isLoading = false)
                 }
             }

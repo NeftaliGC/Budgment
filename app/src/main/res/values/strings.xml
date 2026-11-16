@@ -11,23 +11,33 @@
     <string name="common_understood">Entendido</string>
     <string name="common_accept">Aceptar</string>
     <string name="common_today">Hoy</string>
+    <string name="common_yesterday">Ayer</string>
 
     <!-- Errores de formulario compartidos -->
     <string name="form_error_name_required">Escribe un nombre</string>
-    <string name="form_error_invalid_amount">Ingresa un monto válido, por ejemplo 1500.50</string>
+    <string name="form_error_invalid_amount">Escribe un monto válido, por ejemplo 1500.50</string>
     <string name="common_more_options">Más opciones</string>
 
     <!-- Header -->
     <string name="header_greeting">Hola, %1$s</string>
     <string name="header_menu_settings">Configuración</string>
     <string name="header_menu_logout">Cerrar sesión</string>
-    <string name="header_notifications_content_description">Notificaciones</string>
+    <string name="header_profile_content_description">Perfil y configuración</string>
+
+    <!-- Moneda -->
+    <string name="currency_menu_content_description">Moneda de los totales: %1$s. Cambiar</string>
+    <string name="currency_option_format">%1$s · %2$s</string>
+
+    <!-- Configuración -->
+    <string name="settings_default_currency_title">Moneda por defecto</string>
+    <string name="settings_default_currency_description">Tus totales se muestran en esta moneda, es la que se propone al crear una cuenta y en ella se definen los límites de tus presupuestos.</string>
+    <string name="settings_currency_budgets_note">Si la cambias, tus presupuestos conservan sus cifras, ahora en la nueva moneda. Revisa sus límites.</string>
+    <string name="settings_currency_rate_note">Las conversiones usan la tasa de referencia diaria del Banco Central Europeo.</string>
 
     <!-- Bottom navigation -->
     <string name="bottom_nav_home">Inicio</string>
     <string name="bottom_nav_accounts">Cuentas</string>
     <string name="bottom_nav_transactions">Movimientos</string>
-    <string name="bottom_nav_stats">Estadisticas</string>
     <string name="bottom_nav_budgets">Presupuestos</string>
 
     <!-- Auth errors -->
@@ -39,22 +49,31 @@
 
     <!-- Home -->
     <string name="home_action_new_transaction">Nuevo movimiento</string>
-    <string name="home_action_new_category">Nueva categoría</string>
     <string name="home_action_new_budget">Nuevo presupuesto</string>
-    <string name="home_action_coming_soon">Próximamente</string>
 
-    <string name="home_total_balance_title">Saldo disponible</string>
-    <string name="home_quick_actions_title">Acciones rápidas</string>
-    <string name="home_action_new_account">Nueva cuenta</string>
-    <string name="home_accounts_title">Mis cuentas</string>
-    <string name="home_see_all">Ver todas</string>
-    <string name="home_no_accounts">Aún no tienes cuentas registradas</string>
-    <string name="home_currency_missing_rates">%1$d cuenta(s) sin convertir (tasa no disponible)</string>
-    <string name="home_currency_rate_note">Tasa de referencia diaria (BCE)</string>
+    <string name="home_see_all">Ver todo</string>
+    <string name="home_budget_card_title">Presupuesto de este mes</string>
+    <string name="home_budget_card_title_categories">Presupuesto de tus categorías</string>
+    <string name="home_budget_spent_format">Has gastado %1$s de %2$s</string>
+    <plurals name="home_budget_per_day">
+        <item quantity="one">Hoy es el último día del mes</item>
+        <item quantity="many">Faltan %1$d días: unos %2$s por día</item>
+        <item quantity="other">Faltan %1$d días: unos %2$s por día</item>
+    </plurals>
+    <string name="home_no_budgets_message">Crea un presupuesto para ver aquí cuánto te queda este mes.</string>
+    <string name="home_recent_transactions_title">Últimos movimientos</string>
+    <string name="home_no_transactions">Aún no tienes movimientos</string>
+    <string name="home_get_started_title">Empieza por una cuenta</string>
+    <string name="home_get_started_message">Agrega tu efectivo, una tarjeta o una cuenta de banco para empezar a registrar movimientos.</string>
+    <plurals name="missing_rate_accounts">
+        <item quantity="one">%1$d cuenta no se incluye: falta su tasa de cambio</item>
+        <item quantity="many">%1$d cuentas no se incluyen: falta su tasa de cambio</item>
+        <item quantity="other">%1$d cuentas no se incluyen: falta su tasa de cambio</item>
+    </plurals>
 
     <!-- Login -->
     <string name="login_tagline">Controla tus gastos sin complicarte</string>
-    <string name="login_welcome">Bienvenido</string>
+    <string name="login_welcome">Hola de nuevo</string>
     <string name="login_subtitle">Inicia sesión para continuar</string>
     <string name="login_username_label">Usuario</string>
     <string name="login_password_label">Contraseña</string>
@@ -78,13 +97,15 @@
     <!-- Accounts -->
     <string name="accounts_title">Cuentas</string>
     <string name="accounts_empty_title">Aún no tienes cuentas</string>
-    <string name="accounts_empty_subtitle">Agrega tu primera cuenta para empezar a registrar movimientos</string>
-    <string name="accounts_add_content_description">Agregar cuenta</string>
+    <string name="accounts_empty_subtitle">Agrega tu efectivo, una tarjeta o una cuenta de banco para empezar a registrar movimientos.</string>
+    <string name="accounts_add_content_description">Nueva cuenta</string>
     <string name="accounts_delete_content_description">Eliminar cuenta</string>
-    <string name="accounts_balance_format">Saldo: %1$s</string>
     <string name="accounts_total_balance_title">Saldo total</string>
-    <string name="accounts_count_format">%1$d cuentas</string>
-    <string name="accounts_missing_rates">%1$d cuenta(s) sin convertir (tasa no disponible)</string>
+    <plurals name="accounts_count">
+        <item quantity="one">%1$d cuenta</item>
+        <item quantity="many">%1$d cuentas</item>
+        <item quantity="other">%1$d cuentas</item>
+    </plurals>
     <string name="accounts_credit_limit_format">Límite: %1$s</string>
     <string name="accounts_delete_confirm_title">¿Eliminar «%1$s»?</string>
     <string name="accounts_delete_confirm_message">La cuenta dejará de aparecer en tus listas. Sus movimientos se conservan en el historial.</string>
@@ -105,9 +126,8 @@
     <string name="account_form_initial_balance_hint">El dinero que ya tienes en esta cuenta</string>
     <string name="account_form_initial_debt_label">Deuda actual (opcional)</string>
     <string name="account_form_initial_debt_hint">Lo que debes hoy en esta tarjeta</string>
-    <string name="account_form_initial_balance_error">Ingresa un monto válido, por ejemplo 1500.50</string>
     <string name="account_form_error_day">Escribe un día del 1 al 31</string>
-    <string name="account_form_color_auto_hint">si no eliges color se usa el automático según el tipo de cuenta</string>
+    <string name="account_form_color_auto_hint">Si no eliges uno, se usa el del tipo de cuenta.</string>
 
     <!-- Account types -->
     <string name="account_type_cash">Efectivo</string>
@@ -119,8 +139,8 @@
     <!-- Categories -->
     <string name="categories_title">Categorías</string>
     <string name="categories_empty_title">Aún no tienes categorías</string>
-    <string name="categories_empty_subtitle">Agrega categorías para poder clasificar tus movimientos</string>
-    <string name="categories_add_content_description">Agregar categoría</string>
+    <string name="categories_empty_subtitle">Las categorías clasifican tus movimientos, por ejemplo Comida o Sueldo.</string>
+    <string name="categories_add_content_description">Nueva categoría</string>
     <string name="categories_delete_content_description">Eliminar categoría</string>
     <string name="categories_deleted_message">Categoría eliminada</string>
     <string name="categories_section_expense">Gastos</string>
@@ -140,27 +160,22 @@
     <string name="category_form_icon_label">Icono</string>
     <string name="category_form_color_label">Color</string>
     <string name="category_form_color_default_content_description">Predeterminado (color automático)</string>
-    <string name="category_form_color_auto_hint">Si no eliges color se usa el automático según el tipo de categoría.</string>
+    <string name="category_form_color_auto_hint">Si no eliges uno, se usa el del tipo de categoría.</string>
     <string name="category_form_save_button">Guardar</string>
 
     <!-- Category types -->
     <string name="category_type_expense">Gasto</string>
     <string name="category_type_income">Ingreso</string>
 
-    <!-- Home: categorías -->
-    <string name="home_categories_title">Mis categorías</string>
-    <string name="home_no_categories">Aún no tienes categorías</string>
-
     <!-- Transactions -->
     <string name="transactions_title">Movimientos</string>
     <string name="transactions_empty_title">Aún no tienes movimientos</string>
-    <string name="transactions_empty_subtitle">Registra tu primer ingreso o gasto</string>
-    <string name="transactions_add_content_description">Agregar movimiento</string>
+    <string name="transactions_empty_subtitle">Registra tu primer ingreso o gasto.</string>
+    <string name="transactions_add_content_description">Nuevo movimiento</string>
     <string name="transactions_delete_content_description">Eliminar movimiento</string>
     <string name="transactions_deleted_message">Movimiento eliminado</string>
     <string name="transactions_deleted_account_format">%1$s (cuenta eliminada)</string>
     <string name="transactions_deleted_category_format">%1$s (categoría eliminada)</string>
-    <string name="transactions_no_description">Sin descripción</string>
 
     <!-- Transaction form -->
     <string name="transaction_form_title_new">Nuevo movimiento</string>
@@ -172,47 +187,56 @@
     <string name="transaction_form_save_button">Guardar</string>
     <string name="transaction_form_date_label">Fecha</string>
     <string name="transaction_form_date_pick_content_description">Elegir fecha</string>
-    <string name="transaction_form_error_amount_required">Ingresa un monto</string>
+    <string name="transaction_form_error_amount_required">Escribe un monto</string>
     <string name="transaction_form_error_category_required">Elige una categoría</string>
     <string name="transaction_form_error_account_required">Elige una cuenta</string>
     <string name="transaction_form_no_expense_categories">Aún no tienes categorías de gasto</string>
     <string name="transaction_form_no_income_categories">Aún no tienes categorías de ingreso</string>
     <string name="transaction_form_create_category">Crear categoría</string>
     <string name="transaction_form_create_account">Crear cuenta</string>
-    <string name="transaction_form_error_invalid_amount">Ingresa un monto válido mayor a cero</string>
-    <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos</string>
+    <string name="transaction_form_error_invalid_amount">Escribe un monto mayor a cero</string>
+    <string name="transaction_form_no_accounts">Primero crea una cuenta para poder registrar movimientos.</string>
 
     <!-- Budgets -->
     <string name="budgets_title">Presupuestos</string>
     <string name="budgets_empty_title">Aún no tienes presupuestos</string>
-    <string name="budgets_empty_subtitle">Crea un presupuesto para controlar tu gasto mensual</string>
-    <string name="budgets_add_content_description">Agregar presupuesto</string>
+    <string name="budgets_empty_subtitle">Ponle un límite a tu gasto del mes, en total o por categoría.</string>
+    <string name="budgets_add_content_description">Nuevo presupuesto</string>
     <string name="budgets_delete_content_description">Eliminar presupuesto</string>
     <string name="budgets_deleted_message">Presupuesto eliminado</string>
     <string name="budgets_categories_deleted_note">Sus categorías fueron eliminadas. Sigue contando lo ya registrado.</string>
     <string name="budgets_spent_format">%1$s de %2$s</string>
-    <string name="budgets_period_current_month">Este mes</string>
     <string name="budgets_summary_title">Resumen del mes</string>
-    <string name="budgets_summary_allocated">Presupuestado</string>
+    <string name="budgets_summary_allocated">Límite</string>
     <string name="budgets_summary_spent">Gastado</string>
-    <string name="budgets_summary_remaining">Restante</string>
-    <string name="budgets_count_format">%1$d presupuestos</string>
-    <string name="budgets_remaining_format">Restan %1$s</string>
-    <string name="budgets_exceeded_format">Excedido por %1$s</string>
+    <string name="budgets_summary_remaining">Te queda</string>
+    <string name="budgets_summary_source_global">Según tu presupuesto global</string>
+    <string name="budgets_summary_source_categories">Solo en tus categorías con presupuesto</string>
+    <string name="budgets_section_category_within_global">Por categoría, dentro del global</string>
+    <string name="budgets_category_limits_exceed_global">Tus presupuestos por categoría suman %1$s, más que el global de %2$s.</string>
+    <string name="budgets_remaining_format">Te quedan %1$s</string>
+    <string name="budgets_exceeded_format">Te pasaste por %1$s</string>
     <string name="budgets_percent_format">%1$d%% usado</string>
-    <string name="budgets_missing_rates">%1$d presupuesto(s) sin convertir (tasa no disponible)</string>
+    <plurals name="budgets_missing_rates">
+        <item quantity="one">%1$d presupuesto no se pudo convertir por completo: falta una tasa de cambio</item>
+        <item quantity="many">%1$d presupuestos no se pudieron convertir por completo: falta una tasa de cambio</item>
+        <item quantity="other">%1$d presupuestos no se pudieron convertir por completo: falta una tasa de cambio</item>
+    </plurals>
 
     <!-- Budget form -->
     <string name="budget_form_title_new">Nuevo presupuesto</string>
     <string name="budget_form_title_edit">Editar presupuesto</string>
     <string name="budget_form_name_label">Nombre</string>
     <string name="budget_form_amount_label">Límite</string>
+    <string name="budget_form_amount_currency_hint">En tu moneda por defecto, %1$s</string>
     <string name="budget_form_scope_label">Alcance</string>
     <string name="budget_form_categories_label">Categorías incluidas</string>
     <string name="budget_form_save_button">Guardar</string>
-    <string name="budget_form_error_amount">Ingresa un límite mayor a cero</string>
+    <string name="budget_form_error_amount">Escribe un límite mayor a cero</string>
     <string name="budget_form_error_categories_required">Elige al menos una categoría</string>
-    <string name="budget_form_no_expense_categories">Primero crea una categoría de tipo Gasto para presupuestos por categoría</string>
+    <string name="budget_form_global_exists">Ya tienes un presupuesto global, «%1$s». Solo puede haber uno: edítalo o elige Por categoría.</string>
+    <string name="budget_form_edit_existing_global">Editar «%1$s»</string>
+    <string name="budget_form_no_expense_categories">Primero crea una categoría de gasto.</string>
 
     <!-- Budget scope -->
     <string name="budget_scope_global">Global</string>

@@ -1,5 +1,7 @@
 package com.nintech.budgment.ui.accounts
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -119,6 +121,8 @@ fun AccountFormScreenContent(
                     null
                 },
                 singleLine = true,
+                // Lo que sigue son menús, no campos de texto: "Listo" cierra el teclado.
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -188,7 +192,7 @@ fun AccountFormScreenContent(
                         Text(
                             stringResource(
                                 when {
-                                    state.initialBalanceError -> R.string.account_form_initial_balance_error
+                                    state.initialBalanceError -> R.string.form_error_invalid_amount
                                     isCredit -> R.string.account_form_initial_debt_hint
                                     else -> R.string.account_form_initial_balance_hint
                                 }
@@ -197,7 +201,7 @@ fun AccountFormScreenContent(
                     },
                     isError = state.initialBalanceError,
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -223,8 +227,13 @@ fun AccountFormScreenContent(
             Spacer(Modifier.height(15.dp))
 
             Text(
-                text = stringResource(R.string.category_form_color_label) + ": " + stringResource(R.string.account_form_color_auto_hint),
+                text = stringResource(R.string.category_form_color_label),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.account_form_color_auto_hint),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(8.dp))
@@ -248,7 +257,7 @@ fun AccountFormScreenContent(
                         null
                     },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
@@ -263,7 +272,7 @@ fun AccountFormScreenContent(
                         null
                     },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
@@ -278,7 +287,7 @@ fun AccountFormScreenContent(
                         null
                     },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

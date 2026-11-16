@@ -1,5 +1,7 @@
 package com.nintech.budgment.ui.budgets
 
+import com.nintech.budgment.data.model.SupportedCurrency
+import com.nintech.budgment.data.repository.UserRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,18 +26,25 @@ data class BudgetFormState(
     val scope: BudgetScope = BudgetScope.GLOBAL,
     val expenseCategories: List<CategoryEntity> = emptyList(),
     val selectedCategoryIds: Set<String> = emptySet(),
+    /** Los límites siempre están en la moneda por defecto del usuario. */
+    val currency: String = SupportedCurrency.MXN.code,
+    /** Otro presupuesto global del usuario; si existe, este no puede ser global también. */
+    val existingGlobal: BudgetEntity? = null,
     val isEditing: Boolean = false,
     val isSaved: Boolean = false,
     val isLoading: Boolean = true,
     val nameError: Boolean = false,
     val amountError: Boolean = false,
     val categoriesError: Boolean = false
-)
+) {
+    val globalTaken: Boolean get() = scope == BudgetScope.GLOBAL && existingGlobal != null
+}
 
 @HiltViewModel
 class BudgetFormViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val categoryRepository: CategoryRepository,
+    private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -50,7 +59,18 @@ class BudgetFormViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = sessionManager.currentUserId.filterNotNull().first()
             val categories = categoryRepository.observeCategories(userId).first().filter { it.type == CategoryType.EXPENSE }
-            _state.value = _state.value.copy(expenseCategories = categories, isLoading = false)
+            // Solo puede haber un global: es el techo del mes y el resumen depende de él.
+            val existingGlobal = budgetRepository.observeBudgets(userId).first()
+                .filter { it.scope == BudgetScope.GLOBAL && it.id != budgetId }
+                .minByOrNull { it.createdAt }
+            _state.value = _state.value.copy(
+                expenseCategories = categories,
+                currency = userRepository.getUser(userId)?.defaultCurrency ?: SupportedCurrency.MXN.code,
+                existingGlobal = existingGlobal,
+                // Uno nuevo con un global ya creado solo tiene sentido por categoría.
+                scope = if (budgetId == null && existingGlobal != null) BudgetScope.CATEGORY else _state.value.scope,
+                isLoading = false
+            )
 
             budgetId?.let { id ->
                 budgetRepository.getBudget(id)?.let { budget ->
@@ -82,6 +102,7 @@ class BudgetFormViewModel @Inject constructor(
         val nameError = name.isBlank()
         val amountError = cents == null || cents <= 0
         val categoriesError = s.scope == BudgetScope.CATEGORY && s.selectedCategoryIds.isEmpty()
+        if (s.globalTaken) return
         if (nameError || amountError || categoriesError || cents == null) {
             _state.value = s.copy(nameError = nameError, amountError = amountError, categoriesError = categoriesError)
             return

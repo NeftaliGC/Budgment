@@ -1,10 +1,11 @@
 package com.nintech.budgment.ui.budgets
 
+import com.nintech.budgment.ui.common.EmptyState
+import androidx.compose.ui.res.pluralStringResource
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,7 +28,6 @@ import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.BudgetScope
 import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.data.model.PeriodUnit
-import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.ui.categories.CategoryIcon
 import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
@@ -37,11 +37,13 @@ import kotlin.math.roundToInt
 import com.nintech.budgment.ui.common.RowActionsMenu
 import com.nintech.budgment.ui.common.rememberUndoableDelete
 import com.nintech.budgment.ui.theme.tabular
+import com.nintech.budgment.ui.common.CurrencyMenu
 
 @Composable
 fun BudgetsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddBudgetClick: () -> Unit,
     onBudgetClick: (String) -> Unit,
     viewModel: BudgetsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
@@ -54,6 +56,7 @@ fun BudgetsListScreen(
             uiState = uiState,
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddBudgetClick = onAddBudgetClick,
             onBudgetClick = onBudgetClick,
             onDeleteBudget = rememberUndoableDelete(
@@ -71,6 +74,7 @@ fun BudgetsListScreen(
             uiState = BudgetsUiState(),
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddBudgetClick = onAddBudgetClick,
             onBudgetClick = onBudgetClick,
             onDeleteBudget = {},
@@ -85,6 +89,7 @@ fun BudgetsListScreen(
     uiState: BudgetsUiState,
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddBudgetClick: () -> Unit,
     onBudgetClick: (String) -> Unit,
     onDeleteBudget: (String) -> Unit,
@@ -94,7 +99,9 @@ fun BudgetsListScreen(
 ) {
     BudgmentScaffold(
         currentRoute = currentRoute,
+        title = stringResource(R.string.budgets_title),
         onNavigateToTab = onNavigateToTab,
+        onSettingsClick = onSettingsClick,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
@@ -107,32 +114,13 @@ fun BudgetsListScreen(
         }
     ) { innerPadding ->
         if (!uiState.isLoading && uiState.global.isEmpty() && uiState.category.isEmpty()) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        stringResource(R.string.budgets_empty_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.budgets_empty_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
+            EmptyState(
+                title = stringResource(R.string.budgets_empty_title),
+                message = stringResource(R.string.budgets_empty_subtitle),
+                actionLabel = stringResource(R.string.budgets_add_content_description),
+                onAction = onAddBudgetClick,
+                modifier = modifier.background(MaterialTheme.colorScheme.background).padding(innerPadding)
+            )
         } else {
             LazyColumn(
                 modifier = modifier
@@ -146,7 +134,9 @@ fun BudgetsListScreen(
                     BudgetSummaryHeader(
                         totalAllocated = uiState.totalAllocated,
                         totalSpent = uiState.totalSpent,
-                        budgetCount = uiState.global.size + uiState.category.size,
+                        hasGlobal = uiState.hasGlobal,
+                        categoryLimitsTotal = uiState.categoryLimitsTotal,
+                        categoryLimitsExceedGlobal = uiState.categoryLimitsExceedGlobal,
                         primaryCurrency = uiState.primaryCurrency,
                         missingRateCount = uiState.missingRateCount,
                         onCurrencyChange = onCurrencyChange
@@ -154,7 +144,7 @@ fun BudgetsListScreen(
                 }
                 if (uiState.global.isNotEmpty()) {
                     item(key = "section_global") {
-                        BudgetSectionHeader(BudgetScope.GLOBAL)
+                        BudgetSectionHeader(BudgetScope.GLOBAL.label())
                     }
                     items(uiState.global, key = { it.budget.id }) { item ->
                         BudgetCard(
@@ -168,7 +158,14 @@ fun BudgetsListScreen(
                 }
                 if (uiState.category.isNotEmpty()) {
                     item(key = "section_category") {
-                        BudgetSectionHeader(BudgetScope.CATEGORY)
+                        // Con un global, los de categoría son topes dentro de él, no dinero aparte.
+                        BudgetSectionHeader(
+                            if (uiState.hasGlobal) {
+                                stringResource(R.string.budgets_section_category_within_global)
+                            } else {
+                                BudgetScope.CATEGORY.label()
+                            }
+                        )
                     }
                     items(uiState.category, key = { it.budget.id }) { item ->
                         BudgetCard(
@@ -186,9 +183,9 @@ fun BudgetsListScreen(
 }
 
 @Composable
-private fun BudgetSectionHeader(scope: BudgetScope) {
+private fun BudgetSectionHeader(text: String) {
     Text(
-        text = scope.label(),
+        text = text,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -199,7 +196,9 @@ private fun BudgetSectionHeader(scope: BudgetScope) {
 private fun BudgetSummaryHeader(
     totalAllocated: Long,
     totalSpent: Long,
-    budgetCount: Int,
+    hasGlobal: Boolean,
+    categoryLimitsTotal: Long,
+    categoryLimitsExceedGlobal: Boolean,
     primaryCurrency: String,
     missingRateCount: Int,
     onCurrencyChange: (String) -> Unit
@@ -221,9 +220,24 @@ private fun BudgetSummaryHeader(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.budgets_summary_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                CurrencyMenu(selectedCode = primaryCurrency, onSelect = onCurrencyChange)
+            }
+            // Dice de dónde salen las cifras: sin global, no es todo lo gastado en el mes.
             Text(
-                stringResource(R.string.budgets_summary_title),
-                style = MaterialTheme.typography.bodyMedium,
+                stringResource(
+                    if (hasGlobal) R.string.budgets_summary_source_global else R.string.budgets_summary_source_categories
+                ),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
@@ -250,36 +264,26 @@ private fun BudgetSummaryHeader(
                 color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
             )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                stringResource(R.string.budgets_count_format, budgetCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (categoryLimitsExceedGlobal) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    stringResource(
+                        R.string.budgets_category_limits_exceed_global,
+                        formatCents(categoryLimitsTotal, primaryCurrency),
+                        formatCents(totalAllocated, primaryCurrency)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (missingRateCount > 0) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    stringResource(R.string.budgets_missing_rates, missingRateCount),
+                    pluralStringResource(R.plurals.budgets_missing_rates, missingRateCount, missingRateCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
             }
-            Spacer(Modifier.height(16.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(SupportedCurrency.ALL) { currency ->
-                    FilterChip(
-                        selected = primaryCurrency == currency.code,
-                        onClick = { onCurrencyChange(currency.code) },
-                        label = { Text(currency.code) }
-                    )
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.home_currency_rate_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -319,7 +323,7 @@ private fun BudgetCard(
     } else {
         MaterialTheme.colorScheme.primary
     }
-    val remaining = item.budget.amountLimit - item.spent
+    val remaining = item.limit - item.spent
     val percent = (item.progress * 100).roundToInt().coerceAtLeast(0)
 
     Card(
@@ -372,7 +376,7 @@ private fun BudgetCard(
                     stringResource(
                         R.string.budgets_spent_format,
                         formatCents(item.spent, currency),
-                        formatCents(item.budget.amountLimit, currency)
+                        formatCents(item.limit, currency)
                     ),
                     style = MaterialTheme.typography.bodyMedium.tabular,
                     color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
@@ -461,14 +465,16 @@ private fun BudgetsListScreenPopulatedLightPreview() {
                         spent = 1450000L,
                         progress = 0.725f,
                         missingRate = false
-                    ),
+                    )
+                ),
+                category = listOf(
                     BudgetWithProgress(
                         budget = BudgetEntity(
                             id = "2",
                             userId = "user_1",
                             name = "Entretenimiento",
                             amountLimit = 500000L,
-                            scope = BudgetScope.GLOBAL,
+                            scope = BudgetScope.CATEGORY,
                             periodUnit = PeriodUnit.MONTH,
                             startDate = 1000L,
                             endDate = 2000L,
@@ -477,9 +483,7 @@ private fun BudgetsListScreenPopulatedLightPreview() {
                         spent = 780000L,
                         progress = 1.56f,
                         missingRate = false
-                    )
-                ),
-                category = listOf(
+                    ),
                     BudgetWithProgress(
                         budget = BudgetEntity(
                             id = "3",
@@ -517,8 +521,10 @@ private fun BudgetsListScreenPopulatedLightPreview() {
                         )
                     )
                 ),
-                totalAllocated = 2900000L,
-                totalSpent = 2460000L,
+                totalAllocated = 2000000L,
+                totalSpent = 1450000L,
+                summaryBudgetId = "1",
+                categoryLimitsTotal = 900000L,
                 primaryCurrency = "MXN",
                 isLoading = false
             ),

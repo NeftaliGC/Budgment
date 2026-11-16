@@ -1,5 +1,8 @@
 package com.nintech.budgment.ui.categories
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -103,6 +106,7 @@ fun CategoryFormScreen(
                     null
                 },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -152,8 +156,13 @@ fun CategoryFormScreen(
             Spacer(Modifier.height(15.dp))
 
             Text(
-                text = stringResource(R.string.category_form_color_label)+": "+stringResource(R.string.category_form_color_auto_hint),
+                text = stringResource(R.string.category_form_color_label),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.category_form_color_auto_hint),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(8.dp))

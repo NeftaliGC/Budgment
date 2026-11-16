@@ -1,5 +1,7 @@
 package com.nintech.budgment.ui.budgets
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,6 +25,7 @@ import com.nintech.budgment.ui.common.SurfaceSystemBars
 fun BudgetFormScreen(
     onBackClick: () -> Unit,
     onSaved: () -> Unit,
+    onEditBudget: (String) -> Unit = {},
     viewModel: BudgetFormViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
     if (viewModel != null) {
@@ -39,6 +42,7 @@ fun BudgetFormScreen(
             onScopeChange = viewModel::onScopeChange,
             onCategoryToggle = viewModel::onCategoryToggle,
             onSaveClick = viewModel::save,
+            onEditExistingGlobal = onEditBudget,
             onBackClick = onBackClick
         )
     } else {
@@ -49,6 +53,7 @@ fun BudgetFormScreen(
             onScopeChange = {},
             onCategoryToggle = {},
             onSaveClick = {},
+            onEditExistingGlobal = {},
             onBackClick = onBackClick
         )
     }
@@ -63,6 +68,7 @@ fun BudgetFormScreenContent(
     onScopeChange: (BudgetScope) -> Unit,
     onCategoryToggle: (String) -> Unit,
     onSaveClick: () -> Unit,
+    onEditExistingGlobal: (String) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -91,6 +97,7 @@ fun BudgetFormScreenContent(
                 onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.budget_form_name_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
                 isError = state.nameError,
                 supportingText = if (state.nameError) {
                     { Text(stringResource(R.string.form_error_name_required)) }
@@ -108,12 +115,17 @@ fun BudgetFormScreenContent(
                 label = { Text(stringResource(R.string.budget_form_amount_label)) },
                 singleLine = true,
                 isError = state.amountError,
-                supportingText = if (state.amountError) {
-                    { Text(stringResource(R.string.budget_form_error_amount)) }
-                } else {
-                    null
+                suffix = { Text(state.currency) },
+                supportingText = {
+                    Text(
+                        if (state.amountError) {
+                            stringResource(R.string.budget_form_error_amount)
+                        } else {
+                            stringResource(R.string.budget_form_amount_currency_hint, state.currency)
+                        }
+                    )
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -132,6 +144,22 @@ fun BudgetFormScreenContent(
                     BudgetScope.entries.forEach { scope ->
                         DropdownMenuItem(text = { Text(scope.label()) }, onClick = { onScopeChange(scope); scopeMenuExpanded = false })
                     }
+                }
+            }
+
+            val existingGlobal = state.existingGlobal
+            if (state.globalTaken && existingGlobal != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.budget_form_global_exists, existingGlobal.name),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                TextButton(
+                    onClick = { onEditExistingGlobal(existingGlobal.id) },
+                    contentPadding = PaddingValues(horizontal = 0.dp)
+                ) {
+                    Text(stringResource(R.string.budget_form_edit_existing_global, existingGlobal.name))
                 }
             }
 
@@ -160,7 +188,7 @@ fun BudgetFormScreenContent(
 
             Spacer(Modifier.height(28.dp))
 
-            Button(onClick = onSaveClick, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+            Button(onClick = onSaveClick, enabled = !state.globalTaken, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Text(stringResource(R.string.budget_form_save_button))
             }
         }

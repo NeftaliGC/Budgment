@@ -1,10 +1,11 @@
 package com.nintech.budgment.ui.accounts
 
+import com.nintech.budgment.ui.common.EmptyState
+import androidx.compose.ui.res.pluralStringResource
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -20,7 +21,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.AccountEntity
 import com.nintech.budgment.data.model.AccountType
-import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.BudgmentScaffold
 import com.nintech.budgment.ui.common.ColorIconTile
@@ -30,11 +30,13 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import com.nintech.budgment.ui.common.RowActionsMenu
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.nintech.budgment.ui.theme.tabular
+import com.nintech.budgment.ui.common.CurrencyMenu
 
 @Composable
 fun AccountsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     viewModel: AccountsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
@@ -46,6 +48,7 @@ fun AccountsListScreen(
             uiState = uiState,
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onDeleteAccount = viewModel::deleteAccount,
@@ -56,6 +59,7 @@ fun AccountsListScreen(
             uiState = AccountsUiState(),
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddAccountClick = onAddAccountClick,
             onAccountClick = onAccountClick,
             onDeleteAccount = {},
@@ -69,6 +73,7 @@ fun AccountsListScreen(
     uiState: AccountsUiState,
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddAccountClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onDeleteAccount: (String) -> Unit,
@@ -89,7 +94,9 @@ fun AccountsListScreen(
 
     BudgmentScaffold(
         currentRoute = currentRoute,
+        title = stringResource(R.string.accounts_title),
         onNavigateToTab = onNavigateToTab,
+        onSettingsClick = onSettingsClick,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddAccountClick,
@@ -101,32 +108,13 @@ fun AccountsListScreen(
         }
     ) { innerPadding ->
         if (!uiState.isLoading && uiState.accounts.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.accounts_empty_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.accounts_empty_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
+            EmptyState(
+                title = stringResource(R.string.accounts_empty_title),
+                message = stringResource(R.string.accounts_empty_subtitle),
+                actionLabel = stringResource(R.string.accounts_add_content_description),
+                onAction = onAddAccountClick,
+                modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(innerPadding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -224,11 +212,18 @@ private fun TotalSummaryHeader(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.accounts_total_balance_title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.accounts_total_balance_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                CurrencyMenu(selectedCode = primaryCurrency, onSelect = onCurrencyChange)
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = formatCents(totalBalance, primaryCurrency),
@@ -237,34 +232,18 @@ private fun TotalSummaryHeader(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.accounts_count_format, accountCount),
+                text = pluralStringResource(R.plurals.accounts_count, accountCount, accountCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (missingRateAccounts > 0) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.accounts_missing_rates, missingRateAccounts),
+                    text = pluralStringResource(R.plurals.missing_rate_accounts, missingRateAccounts, missingRateAccounts),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
             }
-            Spacer(Modifier.height(16.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(SupportedCurrency.ALL) { currency ->
-                    FilterChip(
-                        selected = primaryCurrency == currency.code,
-                        onClick = { onCurrencyChange(currency.code) },
-                        label = { Text(currency.code) }
-                    )
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.home_currency_rate_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

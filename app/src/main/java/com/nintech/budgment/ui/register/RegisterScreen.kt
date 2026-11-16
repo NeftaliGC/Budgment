@@ -1,5 +1,10 @@
 package com.nintech.budgment.ui.register
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -133,6 +138,7 @@ fun RegisterScreenContent(
                 onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.register_name_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
                 isError = state.errorMessage != null,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -144,6 +150,7 @@ fun RegisterScreenContent(
                 onValueChange = onUsernameChange,
                 label = { Text(stringResource(R.string.register_username_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Next),
                 isError = state.errorMessage != null,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -155,6 +162,7 @@ fun RegisterScreenContent(
                 onValueChange = onEmailChange,
                 label = { Text(stringResource(R.string.register_email_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -165,6 +173,7 @@ fun RegisterScreenContent(
                 onValueChange = onPasswordChange,
                 label = { Text(stringResource(R.string.register_password_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                 isError = state.errorMessage != null,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
@@ -187,6 +196,8 @@ fun RegisterScreenContent(
                 onValueChange = onConfirmPasswordChange,
                 label = { Text(stringResource(R.string.register_confirm_password_label)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { if (!state.isLoading) onRegisterClick() }),
                 isError = state.errorMessage != null,
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {

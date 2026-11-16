@@ -9,6 +9,33 @@ import java.util.TimeZone
 fun formatDate(millis: Long): String =
     SimpleDateFormat("d MMM yyyy", Locale("es", "MX")).format(Date(millis))
 
+/** Medianoche local del día al que pertenece [millis]: sirve para agrupar por día. */
+fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
+    timeInMillis = millis
+    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+}.timeInMillis
+
+/** "Hoy", "Ayer" o "lunes, 10 de noviembre"; con año solo si no es el actual. */
+fun relativeDayLabel(millis: Long, today: String, yesterday: String): String {
+    val day = startOfDay(millis)
+    val todayStart = startOfDay(System.currentTimeMillis())
+    val yesterdayStart = Calendar.getInstance().apply {
+        timeInMillis = todayStart
+        add(Calendar.DAY_OF_MONTH, -1)
+    }.timeInMillis
+    return when (day) {
+        todayStart -> today
+        yesterdayStart -> yesterday
+        else -> {
+            val sameYear = Calendar.getInstance().apply { timeInMillis = day }.get(Calendar.YEAR) ==
+                Calendar.getInstance().get(Calendar.YEAR)
+            val pattern = if (sameYear) "EEEE, d 'de' MMMM" else "EEEE, d 'de' MMMM 'de' yyyy"
+            SimpleDateFormat(pattern, Locale("es", "MX")).format(Date(day))
+                .replaceFirstChar { it.titlecase(Locale("es", "MX")) }
+        }
+    }
+}
+
 fun currentMonthRange(): Pair<Long, Long> {
     val cal = Calendar.getInstance()
     cal.set(Calendar.DAY_OF_MONTH, 1)

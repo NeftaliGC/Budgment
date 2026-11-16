@@ -1,16 +1,16 @@
 package com.nintech.budgment.ui.common
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.nintech.budgment.R
@@ -36,55 +37,49 @@ import com.nintech.budgment.ui.theme.BudgmentTheme
 import com.nintech.budgment.ui.theme.ChromeBackground
 import com.nintech.budgment.ui.theme.ChromeContent
 
+/**
+ * Barra superior de las pestañas principales.
+ *
+ * @param title título de la pestaña. Si es null (Inicio) se muestra el logo con el saludo.
+ * @param actions acciones propias de la pestaña; van antes del menú de perfil.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgmentTopBar(
+    title: String?,
     userName: String,
     onSettingsClick: () -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
     TopAppBar(
         title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { menuExpanded = true },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            if (title != null) {
+                Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         painter = painterResource(id = R.drawable.logo_mark),
                         contentDescription = null,
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.header_greeting, userName), style = MaterialTheme.typography.titleMedium)
-                }
-
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.header_menu_settings)) },
-                        onClick = { menuExpanded = false; onSettingsClick() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.header_menu_logout)) },
-                        onClick = { menuExpanded = false; onLogoutClick() }
+                    Text(
+                        text = if (userName.isBlank()) {
+                            stringResource(R.string.app_name)
+                        } else {
+                            stringResource(R.string.header_greeting, userName)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         },
         actions = {
-            IconButton(onClick = { /* no funcional por ahora */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.header_notifications_content_description)
-                )
-            }
+            actions()
+            ProfileMenu(onSettingsClick = onSettingsClick, onLogoutClick = onLogoutClick)
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = ChromeBackground,
@@ -94,26 +89,50 @@ fun BudgmentTopBar(
     )
 }
 
-@Preview(showBackground = true, name = "TopBar - Claro")
 @Composable
-private fun BudgmentTopBarPreview() {
-    BudgmentTheme(darkTheme = false) {
-        BudgmentTopBar(
-            userName = "Juan",
-            onSettingsClick = {},
-            onLogoutClick = {}
-        )
+private fun ProfileMenu(onSettingsClick: () -> Unit, onLogoutClick: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Filled.AccountCircle,
+                contentDescription = stringResource(R.string.header_profile_content_description)
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.header_menu_settings)) },
+                leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onSettingsClick()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.header_menu_logout)) },
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onLogoutClick()
+                }
+            )
+        }
     }
 }
 
-@Preview(showBackground = true, name = "TopBar - Oscuro")
+@Preview(showBackground = true, name = "TopBar - Inicio")
 @Composable
-private fun BudgmentTopBarDarkPreview() {
+private fun BudgmentTopBarHomePreview() {
+    BudgmentTheme(darkTheme = false) {
+        BudgmentTopBar(title = null, userName = "Juan", onSettingsClick = {}, onLogoutClick = {})
+    }
+}
+
+@Preview(showBackground = true, name = "TopBar - Pestaña")
+@Composable
+private fun BudgmentTopBarTabPreview() {
     BudgmentTheme(darkTheme = true) {
-        BudgmentTopBar(
-            userName = "Juan",
-            onSettingsClick = {},
-            onLogoutClick = {}
-        )
+        BudgmentTopBar(title = "Movimientos", userName = "Juan", onSettingsClick = {}, onLogoutClick = {})
     }
 }

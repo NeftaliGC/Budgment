@@ -4,6 +4,7 @@ sealed class BudgmentDestination(val route: String) {
     object Login : BudgmentDestination("login")
     object Register : BudgmentDestination("register")
     object Home : BudgmentDestination("home")
+    object Settings : BudgmentDestination("settings")
     object Accounts : BudgmentDestination("accounts")
     object AccountForm : BudgmentDestination("account_form?accountId={accountId}") {
         const val ARG_ACCOUNT_ID = "accountId"

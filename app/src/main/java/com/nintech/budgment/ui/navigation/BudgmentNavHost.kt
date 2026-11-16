@@ -19,6 +19,7 @@ import com.nintech.budgment.ui.login.LoginScreen
 import com.nintech.budgment.ui.register.RegisterScreen
 import com.nintech.budgment.ui.transactions.TransactionFormScreen
 import com.nintech.budgment.ui.transactions.TransactionsListScreen
+import com.nintech.budgment.ui.settings.SettingsScreen
 
 @Composable
 fun BudgmentNavHost(
@@ -65,14 +66,16 @@ fun BudgmentNavHost(
             HomeScreen(
                 currentRoute = BudgmentDestination.Home.route,
                 onNavigateToTab = onNavigateToTab,
+                onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
-                onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) },
-                onAddCategoryClick = { navController.navigate(BudgmentDestination.CategoryForm.createRoute()) },
-                onCategoryClick = { id -> navController.navigate(BudgmentDestination.CategoryForm.createRoute(id)) },
-                onSeeAllCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
+                onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
-                onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) }
+                onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
             )
+        }
+
+        composable(BudgmentDestination.Settings.route) {
+            SettingsScreen(onBackClick = { navController.popBackStack() })
         }
 
         composable(BudgmentDestination.Categories.route) {
@@ -102,6 +105,7 @@ fun BudgmentNavHost(
             AccountsListScreen(
                 currentRoute = BudgmentDestination.Accounts.route,
                 onNavigateToTab = onNavigateToTab,
+                onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddAccountClick = { navController.navigate(BudgmentDestination.AccountForm.createRoute()) },
                 onAccountClick = { id -> navController.navigate(BudgmentDestination.AccountForm.createRoute(id)) }
             )
@@ -126,7 +130,9 @@ fun BudgmentNavHost(
             TransactionsListScreen(
                 currentRoute = BudgmentDestination.Transactions.route,
                 onNavigateToTab = onNavigateToTab,
+                onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddTransactionClick = { navController.navigate(BudgmentDestination.TransactionForm.createRoute()) },
+                onCategoriesClick = { navController.navigate(BudgmentDestination.Categories.route) },
                 onTransactionClick = { id -> navController.navigate(BudgmentDestination.TransactionForm.createRoute(id)) }
             )
         }
@@ -135,6 +141,7 @@ fun BudgmentNavHost(
             BudgetsListScreen(
                 currentRoute = BudgmentDestination.Budgets.route,
                 onNavigateToTab = onNavigateToTab,
+                onSettingsClick = { navController.navigate(BudgmentDestination.Settings.route) },
                 onAddBudgetClick = { navController.navigate(BudgmentDestination.BudgetForm.createRoute()) },
                 onBudgetClick = { id -> navController.navigate(BudgmentDestination.BudgetForm.createRoute(id)) }
             )
@@ -151,7 +158,13 @@ fun BudgmentNavHost(
         ) {
             BudgetFormScreen(
                 onBackClick = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onSaved = { navController.popBackStack() },
+                // Reemplaza este formulario por el del global existente: volver no regresa aquí.
+                onEditBudget = { id ->
+                    navController.navigate(BudgmentDestination.BudgetForm.createRoute(id)) {
+                        popUpTo(BudgmentDestination.BudgetForm.route) { inclusive = true }
+                    }
+                }
             )
         }
 

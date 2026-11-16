@@ -1,7 +1,13 @@
 package com.nintech.budgment.ui.transactions
 
+import com.nintech.budgment.ui.common.relativeDayLabel
+import com.nintech.budgment.ui.common.startOfDay
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import com.nintech.budgment.ui.common.EmptyState
 import android.content.res.Configuration
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,18 +26,18 @@ import com.nintech.budgment.R
 import com.nintech.budgment.data.local.entity.TransactionEntity
 import com.nintech.budgment.data.model.CategoryType
 import com.nintech.budgment.ui.common.BudgmentScaffold
-import com.nintech.budgment.ui.common.formatCents
-import com.nintech.budgment.ui.common.formatDate
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import com.nintech.budgment.ui.common.RowActionsMenu
 import com.nintech.budgment.ui.common.rememberUndoableDelete
-import com.nintech.budgment.ui.theme.tabular
+import androidx.compose.material.icons.filled.Category
 
 @Composable
 fun TransactionsListScreen(
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit,
+    onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
     viewModel: TransactionsViewModel? = if (LocalInspectionMode.current) null else hiltViewModel()
 ) {
@@ -43,7 +49,9 @@ fun TransactionsListScreen(
             uiState = uiState,
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddTransactionClick = onAddTransactionClick,
+            onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
             onDeleteTransaction = rememberUndoableDelete(
                 snackbarHostState = snackbarHostState,
@@ -58,26 +66,39 @@ fun TransactionsListScreen(
             uiState = TransactionsUiState(),
             currentRoute = currentRoute,
             onNavigateToTab = onNavigateToTab,
+            onSettingsClick = onSettingsClick,
             onAddTransactionClick = onAddTransactionClick,
+            onCategoriesClick = onCategoriesClick,
             onTransactionClick = onTransactionClick,
             onDeleteTransaction = {}
         )
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionsListScreen(
     uiState: TransactionsUiState,
     currentRoute: String,
     onNavigateToTab: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit,
+    onCategoriesClick: () -> Unit = {},
     onTransactionClick: (String) -> Unit,
     onDeleteTransaction: (String) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     BudgmentScaffold(
         currentRoute = currentRoute,
+        title = stringResource(R.string.transactions_title),
         onNavigateToTab = onNavigateToTab,
+        onSettingsClick = onSettingsClick,
+        topBarActions = {
+            // Las categorías sirven para clasificar movimientos: se administran desde aquí.
+            IconButton(onClick = onCategoriesClick) {
+                Icon(Icons.Filled.Category, contentDescription = stringResource(R.string.categories_title))
+            }
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
@@ -90,90 +111,67 @@ fun TransactionsListScreen(
         }
     ) { innerPadding ->
         if (!uiState.isLoading && uiState.transactions.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.transactions_empty_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.transactions_empty_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            EmptyState(
+                title = stringResource(R.string.transactions_empty_title),
+                message = stringResource(R.string.transactions_empty_subtitle),
+                actionLabel = stringResource(R.string.transactions_add_content_description),
+                onAction = onAddTransactionClick,
+                modifier = Modifier.padding(innerPadding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                items(uiState.transactions, key = { it.transaction.id }) { item ->
+                // Ya vienen del más reciente al más antiguo; groupBy conserva ese orden.
+                uiState.transactions
+                    .groupBy { startOfDay(it.transaction.date) }
+                    .forEach { (day, dayTransactions) ->
+                stickyHeader(key = "day_$day") {
+                    DayHeader(day)
+                }
+                items(dayTransactions, key = { it.transaction.id }) { item ->
                     TransactionRow(
                         item = item,
                         onClick = { onTransactionClick(item.transaction.id) },
-                        onDeleteClick = { onDeleteTransaction(item.transaction.id) }
+                        showDate = false,
+                        trailing = {
+                            if (item.accountDeleted) {
+                                // Conserva la alineación del monto con las filas que sí tienen menú.
+                                Spacer(Modifier.width(48.dp))
+                            } else {
+                                RowActionsMenu(
+                                    deleteLabel = stringResource(R.string.transactions_delete_content_description),
+                                    onDeleteClick = { onDeleteTransaction(item.transaction.id) }
+                                )
+                            }
+                        }
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                 }
+                    }
             }
         }
     }
 }
 
+/** Encabezado de día; queda fijo arriba mientras se recorren sus movimientos. */
 @Composable
-private fun TransactionRow(item: TransactionWithDetails, onClick: () -> Unit, onDeleteClick: () -> Unit) {
-    val amountColor = if (item.categoryType == CategoryType.EXPENSE) {
-        MaterialTheme.colorScheme.error
-    } else {
-        MaterialTheme.colorScheme.tertiary
-    }
-
-    val categoryLabel = if (item.categoryDeleted) {
-        stringResource(R.string.transactions_deleted_category_format, item.categoryName)
-    } else {
-        item.categoryName
-    }
-    val accountLabel = if (item.accountDeleted) {
-        stringResource(R.string.transactions_deleted_account_format, item.accountName)
-    } else {
-        item.accountName
-    }
-
-    Row(
+private fun DayHeader(day: Long) {
+    Text(
+        text = relativeDayLabel(
+            day,
+            today = stringResource(R.string.common_today),
+            yesterday = stringResource(R.string.common_yesterday)
+        ),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !item.accountDeleted, onClick = onClick)
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(categoryLabel, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = "$accountLabel · ${formatDate(item.transaction.date)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Text(
-            text = formatCents(item.transaction.amount, item.transaction.currency ?: ""),
-            style = MaterialTheme.typography.titleMedium.tabular,
-            color = amountColor
-        )
-        if (item.accountDeleted) {
-            // Conserva la alineación del monto con las filas que sí tienen menú.
-            Spacer(Modifier.width(48.dp))
-        } else {
-            RowActionsMenu(deleteLabel = stringResource(R.string.transactions_delete_content_description), onDeleteClick = onDeleteClick)
-        }
-    }
+            .background(MaterialTheme.colorScheme.background)
+            .padding(top = 16.dp, bottom = 4.dp)
+            .semantics { heading() }
+    )
 }
 
 @Preview(showBackground = true)

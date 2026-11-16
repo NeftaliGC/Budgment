@@ -1,5 +1,6 @@
 package com.nintech.budgment.ui.categories
 
+import com.nintech.budgment.ui.common.EmptyState
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -120,24 +121,13 @@ fun CategoriesListScreen(
         }
     ) { innerPadding ->
         if (!uiState.isLoading && uiState.categories.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.categories_empty_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.categories_empty_subtitle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            EmptyState(
+                title = stringResource(R.string.categories_empty_title),
+                message = stringResource(R.string.categories_empty_subtitle),
+                actionLabel = stringResource(R.string.categories_add_content_description),
+                onAction = onAddCategoryClick,
+                modifier = Modifier.padding(innerPadding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -195,11 +185,8 @@ private fun CategoryRow(category: CategoryEntity, onClick: () -> Unit, onDeleteC
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             ColorIconTile(color = accentColor, icon = icon, size = 36.dp, cornerRadius = 10.dp)
             Spacer(Modifier.width(12.dp))
-            Column {
-                Text(category.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(Modifier.height(2.dp))
-                Text(category.type.label(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            // El tipo ya lo dice el encabezado de la sección (Gastos / Ingresos).
+            Text(category.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         }
         RowActionsMenu(deleteLabel = stringResource(R.string.categories_delete_content_description), onDeleteClick = onDeleteClick)
     }

@@ -55,6 +55,11 @@ class SessionManagerImpl @Inject constructor(
 
     override suspend fun logout() {
         inMemoryUserId.value = null
-        dataStore.edit { it.remove(USER_ID_KEY) }
+        // La moneda de visualización es una preferencia de la sesión: el siguiente usuario
+        // empieza con su propia moneda por defecto.
+        dataStore.edit {
+            it.remove(USER_ID_KEY)
+            it.remove(DISPLAY_CURRENCY_KEY)
+        }
     }
 }

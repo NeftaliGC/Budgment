@@ -2,36 +2,66 @@ package com.nintech.budgment.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nintech.budgment.data.local.entity.AccountEntity
-import com.nintech.budgment.data.local.entity.CategoryEntity
 import com.nintech.budgment.data.model.SupportedCurrency
 import com.nintech.budgment.data.repository.AccountRepository
 import com.nintech.budgment.data.repository.CategoryRepository
 import com.nintech.budgment.data.repository.ExchangeRateRepository
-import com.nintech.budgment.data.repository.UserRepository
+import com.nintech.budgment.data.repository.TransactionRepository
 import com.nintech.budgment.data.session.SessionManager
+import com.nintech.budgment.ui.budgets.BudgetOverviewSource
+import com.nintech.budgment.ui.budgets.BudgetWithProgress
+import com.nintech.budgment.ui.transactions.TransactionWithDetails
+import com.nintech.budgment.ui.transactions.buildTransactionDetails
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import javax.inject.Inject
 
 data class HomeUiState(
-    val totalBalance: Long = 0,
     val primaryCurrency: String = SupportedCurrency.MXN.code,
-    val accounts: List<AccountEntity> = emptyList(),
-    val categories: List<CategoryEntity> = emptyList(),
+    val hasAccounts: Boolean = false,
+    val totalBalance: Long = 0,
     val missingRateAccounts: Int = 0,
+    /**
+     * Límite y gastado del mes: los del presupuesto global si hay; si no, la suma de los
+     * presupuestos por categoría. Mismas cifras que el resumen de la pestaña Presupuestos.
+     */
+    val budgetAllocated: Long = 0,
+    val budgetSpent: Long = 0,
+    val budgetFromGlobal: Boolean = false,
+    val topBudgets: List<BudgetWithProgress> = emptyList(),
+    val dayOfMonth: Int = 1,
+    val daysInMonth: Int = 30,
+    val recentTransactions: List<TransactionWithDetails> = emptyList(),
     val isLoading: Boolean = true
-)
+) {
+    val hasBudgets: Boolean get() = budgetAllocated > 0
+    val budgetRemaining: Long get() = budgetAllocated - budgetSpent
+
+    val budgetSpentFraction: Float get() = if (hasBudgets) budgetSpent.toFloat() / budgetAllocated else 0f
+
+    /** Días que faltan del mes, contando hoy. */
+    val daysLeftInMonth: Int get() = (daysInMonth - dayOfMonth + 1).coerceAtLeast(1)
+
+    /** Lo que se puede gastar por día para llegar a fin de mes sin pasarse. */
+    val budgetPerDayLeft: Long get() = if (budgetRemaining > 0) budgetRemaining / daysLeftInMonth else 0
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val transactionRepository: TransactionRepository,
     private val exchangeRateRepository: ExchangeRateRepository,
-    private val userRepository: UserRepository,
+    private val budgetOverviewSource: BudgetOverviewSource,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -40,14 +70,22 @@ class HomeViewModel @Inject constructor(
             if (userId == null) {
                 flowOf(HomeUiState(isLoading = true))
             } else {
-                val defaultCurrency = userRepository.getUser(userId)?.defaultCurrency
-                    ?: SupportedCurrency.MXN.code
+                val recentTransactions = combine(
+                    transactionRepository.observeTransactions(userId),
+                    accountRepository.observeAccountsIncludingDeleted(userId),
+                    categoryRepository.observeCategoriesIncludingDeleted(userId)
+                ) { transactions, accounts, categories ->
+                    buildTransactionDetails(transactions, accounts, categories).take(RECENT_TRANSACTIONS)
+                }
+
                 combine(
                     accountRepository.observeAccounts(userId),
-                    categoryRepository.observeCategories(userId),
-                    sessionManager.displayCurrency
-                ) { accounts, categories, preferredCurrency ->
-                    val displayCurrency = preferredCurrency ?: defaultCurrency
+                    // Misma fuente que la pestaña Presupuestos: las cifras coinciden y ya vienen
+                    // convertidas a la moneda de visualización.
+                    budgetOverviewSource.observe(userId),
+                    recentTransactions
+                ) { accounts, budgets, transactions ->
+                    val displayCurrency = budgets.primaryCurrency
                     var missing = 0
                     var total = 0L
                     accounts.forEach { account ->
@@ -56,18 +94,27 @@ class HomeViewModel @Inject constructor(
                             account.currency,
                             displayCurrency
                         )
-                        if (converted == null) {
-                            missing++
-                        } else {
-                            total += converted
-                        }
+                        if (converted == null) missing++ else total += converted
                     }
+
+                    val today = Calendar.getInstance()
                     HomeUiState(
-                        totalBalance = total,
                         primaryCurrency = displayCurrency,
-                        accounts = accounts,
-                        categories = categories,
+                        hasAccounts = accounts.isNotEmpty(),
+                        totalBalance = total,
                         missingRateAccounts = missing,
+                        budgetAllocated = budgets.totalAllocated,
+                        budgetSpent = budgets.totalSpent,
+                        budgetFromGlobal = budgets.hasGlobal,
+                        // Los más avanzados primero: son los que piden atención. El global que da
+                        // las cifras de la tarjeta no se repite en la lista.
+                        topBudgets = (budgets.global + budgets.category)
+                            .filter { it.budget.id != budgets.summaryBudgetId }
+                            .sortedByDescending { it.progress }
+                            .take(TOP_BUDGETS),
+                        dayOfMonth = today.get(Calendar.DAY_OF_MONTH),
+                        daysInMonth = today.getActualMaximum(Calendar.DAY_OF_MONTH),
+                        recentTransactions = transactions,
                         isLoading = false
                     )
                 }
@@ -77,5 +124,10 @@ class HomeViewModel @Inject constructor(
 
     fun onDisplayCurrencyChange(code: String) {
         viewModelScope.launch { sessionManager.setDisplayCurrency(code) }
+    }
+
+    private companion object {
+        const val RECENT_TRANSACTIONS = 5
+        const val TOP_BUDGETS = 3
     }
 }

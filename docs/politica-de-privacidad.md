@@ -1,3 +1,10 @@
+---
+layout: prose
+title: Política de privacidad
+description: Qué información maneja Budgment, dónde se guarda y qué sale de tu teléfono.
+permalink: /privacidad/
+---
+
 # Política de privacidad de Budgment
 
 Última actualización: 16 de noviembre de 2026
@@ -13,7 +20,7 @@ Budgment es una aplicación para Android de control de gastos y presupuestos per
 
 ## Responsable
 
-**Fabián Neftaly Guía Cruz**
+**Fabián Neftaly Guía Cruz**  
 Contacto: **nintech1912@gmail.com**
 
 ## Qué información guarda la app

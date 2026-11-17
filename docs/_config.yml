@@ -1,0 +1,14 @@
+title: Budgment
+description: Control de gastos y presupuestos personales para Android. Tus datos se quedan en tu teléfono.
+lang: es
+url: "https://neftaligc.github.io"
+baseurl: "/Budgment"
+contact_email: nintech1912@gmail.com
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  auto_ids: true
+
+exclude:
+  - budgment_schema.dbml

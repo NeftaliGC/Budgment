@@ -13,6 +13,10 @@ Aplicación móvil Android para control de gastos y presupuestos personales. Los
 - **Multi-moneda** — Selector de moneda de visualización en toda la app
 - **Navegación intuitiva** — BottomBar con pestañas y conservación de estado
 
+## 🌐 Web
+
+Sitio del proyecto y política de privacidad: <https://neftaligc.github.io/Budgment/> (publicado con GitHub Pages desde la carpeta [`docs/`](docs/)).
+
 ## 🛠️ Stack técnico
 
 - **Lenguaje:** Kotlin
@@ -67,7 +71,9 @@ app/
   ├─ domain/        # Modelos de dominio y casos de uso
   ├─ ui/            # Pantallas y componentes de Compose
   └─ MainActivity.kt, BudgmentApp.kt
-docs/
+docs/                          # Sitio de GitHub Pages (Jekyll)
+  ├─ index.html                # Portada
+  ├─ politica-de-privacidad.md # Política de privacidad → /privacidad/
   └─ budgment_schema.dbml
 ```
 

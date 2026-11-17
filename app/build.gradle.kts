@@ -33,6 +33,10 @@ android {
             )
         }
     }
+    androidResources {
+        // Idiomas de la app (values/ = inglés, values-es/ = español) para el selector de idioma por app de Android 13+.
+        generateLocaleConfig = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21

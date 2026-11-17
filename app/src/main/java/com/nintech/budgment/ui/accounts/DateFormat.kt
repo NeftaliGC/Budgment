@@ -3,15 +3,14 @@ package com.nintech.budgment.ui.common
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 import java.util.TimeZone
 
 fun formatDate(millis: Long): String =
-    SimpleDateFormat("d MMM yyyy", Locale("es", "MX")).format(Date(millis))
+    SimpleDateFormat(if (isSpanish()) "d MMM yyyy" else "MMM d, yyyy", appLocale()).format(Date(millis))
 
-/** «1 dic»: fecha corta sin año, para fechas cercanas como la renovación de un presupuesto. */
+/** «1 dic» («Dec 1» en inglés): fecha corta sin año, para fechas cercanas como la renovación de un presupuesto. */
 fun formatShortDate(millis: Long): String =
-    SimpleDateFormat("d MMM", Locale("es", "MX")).format(Date(millis))
+    SimpleDateFormat(if (isSpanish()) "d MMM" else "MMM d", appLocale()).format(Date(millis))
 
 /** Medianoche local del día al que pertenece [millis]: sirve para agrupar por día. */
 fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
@@ -19,7 +18,7 @@ fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
 }.timeInMillis
 
-/** "Hoy", "Ayer" o "lunes, 10 de noviembre"; con año solo si no es el actual. */
+/** "Hoy", "Ayer" o "lunes, 10 de noviembre" («Monday, November 10» en inglés); con año solo si no es el actual. */
 fun relativeDayLabel(millis: Long, today: String, yesterday: String): String {
     val day = startOfDay(millis)
     val todayStart = startOfDay(System.currentTimeMillis())
@@ -33,9 +32,15 @@ fun relativeDayLabel(millis: Long, today: String, yesterday: String): String {
         else -> {
             val sameYear = Calendar.getInstance().apply { timeInMillis = day }.get(Calendar.YEAR) ==
                 Calendar.getInstance().get(Calendar.YEAR)
-            val pattern = if (sameYear) "EEEE, d 'de' MMMM" else "EEEE, d 'de' MMMM 'de' yyyy"
-            SimpleDateFormat(pattern, Locale("es", "MX")).format(Date(day))
-                .replaceFirstChar { it.titlecase(Locale("es", "MX")) }
+            val locale = appLocale()
+            val pattern = when {
+                isSpanish() && sameYear -> "EEEE, d 'de' MMMM"
+                isSpanish() -> "EEEE, d 'de' MMMM 'de' yyyy"
+                sameYear -> "EEEE, MMMM d"
+                else -> "EEEE, MMMM d, yyyy"
+            }
+            SimpleDateFormat(pattern, locale).format(Date(day))
+                .replaceFirstChar { it.titlecase(locale) }
         }
     }
 }

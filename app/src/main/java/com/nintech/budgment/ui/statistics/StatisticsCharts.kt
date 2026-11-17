@@ -24,16 +24,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nintech.budgment.ui.common.appLocale
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
-
-private val esMx = Locale("es", "MX")
 
 /** «nov» para seis meses; con doce solo cabe la inicial: «N». */
 fun monthLabel(monthStart: Long, compact: Boolean): String {
-    val name = SimpleDateFormat("MMM", esMx).format(Date(monthStart)).trimEnd('.')
-    return if (compact) name.take(1).uppercase(esMx) else name.replaceFirstChar { it.titlecase(esMx) }
+    val locale = appLocale()
+    val name = SimpleDateFormat("MMM", locale).format(Date(monthStart)).trimEnd('.')
+    return if (compact) name.take(1).uppercase(locale) else name.replaceFirstChar { it.titlecase(locale) }
 }
 
 /**

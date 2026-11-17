@@ -52,12 +52,12 @@ import com.nintech.budgment.ui.categories.parseHexColor
 import com.nintech.budgment.ui.common.ColorIconTile
 import com.nintech.budgment.ui.common.CurrencyMenu
 import com.nintech.budgment.ui.common.SurfaceSystemBars
+import com.nintech.budgment.ui.common.appLocale
 import com.nintech.budgment.ui.common.formatCents
 import com.nintech.budgment.ui.theme.BudgmentTheme
 import com.nintech.budgment.ui.theme.tabular
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -167,14 +167,14 @@ private fun PeriodSelector(
 
 /** «Noviembre 2026» o «2026». */
 private fun rangeLabel(range: StatsRange): String {
-    val locale = Locale("es", "MX")
+    val locale = appLocale()
     val pattern = if (range.mode == StatsRangeMode.MONTH) "MMMM yyyy" else "yyyy"
     return SimpleDateFormat(pattern, locale).format(Date(range.start)).replaceFirstChar { it.titlecase(locale) }
 }
 
 /** «en octubre» o «en 2025»: con qué se compara. */
 private fun previousLabel(range: StatsRange): String {
-    val locale = Locale("es", "MX")
+    val locale = appLocale()
     val previous = StatsRange.of(range.mode, 1, now = range.start)
     val pattern = if (range.mode == StatsRangeMode.MONTH) "MMMM" else "yyyy"
     return SimpleDateFormat(pattern, locale).format(Date(previous.start))
